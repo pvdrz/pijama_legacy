@@ -28,6 +28,16 @@ impl<'a> Rule<'a> for Node<'a> {
         };
         Ok(node)
     }
+
+    fn apply(parser: &mut Parser<'a>) -> Option<ParseResult<Self>> {
+        if Atom::lookahead(parser) {
+            Some(Atom::consume(parser).map(|atom| Node::Atom(atom)))
+        } else if Seq::lookahead(parser) {
+            Some(Seq::consume(parser).map(|seq| Node::Seq(seq)))
+        } else {
+            None
+        }
+    }
 }
 
 pub struct Seq<'a>(Vec<Node<'a>>);
