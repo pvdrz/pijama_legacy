@@ -26,6 +26,10 @@ struct Parser<'a> {
 }
 
 impl<'a> Parser<'a> {
+    fn curr_char(&self) -> Option<char> {
+        self.text.get(self.index).map(|&b| b.into())
+    }
+
     fn check_next<F: Fn(&u8) -> bool>(&self, f: F) -> bool {
         self.text.get(self.index).map(f).unwrap_or(false)
     }
@@ -34,8 +38,8 @@ impl<'a> Parser<'a> {
         self.index += 1;
     }
 
-    fn consume_space(&mut self) {
-        Space::apply(self).unwrap_or(Ok(Space)).ok();
+    fn consume_space(&mut self) -> bool {
+        Space::apply(self).is_some()
     }
 
     fn error<T>(&self, kind: ParseErrorKind) -> ParseResult<T> {
@@ -52,7 +56,7 @@ impl<'a> Iterator for Parser<'a> {
             if let Some(node) = Node::apply(self) {
                 Some(node.map(Node::into))
             } else {
-                let chr = self.text.get(self.index).copied().unwrap().into();
+                let chr = self.curr_char().unwrap();
                 Some(self.error(ParseErrorKind::UnexpectedChar(chr)))
             }
         } else {

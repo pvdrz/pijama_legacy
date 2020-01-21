@@ -9,7 +9,7 @@ fn main() -> parser::ParseResult {
         (None None)))
     ";
 
-    let input = "(defun foo (x y) (add x y))";
+    let input = "(foo + xy)";
 
     let nodes = parser::parse(input)?;
 
