@@ -1,44 +1,17 @@
 use super::*;
-use crate::parser::{rule::Rule, ASTNode, ParseError, ParseResult, Parser};
+use crate::parser::{rule::{Rule, OrRule}, ASTNode, ParseErrorKind, ParseResult, Parser};
 
-pub enum Node<'a> {
-    Atom(Atom<'a>),
-    Seq(Seq<'a>),
-}
+pub type Node<'a> = OrRule<Atom<'a>, Seq<'a>>;
 
 impl<'a> Into<ASTNode<'a>> for Node<'a> {
     fn into(self) -> ASTNode<'a> {
         match self {
-            Node::Atom(Atom(name)) => ASTNode::Atom(name),
-            Node::Seq(Seq(nodes)) => ASTNode::Seq(nodes.into_iter().map(Self::into).collect()),
+            OrRule::Left(Atom(name)) => ASTNode::Atom(name),
+            OrRule::Right(Seq(nodes)) => ASTNode::Seq(nodes.into_iter().map(Self::into).collect()),
         }
     }
 }
 
-impl<'a> Rule<'a> for Node<'a> {
-    fn lookahead(parser: &Parser<'a>) -> bool {
-        Atom::lookahead(parser) || Seq::lookahead(parser)
-    }
-
-    fn consume(parser: &mut Parser<'a>) -> ParseResult<Self> {
-        let node = if Atom::lookahead(parser) {
-            Node::Atom(Atom::consume(parser)?)
-        } else {
-            Node::Seq(Seq::consume(parser)?)
-        };
-        Ok(node)
-    }
-
-    fn apply(parser: &mut Parser<'a>) -> Option<ParseResult<Self>> {
-        if Atom::lookahead(parser) {
-            Some(Atom::consume(parser).map(|atom| Node::Atom(atom)))
-        } else if Seq::lookahead(parser) {
-            Some(Seq::consume(parser).map(|seq| Node::Seq(seq)))
-        } else {
-            None
-        }
-    }
-}
 
 pub struct Seq<'a>(Vec<Node<'a>>);
 
@@ -55,7 +28,7 @@ impl<'a> Rule<'a> for Seq<'a> {
             nodes.push(node?);
             parser.consume_space();
         }
-        RBracket::apply(parser).unwrap_or(Err(ParseError::BracketMismatch))?;
+        RBracket::apply(parser).unwrap_or_else(|| parser.error(ParseErrorKind::BracketMismatch))?;
         Ok(Seq(nodes))
     }
 }

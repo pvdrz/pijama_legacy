@@ -1,4 +1,4 @@
-use crate::parser::{rule::Rule, ParseError, ParseResult, Parser};
+use crate::parser::{rule::Rule, ParseErrorKind, ParseResult, Parser};
 
 pub struct Space;
 
@@ -23,7 +23,7 @@ impl<'a> Rule<'a> for EOF {
         !parser.check_next(|_| true)
     }
 
-    fn consume(_parser: &mut Parser<'a>) -> ParseResult<Self> {
-        Err(ParseError::UnexpectedEOF)
+    fn consume(parser: &mut Parser<'a>) -> ParseResult<Self> {
+        parser.error(ParseErrorKind::UnexpectedEOF)
     }
 }

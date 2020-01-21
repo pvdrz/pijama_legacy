@@ -37,6 +37,10 @@ impl<'a> Parser<'a> {
     fn consume_space(&mut self) {
         Space::apply(self).unwrap_or(Ok(Space)).ok();
     }
+
+    fn error<T>(&self, kind: ParseErrorKind) -> ParseResult<T> {
+        Err(ParseError::new(self.index, kind))
+    }
 }
 
 impl<'a> Iterator for Parser<'a> {
@@ -49,7 +53,7 @@ impl<'a> Iterator for Parser<'a> {
                 Some(node.map(Node::into))
             } else {
                 let chr = self.text.get(self.index).copied().unwrap().into();
-                Some(Err(ParseError::UnexpectedChar(chr)))
+                Some(self.error(ParseErrorKind::UnexpectedChar(chr)))
             }
         } else {
             None
