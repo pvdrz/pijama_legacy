@@ -30,7 +30,7 @@ impl<'a> Rule<'a> for Seq<'a> {
             nodes.push(node?);
             if !(parser.consume_space() || RBracket::lookahead(parser)) {
                 let chr = parser.curr_char().unwrap();
-                return parser.error(ParseErrorKind::UnexpectedChar(chr))
+                return parser.error(ParseErrorKind::UnexpectedChar(chr));
             }
         }
         RBracket::apply(parser).unwrap_or_else(|| parser.error(ParseErrorKind::BracketMismatch))?;
@@ -43,7 +43,9 @@ pub type Atom<'a> = OrRule<OrRule<Name<'a>, Number<'a>>, Operator<'a>>;
 impl<'a> Into<ASTNode<'a>> for Atom<'a> {
     fn into(self) -> ASTNode<'a> {
         match self {
-            OrRule::Left(OrRule::Left(Name(s))) | OrRule::Left(OrRule::Right(Number(s))) | OrRule::Right(Operator(s)) => ASTNode::Atom(s)
+            OrRule::Left(OrRule::Left(Name(s)))
+            | OrRule::Left(OrRule::Right(Number(s)))
+            | OrRule::Right(Operator(s)) => ASTNode::Atom(s),
         }
     }
 }

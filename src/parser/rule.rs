@@ -19,7 +19,11 @@ pub enum OrRule<A, B> {
     Right(B),
 }
 
-impl<'a, A, B> Rule<'a> for OrRule<A, B>  where A: Rule<'a>, B: Rule<'a> {
+impl<'a, A, B> Rule<'a> for OrRule<A, B>
+where
+    A: Rule<'a>,
+    B: Rule<'a>,
+{
     fn lookahead(parser: &Parser<'a>) -> bool {
         A::lookahead(parser) || B::lookahead(parser)
     }
@@ -41,5 +45,4 @@ impl<'a, A, B> Rule<'a> for OrRule<A, B>  where A: Rule<'a>, B: Rule<'a> {
             None
         }
     }
-
 }

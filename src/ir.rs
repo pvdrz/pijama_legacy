@@ -190,6 +190,42 @@ impl<'a> Expr<'a> {
         }))
     }
 
+    fn try_switch_from_if(node: &ASTNode<'a>) -> LowerResult<Option<Self>> {
+        let seq = if let ASTNode::Seq(seq) = node {
+            if let Some(ASTNode::Atom("if")) = seq.get(0) {
+                seq
+            } else {
+                return Ok(None);
+            }
+        } else {
+            return Ok(None);
+        };
+
+        let target = if let Some(target) = seq.get(1) {
+            Box::new(Self::try_from(target)?)
+        } else {
+            Err(LowerError::MissingExpr)?
+        };
+
+        let patterns = if let Some(node) = seq.get(2) {
+            vec![(Self::Symbol(Symbol::bool(true)), Self::try_from(node)?)]
+        } else {
+            Err(LowerError::MissingExpr)?
+        };
+
+        let default = if let Some(node) = seq.get(3) {
+            Box::new(Self::try_from(node)?)
+        } else {
+            Err(LowerError::MissingExpr)?
+        };
+
+        Ok(Some(Expr::Switch {
+            target,
+            patterns,
+            default,
+        }))
+    }
+
     fn try_application_from(node: &ASTNode<'a>) -> LowerResult<Option<Self>> {
         let seq = if let ASTNode::Seq(seq) = node {
             if !seq.is_empty() {
@@ -223,6 +259,8 @@ impl<'a> TryFrom<&ASTNode<'a>> for Expr<'a> {
         } else if let Some(expr) = Self::try_fn_def_from(node)? {
             expr
         } else if let Some(expr) = Self::try_switch_from(node)? {
+            expr
+        } else if let Some(expr) = Self::try_switch_from_if(node)? {
             expr
         } else if let Some(expr) = Self::try_application_from(node)? {
             expr

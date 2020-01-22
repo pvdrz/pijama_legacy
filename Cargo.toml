@@ -6,3 +6,8 @@ edition = "2018"
 
 [dependencies]
 thiserror = "1.0"
+
+[dev-dependencies.cargo-husky]
+version = "1"
+default-features = false # Disable features which are enabled by default
+features = ["precommit-hook", "run-cargo-fmt"]

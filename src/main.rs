@@ -1,5 +1,5 @@
-mod parser;
 mod ir;
+mod parser;
 
 use std::convert::TryFrom;
 
@@ -8,7 +8,10 @@ fn main() -> parser::ParseResult {
 
     let nodes = parser::parse(input)?;
 
-    let _exprs = dbg!(nodes.iter().map(ir::Expr::try_from).collect::<Result<Vec<_>, _>>());
+    let _exprs = dbg!(nodes
+        .iter()
+        .map(ir::Expr::try_from)
+        .collect::<Result<Vec<_>, _>>());
 
     Ok(())
 }
