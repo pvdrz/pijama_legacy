@@ -91,7 +91,7 @@ pub struct Operator<'a>(&'a str);
 
 impl<'a> Rule<'a> for Operator<'a> {
     fn lookahead(parser: &Parser<'a>) -> bool {
-        parser.check_next(|&b| b == b'+' || b == b'-' || b == b'*' || b == b'/')
+        parser.check_next(|&b| b == b'+' || b == b'-' || b == b'*' || b == b'/' || b == b'=')
     }
 
     fn consume(parser: &mut Parser<'a>) -> ParseResult<Self> {

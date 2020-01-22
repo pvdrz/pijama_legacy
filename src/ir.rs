@@ -13,8 +13,18 @@ pub enum Ty {
 }
 
 #[derive(Debug, Hash, Eq, PartialEq)]
+pub enum Op {
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Eq,
+}
+
+#[derive(Debug, Hash, Eq, PartialEq)]
 pub enum Symbol<'a> {
     Name(&'a str),
+    Operator(Op),
     Literal { bits: u64, ty: Ty },
 }
 
@@ -54,7 +64,7 @@ pub enum Expr<'a> {
 }
 
 impl<'a> Expr<'a> {
-    fn symbol_from(node: &ASTNode<'a>) -> LowerResult<Option<Self>> {
+    fn try_symbol_from(node: &ASTNode<'a>) -> LowerResult<Option<Self>> {
         let name = if let ASTNode::Atom(name) = node {
             *name
         } else {
@@ -64,6 +74,11 @@ impl<'a> Expr<'a> {
         let symbol = match name {
             "true" => Symbol::bool(true),
             "false" => Symbol::bool(false),
+            "+" => Symbol::Operator(Op::Add),
+            "-" => Symbol::Operator(Op::Sub),
+            "*" => Symbol::Operator(Op::Mul),
+            "/" => Symbol::Operator(Op::Div),
+            "=" => Symbol::Operator(Op::Eq),
             _ => {
                 if let Ok(n) = name.parse::<i64>() {
                     Symbol::int(n)
@@ -76,7 +91,7 @@ impl<'a> Expr<'a> {
         Ok(Some(Expr::Symbol(symbol)))
     }
 
-    fn fn_def_from(node: &ASTNode<'a>) -> LowerResult<Option<Self>> {
+    fn try_fn_def_from(node: &ASTNode<'a>) -> LowerResult<Option<Self>> {
         let seq = if let ASTNode::Seq(seq) = node {
             if let Some(ASTNode::Atom("defun")) = seq.get(0) {
                 seq
@@ -124,7 +139,7 @@ impl<'a> Expr<'a> {
         Ok(Some(Expr::FnDef { name, args, body }))
     }
 
-    fn switch_from(node: &ASTNode<'a>) -> LowerResult<Option<Self>> {
+    fn try_switch_from(node: &ASTNode<'a>) -> LowerResult<Option<Self>> {
         let seq = if let ASTNode::Seq(seq) = node {
             if let Some(ASTNode::Atom("switch")) = seq.get(0) {
                 seq
@@ -175,7 +190,7 @@ impl<'a> Expr<'a> {
         }))
     }
 
-    fn application_from(node: &ASTNode<'a>) -> LowerResult<Option<Self>> {
+    fn try_application_from(node: &ASTNode<'a>) -> LowerResult<Option<Self>> {
         let seq = if let ASTNode::Seq(seq) = node {
             if !seq.is_empty() {
                 seq
@@ -203,13 +218,13 @@ impl<'a> TryFrom<&ASTNode<'a>> for Expr<'a> {
     type Error = LowerError;
 
     fn try_from(node: &ASTNode<'a>) -> LowerResult<Self> {
-        let expr = if let Some(expr) = Self::symbol_from(node)? {
+        let expr = if let Some(expr) = Self::try_symbol_from(node)? {
             expr
-        } else if let Some(expr) = Self::fn_def_from(node)? {
+        } else if let Some(expr) = Self::try_fn_def_from(node)? {
             expr
-        } else if let Some(expr) = Self::switch_from(node)? {
+        } else if let Some(expr) = Self::try_switch_from(node)? {
             expr
-        } else if let Some(expr) = Self::application_from(node)? {
+        } else if let Some(expr) = Self::try_application_from(node)? {
             expr
         } else {
             return Err(LowerError::MalformedExpr);
