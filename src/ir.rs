@@ -21,7 +21,7 @@ pub enum Symbol {
     Nil,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Expr {
     FnDef {
         id: FuncId,
@@ -37,4 +37,35 @@ pub enum Expr {
         args: Vec<Expr>,
     },
     Symbol(Symbol),
+}
+
+impl Expr {
+    pub fn replace(&mut self, targ: &Expr, subs: &Expr) {
+        if self == targ {
+            *self = subs.clone();
+        } else {
+            match self {
+                Expr::FnDef { body, .. } => body.replace(targ, subs),
+                Expr::Switch {
+                    target,
+                    branches,
+                    default,
+                } => {
+                    target.replace(targ, subs);
+                    for (pattern, result) in branches {
+                        pattern.replace(targ, subs);
+                        result.replace(targ, subs);
+                    }
+                    default.replace(targ, subs);
+                }
+                Expr::Application { func, args } => {
+                    func.replace(targ, subs);
+                    for arg in args {
+                        arg.replace(targ, subs);
+                    }
+                }
+                _ => (),
+            }
+        }
+    }
 }

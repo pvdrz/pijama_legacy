@@ -1,24 +1,29 @@
 mod ast;
+mod eval;
 mod ir;
 mod lower;
 mod parser;
 mod ty;
 
-use std::collections::HashMap;
-
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let input = "
-(defun fact (n)
-  ((defun aux (n acc)
-     (if (= n 0)
-	     1
-	     (aux (- n 1) (* acc n))))
-   n 1))
+    (defun fact (n)
+      ((defun aux (n acc)
+         (if (= n 0)
+             acc
+             (aux (- n 1) (* acc n))))
+       n 1))
+   (fact 5)
         ";
 
     let nodes = dbg!(parser::parse(input)?);
+
+    let mut ctx = lower::Context::default();
+    let mut interpreter = eval::Interpreter::default();
+
     for node in nodes {
-        let _expr = dbg!(lower::Context::default().lower(&node));
+        let expr = dbg!(ctx.lower(&node));
+        dbg!(interpreter.eval(&expr.unwrap()));
     }
 
     Ok(())
