@@ -2,15 +2,11 @@ mod result;
 mod rule;
 mod token;
 
+use crate::ast::Node as ASTNode;
+
 pub use result::*;
 use rule::*;
 use token::*;
-
-#[derive(Debug)]
-pub enum ASTNode<'a> {
-    Atom(&'a str),
-    Seq(Vec<ASTNode<'a>>),
-}
 
 pub fn parse<'a>(text: &'a str) -> ParseResult<Vec<ASTNode<'a>>> {
     Parser {

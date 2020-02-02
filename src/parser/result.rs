@@ -3,7 +3,7 @@ use thiserror::Error;
 pub type ParseResult<T = ()> = Result<T, ParseError>;
 
 #[derive(Error, Debug)]
-#[error("Parsing error at location {loc}: {kind}")]
+#[error("{kind} while parsing at location {loc}")]
 pub struct ParseError {
     kind: ParseErrorKind,
     loc: usize,
