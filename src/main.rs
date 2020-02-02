@@ -13,7 +13,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
              acc
              (aux (- n 1) (* acc n))))
        n 1))
-   (fact 5)
+   (/ (fact 5) (fact 4))
         ";
 
     let nodes = dbg!(parser::parse(input)?);

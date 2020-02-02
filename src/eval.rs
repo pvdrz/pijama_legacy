@@ -36,11 +36,8 @@ impl Interpreter {
     }
 
     fn eval_fn_def(&mut self, func_id: FuncId, body: &Expr) -> Expr {
-        if self.funcs.insert(func_id, body.clone()).is_some() {
-            panic!("function already exists")
-        } else {
-            Expr::Symbol(Symbol::Func(func_id))
-        }
+        self.funcs.insert(func_id, body.clone());
+        Expr::Symbol(Symbol::Func(func_id))
     }
 
     fn eval_application(&mut self, func: &Expr, args: &[Expr]) -> Expr {
