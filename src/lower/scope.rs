@@ -86,4 +86,12 @@ impl<'a> ScopeArena<'a> {
             .resolve(name)
             .or_else(|| scope.parent().and_then(|id| self.get(id).resolve(name)))
     }
+
+    pub fn up(&mut self) {
+        self.curr = self.curr().parent().unwrap_or(self.curr);
+    }
+
+    pub fn down(&mut self) {
+        self.curr = self.nest_with_parent(Some(self.curr));
+    }
 }

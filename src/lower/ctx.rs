@@ -54,6 +54,7 @@ impl<'a> Context<'a> {
                             if let [name, args, body] = &seq[1..] {
                                 let name = name.try_name().ok_or_else(|| LowerError::Custom(format!("A function's name must be an atom")))?;
                                 let args = args.try_seq().ok_or_else(|| LowerError::Custom(format!("A function's arguments must be a sequence")))?;
+                                self.scopes.down();
                                 let func_id = if let Some(symbol) = self.scopes.resolve(name) {
                                     if let Symbol::Func(id) = symbol {
                                         *id
@@ -66,15 +67,21 @@ impl<'a> Context<'a> {
                                     id
                                 };
 
+                                self.scopes.down();
+
                                 for (index, arg) in args.iter().enumerate() {
                                     let name = arg.try_name().ok_or_else(|| LowerError::Custom(format!("A function's argument must be an atom")))?;
                                     self.scopes.define(name, Symbol::Arg(index, func_id));
                                 }
 
-                                Ok(Expr::FnDef {
+                                let expr = Ok(Expr::FnDef {
                                     id: func_id,
                                     body: Box::new(self.lower(body)?),
-                                })
+                                });
+
+                                self.scopes.up();
+
+                                expr
                             } else {
                                 return Err(LowerError::ArityMismatch("defun", 3, seq.len() - 1));
                             }
