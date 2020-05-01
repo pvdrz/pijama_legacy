@@ -2,7 +2,7 @@ use std::fmt;
 
 use crate::ty::{Binding, Ty};
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Name<'a>(pub &'a str);
 
 #[derive(Debug, Clone)]

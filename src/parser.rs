@@ -9,7 +9,7 @@ use nom::sequence::tuple;
 use nom::IResult;
 
 use crate::ast::*;
-use crate::ty::{Ty, Binding};
+use crate::ty::{Binding, Ty};
 
 pub fn parse<'a>(input: &'a str) -> Option<Vec<Node<'a>>> {
     let result = all_consuming(tuple((multispace0, Node::parse_block0, multispace0)))(input);

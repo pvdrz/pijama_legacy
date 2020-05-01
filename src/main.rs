@@ -1,8 +1,8 @@
-mod parser;
 mod ast;
-mod mir;
-mod lir;
 mod ctx;
+mod lir;
+mod mir;
+mod parser;
 mod ty;
 
 use parser::parse;
@@ -12,6 +12,8 @@ fn main() {
     let ast = parse(input).unwrap();
     let mir = mir::compile_block(ast);
     println!("{}", mir);
+    let ty = ty::ty_check(&mir);
+    println!("{}", ty);
     let mut lir = ctx::remove_names(mir);
     println!("{}", lir);
     lir.evaluate();
