@@ -1,4 +1,4 @@
-fn super_max(cmp: Int -> Int -> Bool, x: Int, y: Int): Int do
+fn super_max(cmp: Int -> Int -> Bool, x: Int, y: Int) do
     if cmp(x, y) do
         x
     else
@@ -6,11 +6,11 @@ fn super_max(cmp: Int -> Int -> Bool, x: Int, y: Int): Int do
     end
 end
 
-fn greater(x: Int, y: Int): Int do
+fn greater(x: Int, y: Int) do
     !(x <= y)
 end
 
-fn meaning_of_universe(): Int do 42 end
+fn meaning_of_universe() do 42 end
 
 max = super_max(greater)
 max(meaning_of_universe(),- 10)

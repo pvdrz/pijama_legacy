@@ -193,15 +193,11 @@ impl<'a> Node<'a> {
                 tuple((space0, char('('), multispace0)),
                 separated_list(tuple((space0, char(','), multispace0)), Binding::parse),
                 tuple((multispace0, char(')'), space0)),
-                opt(map(
-                    tuple((char(':'), space0, Ty::parse, space0)),
-                    |(_, _, ty, _)| ty,
-                )),
                 tuple((tag("do"), multispace1)),
                 Self::parse_block0,
                 tuple((multispace0, tag("end"))),
             )),
-            |(_, name, _, args, _, opt_ty, _, body, _)| Self::FnDef(name, args, opt_ty, body),
+            |(_, name, _, args, _, _, body, _)| Self::FnDef(name, args, body),
         )(input)
     }
 

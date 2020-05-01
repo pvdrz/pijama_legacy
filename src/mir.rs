@@ -80,7 +80,7 @@ fn compile_node<'a>(node: Node<'a>) -> Term<'a> {
 fn compile_block_step<'a>(node: Node<'a>, block: &mut impl Iterator<Item = Node<'a>>) -> Term<'a> {
     match node {
         Node::LetBind(name, node) => compile_let_bind(name, *node, block),
-        Node::FnDef(name, binds, opt_ty, body) => compile_fn_def(name, binds, opt_ty, body, block),
+        Node::FnDef(name, binds, body) => compile_fn_def(name, binds, body, block),
         _ => compile_node(node),
     }
 }
@@ -119,7 +119,6 @@ fn compile_let_bind<'a>(
 fn compile_fn_def<'a>(
     name: Name<'a>,
     binds: Vec<Binding<'a>>,
-    opt_ty: Option<Ty>,
     body: Vec<Node<'a>>,
     block: &mut impl Iterator<Item = Node<'a>>,
 ) -> Term<'a> {
