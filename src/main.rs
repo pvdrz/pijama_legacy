@@ -1,30 +1,18 @@
-mod ast;
-mod eval;
-mod ir;
-mod lower;
 mod parser;
-mod ty;
+mod ast;
+mod mir;
+mod lir;
+mod ctx;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let input = "
-    (defun fact (n)
-      ((defun aux (n acc)
-         (if (= n 0)
-             acc
-             (aux (- n 1) (* acc n))))
-       n 1))
-   (/ (fact 5) (fact 4))
-        ";
+use parser::parse;
 
-    let nodes = dbg!(parser::parse(input)?);
-
-    let mut ctx = lower::Context::default();
-    let mut interpreter = eval::Interpreter::default();
-
-    for node in nodes {
-        let expr = dbg!(ctx.lower(&node));
-        dbg!(interpreter.eval(&expr.unwrap()));
-    }
-
-    Ok(())
+fn main() {
+    let input = include_str!("source.pj");
+    let ast = parse(input).unwrap();
+    let mir = mir::compile_block(ast);
+    println!("{}", mir);
+    let mut lir = ctx::remove_names(mir);
+    println!("{}", lir);
+    lir.evaluate();
+    println!("{}", lir);
 }

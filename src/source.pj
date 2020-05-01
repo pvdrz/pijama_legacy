@@ -1,0 +1,16 @@
+fn super_max(cmp: Int -> Int -> Bool, x: Int, y: Int): Int do
+    if cmp(x, y) do
+        x
+    else
+        y
+    end
+end
+
+fn greater(x: Int, y: Int): Int do
+    !(x <= y)
+end
+
+fn meaning_of_universe(): Int do 42 end
+
+max = super_max(greater)
+max(meaning_of_universe(),- 10)
