@@ -1,6 +1,7 @@
 use std::fmt;
 
 use crate::ast::*;
+use crate::ty::{Binding, Ty};
 
 #[derive(Debug)]
 pub enum Abstraction<'a> {

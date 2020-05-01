@@ -3,6 +3,7 @@ mod ast;
 mod mir;
 mod lir;
 mod ctx;
+mod ty;
 
 use parser::parse;
 
