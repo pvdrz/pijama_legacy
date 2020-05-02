@@ -42,9 +42,9 @@ impl fmt::Display for Term {
 }
 
 impl Term {
-    fn is_literal(&self) -> bool {
+    fn is_value(&self) -> bool {
         match self {
-            Term::Lit(_) => true,
+            Term::Abs(_) | Term::Lit(_) => true,
             _ => false,
         }
     }
@@ -107,98 +107,91 @@ impl Term {
         }
     }
 
-    fn reduce(&mut self) -> bool {
+    fn step(&mut self) -> bool {
         match self {
-            Term::App(t1, t2) => match t1.as_mut() {
-                Term::Abs(abs) => match abs {
-                    Abstraction::Lambda(body) => {
-                        t2.shift(true, 0);
-                        body.replace(0, t2);
-                        body.shift(false, 0);
-                        *self = *body.clone();
+            Term::Var(_) | Term::Lit(_) => false,
+            Term::App(
+                box Term::App(box Term::Abs(Abstraction::Binary(op)), box Term::Lit(l1)),
+                box Term::Lit(l2),
+            ) => {
+                if let Some(lit) = eval_bin_op(op, l1, l2) {
+                    *self = Term::Lit(lit);
+                    true
+                } else {
+                    false
+                }
+            }
+            Term::App(box Term::Abs(abs), box v2) if v2.is_value() => match abs {
+                Abstraction::Lambda(body) => {
+                    v2.shift(true, 0);
+                    body.replace(0, v2);
+                    body.shift(false, 0);
+                    *self = *body.clone();
+                    true
+                }
+                Abstraction::Unary(op) => match (op, v2) {
+                    (UnOp::Minus, Term::Lit(Literal::Number(n))) => {
+                        *self = Term::Lit((-*n).into());
                         true
                     }
-                    Abstraction::Unary(op) => {
-                        let lit = match (op, t2.as_ref()) {
-                            (UnOp::Minus, Term::Lit(Literal::Number(num))) => Literal::Number(-num),
-                            (UnOp::Not, Term::Lit(Literal::True)) => Literal::False,
-                            (UnOp::Not, Term::Lit(Literal::False)) => Literal::True,
-                            _ => return t1.reduce() || t2.reduce(),
-                        };
-                        *self = Term::Lit(lit);
+                    (UnOp::Not, Term::Lit(Literal::True)) => {
+                        *self = Term::Lit(Literal::False);
+                        true
+                    }
+                    (UnOp::Not, Term::Lit(Literal::False)) => {
+                        *self = Term::Lit(Literal::True);
                         true
                     }
                     _ => false,
                 },
-                Term::App(t11, t12) => match t11.as_ref() {
-                    Term::Abs(Abstraction::Binary(op)) => {
-                        let lit = match (t12.as_ref(), t2.as_ref()) {
-                            (Term::Lit(l1), Term::Lit(l2)) => match (op, l1, l2) {
-                                (BinOp::Plus, Literal::Number(n1), Literal::Number(n2)) => {
-                                    (n1 + n2).into()
-                                }
-                                (BinOp::Minus, Literal::Number(n1), Literal::Number(n2)) => {
-                                    (n1 - n2).into()
-                                }
-                                (BinOp::Times, Literal::Number(n1), Literal::Number(n2)) => {
-                                    (n1 * n2).into()
-                                }
-                                (BinOp::Divide, Literal::Number(n1), Literal::Number(n2)) => {
-                                    (n1 / n2).into()
-                                }
-                                (BinOp::Modulo, Literal::Number(n1), Literal::Number(n2)) => {
-                                    (n1 % n2).into()
-                                }
-                                (BinOp::LessThan, Literal::Number(n1), Literal::Number(n2)) => {
-                                    (n1 < n2).into()
-                                }
-                                (BinOp::GreaterThan, Literal::Number(n1), Literal::Number(n2)) => {
-                                    (n1 > n2).into()
-                                }
-                                (
-                                    BinOp::LessThanOrEqual,
-                                    Literal::Number(n1),
-                                    Literal::Number(n2),
-                                ) => (n1 <= n2).into(),
-                                (
-                                    BinOp::GreaterThanOrEqual,
-                                    Literal::Number(n1),
-                                    Literal::Number(n2),
-                                ) => (n1 >= n2).into(),
-                                (BinOp::Equal, l1, l2) => (l1 == l2).into(),
-                                (BinOp::NotEqual, l1, l2) => (l1 != l2).into(),
-                                _ => return t1.reduce() || t2.reduce(),
-                            },
-                            _ => return t1.reduce() || t2.reduce(),
-                        };
 
-                        *self = Term::Lit(lit);
-                        true
-                    }
-                    _ => t1.reduce() || t2.reduce(),
-                },
-                _ => t1.reduce() || t2.reduce(),
+                _ => false,
             },
-            Term::Cond(t1, t2, t3) => {
-                t2.reduce()
-                    || t3.reduce()
-                    || match t1.as_mut() {
-                        Term::Lit(Literal::True) => {
-                            *self = *t2.clone();
-                            true
-                        }
-                        Term::Lit(Literal::False) => {
-                            *self = *t3.clone();
-                            true
-                        }
-                        _ => t1.reduce(),
-                    }
-            }
+            Term::App(v1, t2) if v1.is_value() => t2.step(),
+            Term::App(t1, _) => t1.step(),
+            Term::Cond(box v1, box t2, box t3) if v1.is_value() => match v1 {
+                Term::Lit(Literal::True) => {
+                    *self = t2.clone();
+                    true
+                }
+                Term::Lit(Literal::False) => {
+                    *self = t3.clone();
+                    true
+                }
+                _ => false,
+            },
+            Term::Cond(t1, _, _) => t1.step(),
             _ => false,
         }
     }
 
     pub fn evaluate(&mut self) {
-        while self.reduce() {}
+        while self.step() {}
+    }
+}
+
+fn eval_bin_op(op: &BinOp, l1: &Literal, l2: &Literal) -> Option<Literal> {
+    use Literal::*;
+    match (op, l1, l2) {
+        (BinOp::Plus, Number(n1), Number(n2)) => Some((n1 + n2).into()),
+        (BinOp::Minus, Number(n1), Number(n2)) => Some((n1 - n2).into()),
+        (BinOp::Times, Number(n1), Number(n2)) => Some((n1 * n2).into()),
+        (BinOp::Divide, Number(n1), Number(n2)) => Some((n1 / n2).into()),
+        (BinOp::Modulo, Number(n1), Number(n2)) => Some((n1 % n2).into()),
+        (BinOp::LessThan, Number(n1), Number(n2)) => Some((n1 < n2).into()),
+        (BinOp::LessThanOrEqual, Number(n1), Number(n2)) => Some((n1 <= n2).into()),
+        (BinOp::GreaterThan, Number(n1), Number(n2)) => Some((n1 > n2).into()),
+        (BinOp::GreaterThanOrEqual, Number(n1), Number(n2)) => Some((n1 >= n2).into()),
+        (BinOp::Equal, _, _) => Some((l1 == l2).into()),
+        (BinOp::NotEqual, _, _) => Some((l1 != l2).into()),
+        (BinOp::And, True, True) => Some(True),
+        (BinOp::And, True, False) => Some(False),
+        (BinOp::And, False, True) => Some(False),
+        (BinOp::And, False, False) => Some(False),
+        (BinOp::Or, True, True) => Some(True),
+        (BinOp::Or, True, False) => Some(True),
+        (BinOp::Or, False, True) => Some(True),
+        (BinOp::Or, False, False) => Some(False),
+        _ => None,
     }
 }

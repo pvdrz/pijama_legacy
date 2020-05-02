@@ -1,3 +1,5 @@
+#![feature(box_patterns)]
+
 mod ast;
 mod ctx;
 mod lir;

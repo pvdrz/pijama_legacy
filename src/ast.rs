@@ -72,15 +72,6 @@ pub enum Literal {
     Number(i128),
 }
 
-impl Literal {
-    fn is_bool(&self) -> bool {
-        match self {
-            Literal::True | Literal::False => true,
-            _ => false,
-        }
-    }
-}
-
 impl Into<Literal> for i128 {
     fn into(self) -> Literal {
         Literal::Number(self)
