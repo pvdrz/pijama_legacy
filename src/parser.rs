@@ -4,6 +4,7 @@ use nom::character::complete::{
     alpha1, char, digit1, line_ending, multispace0, multispace1, space0, space1,
 };
 use nom::combinator::{all_consuming, map, opt, recognize, verify};
+use nom::error::{convert_error, ParseError, VerboseError};
 use nom::multi::{many0, separated_list, separated_nonempty_list};
 use nom::sequence::tuple;
 use nom::IResult;
@@ -12,8 +13,18 @@ use crate::ast::*;
 use crate::ty::{Binding, Ty};
 
 pub fn parse<'a>(input: &'a str) -> Option<Vec<Node<'a>>> {
-    let result = all_consuming(tuple((multispace0, Node::parse_block0, multispace0)))(input);
-    dbg!(result).ok().map(|(_, (_, node, _))| node)
+    let result: IResult<&str, Vec<Node>, VerboseError<&str>> = all_consuming(map(
+        tuple((multispace0, Node::parse_block0, multispace0)),
+        |(_, node, _)| node,
+    ))(input);
+    match result {
+        Ok((_, block)) => Some(block),
+        Err(nom::Err::Error(e)) | Err(nom::Err::Failure(e)) => {
+            eprintln!("{}", convert_error(input, e));
+            None
+        }
+        _ => None,
+    }
 }
 
 const KEYWORDS: &[&'static str] = &[
@@ -21,7 +32,7 @@ const KEYWORDS: &[&'static str] = &[
 ];
 
 impl<'a> Name<'a> {
-    fn parse(input: &'a str) -> IResult<&'a str, Self> {
+    fn parse<E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Self, E> {
         map(
             verify(
                 recognize(tuple((alpha1, many0(tuple((char('_'), alpha1)))))),
@@ -32,8 +43,8 @@ impl<'a> Name<'a> {
     }
 }
 
-impl Ty {
-    fn parse(input: &str) -> IResult<&str, Self> {
+impl<'a> Ty {
+    fn parse<E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Self, E> {
         let (rem, ty) = Self::parse_base(input)?;
         if let (rem, Some((_, _, _, ty2))) =
             opt(tuple((space1, tag("->"), space1, Self::parse)))(rem)?
@@ -44,7 +55,7 @@ impl Ty {
         }
     }
 
-    fn parse_base(input: &str) -> IResult<&str, Self> {
+    fn parse_base<E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Self, E> {
         alt((
             map(tag("Bool"), |_| Self::Bool),
             map(tag("Int"), |_| Self::Int),
@@ -55,7 +66,7 @@ impl Ty {
 }
 
 impl<'a> Binding<'a> {
-    fn parse(input: &'a str) -> IResult<&'a str, Self> {
+    fn parse<E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Self, E> {
         map(
             tuple((Name::parse, tuple((space0, char(':'), space0)), Ty::parse)),
             |(name, _, ty)| Binding { name, ty },
@@ -63,8 +74,8 @@ impl<'a> Binding<'a> {
     }
 }
 
-impl BinOp {
-    fn parse(input: &str) -> IResult<&str, Self> {
+impl<'a> BinOp {
+    fn parse<E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Self, E> {
         alt((
             map(char('+'), |_| Self::Plus),
             map(char('-'), |_| Self::Minus),
@@ -83,8 +94,8 @@ impl BinOp {
     }
 }
 
-impl UnOp {
-    fn parse(input: &str) -> IResult<&str, Self> {
+impl<'a> UnOp {
+    fn parse<E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Self, E> {
         alt((
             map(char('!'), |_| Self::Not),
             map(char('-'), |_| Self::Minus),
@@ -92,8 +103,8 @@ impl UnOp {
     }
 }
 
-impl Literal {
-    fn parse(input: &str) -> IResult<&str, Self> {
+impl<'a> Literal {
+    fn parse<E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Self, E> {
         alt((
             map(tag("true"), |_| Self::True),
             map(tag("false"), |_| Self::False),
@@ -113,7 +124,7 @@ impl Literal {
 }
 
 impl<'a> Node<'a> {
-    fn parse(input: &'a str) -> IResult<&'a str, Self> {
+    fn parse<E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Self, E> {
         let (mut input, mut node) = Self::parse_base(input)?;
         while let (rem, Some((_, op, _, node2))) =
             opt(tuple((space0, BinOp::parse, space0, Self::parse_base)))(input)?
@@ -124,7 +135,7 @@ impl<'a> Node<'a> {
         Ok((input, node))
     }
 
-    fn parse_base(input: &'a str) -> IResult<&'a str, Self> {
+    fn parse_base<E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Self, E> {
         alt((
             Self::parse_let_bind,
             Self::parse_cond,
@@ -140,7 +151,7 @@ impl<'a> Node<'a> {
         ))(input)
     }
 
-    fn parse_call(input: &'a str) -> IResult<&'a str, Self> {
+    fn parse_call<E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Self, E> {
         map(
             tuple((
                 Name::parse,
@@ -152,7 +163,7 @@ impl<'a> Node<'a> {
         )(input)
     }
 
-    fn parse_cond(input: &'a str) -> IResult<&'a str, Self> {
+    fn parse_cond<E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Self, E> {
         map(
             tuple((
                 tuple((tag("if"), multispace1)),
@@ -171,21 +182,21 @@ impl<'a> Node<'a> {
         )(input)
     }
 
-    fn parse_let_bind(input: &'a str) -> IResult<&'a str, Self> {
+    fn parse_let_bind<E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Self, E> {
         map(
             tuple((Name::parse, tuple((space0, char('='), space0)), Self::parse)),
             |(name, _, node)| Self::LetBind(name, Box::new(node)),
         )(input)
     }
 
-    fn parse_unary_op(input: &'a str) -> IResult<&'a str, Self> {
+    fn parse_unary_op<E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Self, E> {
         map(
             tuple((UnOp::parse, space0, Self::parse_base)),
             |(un_op, _, node)| Self::UnaryOp(un_op, Box::new(node)),
         )(input)
     }
 
-    fn parse_fn(input: &'a str) -> IResult<&'a str, Self> {
+    fn parse_fn<E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Self, E> {
         map(
             tuple((
                 tuple((tag("fn"), space1)),
@@ -201,14 +212,14 @@ impl<'a> Node<'a> {
         )(input)
     }
 
-    fn parse_block0(input: &'a str) -> IResult<&'a str, Vec<Self>> {
+    fn parse_block0<E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Vec<Self>, E> {
         separated_list(
             line_ending,
             map(tuple((multispace0, Self::parse)), |(_, node)| node),
         )(input)
     }
 
-    fn parse_block1(input: &'a str) -> IResult<&'a str, Vec<Self>> {
+    fn parse_block1<E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Vec<Self>, E> {
         separated_nonempty_list(
             line_ending,
             map(tuple((multispace0, Self::parse)), |(_, node)| node),
