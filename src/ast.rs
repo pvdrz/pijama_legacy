@@ -1,9 +1,14 @@
 use std::fmt;
 
-use crate::ty::{Binding, Ty};
+use crate::ty::Binding;
 
-#[derive(Debug, Eq, PartialEq, Clone)]
+#[derive(Debug, Eq, PartialEq, Clone, Copy)]
 pub struct Name<'a>(pub &'a str);
+impl<'a> fmt::Display for Name<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
 
 #[derive(Debug, Clone)]
 pub enum BinOp {

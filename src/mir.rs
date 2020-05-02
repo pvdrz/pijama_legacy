@@ -1,9 +1,15 @@
 use std::fmt;
 
 use crate::ast::*;
-use crate::ty::{Binding, Ty};
+use crate::ty::Binding;
 
-#[derive(Debug)]
+type Block<'a> = Vec<Node<'a>>;
+
+pub fn lower(blk: Block<'_>) -> Term<'_> {
+    lower_blk(blk)
+}
+
+#[derive(Debug, Clone)]
 pub enum Abstraction<'a> {
     Lambda(Binding<'a>, Box<Term<'a>>),
     Binary(BinOp),
@@ -21,7 +27,7 @@ impl<'a> fmt::Display for Abstraction<'a> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Term<'a> {
     Var(Name<'a>),
     Abs(Abstraction<'a>),
@@ -46,13 +52,7 @@ impl<'a> fmt::Display for Term<'a> {
     }
 }
 
-type Block<'a> = Vec<Node<'a>>;
-
-pub fn lower<'a>(blk: Block<'a>) -> Term<'a> {
-    lower_blk(blk)
-}
-
-fn lower_blk<'a>(blk: Block<'a>) -> Term<'a> {
+fn lower_blk(blk: Block<'_>) -> Term<'_> {
     let mut terms = blk.into_iter().rev().map(lower_node);
     if let Some(mut term) = terms.next() {
         for prev_term in terms {
@@ -69,7 +69,7 @@ fn lower_blk<'a>(blk: Block<'a>) -> Term<'a> {
     }
 }
 
-fn lower_node<'a>(node: Node<'a>) -> Term<'a> {
+fn lower_node(node: Node<'_>) -> Term<'_> {
     match node {
         Node::Name(name) => Term::Var(name),
         Node::Cond(if_blk, do_blk, el_blk) => lower_cond(if_blk, do_blk, el_blk),
@@ -108,7 +108,7 @@ fn lower_binary_op<'a>(bin_op: BinOp, node1: Node<'a>, node2: Node<'a>) -> Term<
     )
 }
 
-fn lower_unary_op<'a>(un_op: UnOp, node: Node<'a>) -> Term<'a> {
+fn lower_unary_op(un_op: UnOp, node: Node<'_>) -> Term<'_> {
     Term::App(
         Box::new(Term::Abs(Abstraction::Unary(un_op))),
         Box::new(lower_node(node)),

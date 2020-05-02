@@ -27,7 +27,7 @@ pub fn parse<'a>(input: &'a str) -> Option<Vec<Node<'a>>> {
     }
 }
 
-const KEYWORDS: &[&'static str] = &[
+const KEYWORDS: &[&str] = &[
     "fn", "do", "end", "if", "else", "true", "false", "unit", "Bool", "Int", "Unit",
 ];
 
@@ -38,7 +38,7 @@ impl<'a> Name<'a> {
                 recognize(tuple((alpha1, many0(tuple((char('_'), alpha1)))))),
                 |s| !KEYWORDS.contains(s),
             ),
-            |name| Name(name),
+            Name,
         )(input)
     }
 }
@@ -140,10 +140,10 @@ impl<'a> Node<'a> {
             Self::parse_let_bind,
             Self::parse_cond,
             Self::parse_fn,
-            map(Literal::parse, |literal| Self::Literal(literal)),
+            map(Literal::parse, Self::Literal),
             Self::parse_unary_op,
             Self::parse_call,
-            map(Name::parse, |name| Self::Name(name)),
+            map(Name::parse, Self::Name),
             map(
                 tuple((char('('), space0, Self::parse, space0, char(')'))),
                 |(_, _, node, _, _)| node,
@@ -177,7 +177,7 @@ impl<'a> Node<'a> {
                 tuple((multispace0, tag("end"))),
             )),
             |(_, if_block, _, do_block, else_block, _)| {
-                Self::Cond(if_block, do_block, else_block.unwrap_or(Vec::new()))
+                Self::Cond(if_block, do_block, else_block.unwrap_or_default())
             },
         )(input)
     }
