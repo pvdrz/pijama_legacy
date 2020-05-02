@@ -46,54 +46,22 @@ impl<'a> fmt::Display for Term<'a> {
     }
 }
 
-fn compile_node<'a>(node: Node<'a>) -> Term<'a> {
-    match node {
-        Node::Name(name) => Term::Var(name),
-        Node::Cond(if_block, do_block, else_block) => Term::Cond(
-            Box::new(compile_block(if_block)),
-            Box::new(compile_block(do_block)),
-            Box::new(compile_block(else_block)),
-        ),
-        Node::Literal(literal) => Term::Lit(literal),
-        Node::Call(name, args) => {
-            let mut term = Term::Var(name);
-            for node in args {
-                term = Term::App(Box::new(term), Box::new(compile_node(node)));
-            }
-            term
-        }
-        Node::BinaryOp(bin_op, node1, node2) => Term::App(
-            Box::new(Term::App(
-                Box::new(Term::Abs(Abstraction::Binary(bin_op))),
-                Box::new(compile_node(*node1)),
-            )),
-            Box::new(compile_node(*node2)),
-        ),
-        Node::UnaryOp(un_op, node) => Term::App(
-            Box::new(Term::Abs(Abstraction::Unary(un_op))),
-            Box::new(compile_node(*node)),
-        ),
-        _ => panic!("{:?}", node),
-    }
+type Block<'a> = Vec<Node<'a>>;
+
+pub fn lower<'a>(blk: Block<'a>) -> Term<'a> {
+    lower_blk(blk)
 }
 
-fn compile_block_step<'a>(node: Node<'a>, block: &mut impl Iterator<Item = Node<'a>>) -> Term<'a> {
-    match node {
-        Node::LetBind(name, node) => compile_let_bind(name, *node, block),
-        Node::FnDef(name, binds, body) => compile_fn_def(name, binds, body, block),
-        _ => compile_node(node),
-    }
-}
-
-pub fn compile_block<'a>(block: Vec<Node<'a>>) -> Term<'a> {
-    let mut block = block.into_iter();
-    if let Some(node) = block.next() {
-        let mut term = compile_block_step(node, &mut block);
-        while let Some(node) = block.next() {
-            term = Term::Seq(
-                Box::new(term),
-                Box::new(compile_block_step(node, &mut block)),
-            );
+fn lower_blk<'a>(blk: Block<'a>) -> Term<'a> {
+    let mut terms = blk.into_iter().rev().map(lower_node);
+    if let Some(mut term) = terms.next() {
+        for prev_term in terms {
+            let next_term = Box::new(term);
+            term = if let Term::Let(name, value, _) = prev_term {
+                Term::Let(name, value, next_term)
+            } else {
+                Term::Seq(Box::new(prev_term), next_term)
+            };
         }
         term
     } else {
@@ -101,38 +69,65 @@ pub fn compile_block<'a>(block: Vec<Node<'a>>) -> Term<'a> {
     }
 }
 
-fn compile_let_bind<'a>(
-    name: Name<'a>,
-    node: Node<'a>,
-    block: &mut impl Iterator<Item = Node<'a>>,
-) -> Term<'a> {
-    Term::Let(
-        name,
-        Box::new(compile_node(node)),
-        Box::new(compile_block_step(
-            block.next().unwrap_or_else(|| Node::Literal(Literal::Unit)),
-            block,
-        )),
+fn lower_node<'a>(node: Node<'a>) -> Term<'a> {
+    match node {
+        Node::Name(name) => Term::Var(name),
+        Node::Cond(if_blk, do_blk, el_blk) => lower_cond(if_blk, do_blk, el_blk),
+        Node::Literal(lit) => Term::Lit(lit),
+        Node::Call(name, args) => lower_call(name, args),
+        Node::BinaryOp(bin_op, node1, node2) => lower_binary_op(bin_op, *node1, *node2),
+        Node::UnaryOp(un_op, node) => lower_unary_op(un_op, *node),
+        Node::LetBind(name, node) => lower_let_bind(name, *node),
+        Node::FnDef(name, binds, body) => lower_fn_def(name, binds, body),
+    }
+}
+
+fn lower_cond<'a>(if_blk: Block<'a>, do_blk: Block<'a>, el_blk: Block<'a>) -> Term<'a> {
+    Term::Cond(
+        Box::new(lower_blk(if_blk)),
+        Box::new(lower_blk(do_blk)),
+        Box::new(lower_blk(el_blk)),
     )
 }
 
-fn compile_fn_def<'a>(
-    name: Name<'a>,
-    binds: Vec<Binding<'a>>,
-    body: Vec<Node<'a>>,
-    block: &mut impl Iterator<Item = Node<'a>>,
-) -> Term<'a> {
-    let mut term = compile_block(body);
+fn lower_call<'a>(name: Name<'a>, args: Block<'a>) -> Term<'a> {
+    let mut term = Term::Var(name);
+    for node in args {
+        term = Term::App(Box::new(term), Box::new(lower_node(node)));
+    }
+    term
+}
+
+fn lower_binary_op<'a>(bin_op: BinOp, node1: Node<'a>, node2: Node<'a>) -> Term<'a> {
+    Term::App(
+        Box::new(Term::App(
+            Box::new(Term::Abs(Abstraction::Binary(bin_op))),
+            Box::new(lower_node(node1)),
+        )),
+        Box::new(lower_node(node2)),
+    )
+}
+
+fn lower_unary_op<'a>(un_op: UnOp, node: Node<'a>) -> Term<'a> {
+    Term::App(
+        Box::new(Term::Abs(Abstraction::Unary(un_op))),
+        Box::new(lower_node(node)),
+    )
+}
+
+fn lower_let_bind<'a>(name: Name<'a>, node: Node<'a>) -> Term<'a> {
+    Term::Let(
+        name,
+        Box::new(lower_node(node)),
+        Box::new(Term::Lit(Literal::Unit)),
+    )
+}
+
+fn lower_fn_def<'a>(name: Name<'a>, binds: Vec<Binding<'a>>, body: Block<'a>) -> Term<'a> {
+    let mut term = lower_blk(body);
     for bind in binds.into_iter().rev() {
         term = Term::Abs(Abstraction::Lambda(bind, Box::new(term)));
     }
 
-    Term::Let(
-        name,
-        Box::new(term),
-        Box::new(compile_block_step(
-            block.next().unwrap_or_else(|| Node::Literal(Literal::Unit)),
-            block,
-        )),
-    )
+    Term::Let(name, Box::new(term), Box::new(Term::Lit(Literal::Unit)))
 }

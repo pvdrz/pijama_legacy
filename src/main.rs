@@ -10,7 +10,7 @@ use parser::parse;
 fn main() {
     let input = include_str!("source.pj");
     let ast = parse(input).unwrap();
-    let mir = mir::compile_block(ast);
+    let mir = mir::lower(ast);
     println!("{}", mir);
     let ty = ty::ty_check(&mir);
     println!("{}", ty);
