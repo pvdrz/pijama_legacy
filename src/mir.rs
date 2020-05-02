@@ -1,7 +1,7 @@
 use std::fmt;
 
 use crate::ast::*;
-use crate::ty::Binding;
+use crate::ty::{Binding, Ty};
 
 type Block<'a> = Vec<Node<'a>>;
 
@@ -92,8 +92,12 @@ fn lower_cond<'a>(if_blk: Block<'a>, do_blk: Block<'a>, el_blk: Block<'a>) -> Te
 
 fn lower_call<'a>(name: Name<'a>, args: Block<'a>) -> Term<'a> {
     let mut term = Term::Var(name);
-    for node in args {
-        term = Term::App(Box::new(term), Box::new(lower_node(node)));
+    if args.is_empty() {
+        term = Term::App(Box::new(term), Box::new(Term::Lit(Literal::Unit)));
+    } else {
+        for node in args {
+            term = Term::App(Box::new(term), Box::new(lower_node(node)));
+        }
     }
     term
 }
@@ -125,8 +129,19 @@ fn lower_let_bind<'a>(name: Name<'a>, node: Node<'a>) -> Term<'a> {
 
 fn lower_fn_def<'a>(name: Name<'a>, binds: Vec<Binding<'a>>, body: Block<'a>) -> Term<'a> {
     let mut term = lower_blk(body);
-    for bind in binds.into_iter().rev() {
-        term = Term::Abs(Abstraction::Lambda(bind, Box::new(term)));
+
+    if binds.is_empty() {
+        term = Term::Abs(Abstraction::Lambda(
+            Binding {
+                name: Name("_"),
+                ty: Ty::Unit,
+            },
+            Box::new(term),
+        ));
+    } else {
+        for bind in binds.into_iter().rev() {
+            term = Term::Abs(Abstraction::Lambda(bind, Box::new(term)));
+        }
     }
 
     Term::Let(name, Box::new(term), Box::new(Term::Lit(Literal::Unit)))
