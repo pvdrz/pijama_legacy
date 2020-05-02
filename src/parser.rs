@@ -28,7 +28,7 @@ pub fn parse<'a>(input: &'a str) -> Option<Vec<Node<'a>>> {
 }
 
 const KEYWORDS: &[&str] = &[
-    "fn", "do", "end", "if", "else", "true", "false", "unit", "Bool", "Int", "Unit",
+    "fn", "do", "end", "if", "else", "true", "false", "unit", "Bool", "Int", "Unit", "rec",
 ];
 
 impl<'a> Name<'a> {
@@ -139,6 +139,7 @@ impl<'a> Node<'a> {
         alt((
             Self::parse_let_bind,
             Self::parse_cond,
+            Self::parse_fn_rec,
             Self::parse_fn,
             map(Literal::parse, Self::Literal),
             Self::parse_unary_op,
@@ -208,7 +209,24 @@ impl<'a> Node<'a> {
                 Self::parse_block0,
                 tuple((multispace0, tag("end"))),
             )),
-            |(_, name, _, args, _, _, body, _)| Self::FnDef(name, args, body),
+            |(_, name, _, args, _, _, body, _)| Self::FnDef(name, args, body, None),
+        )(input)
+    }
+
+    fn parse_fn_rec<E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Self, E> {
+        map(
+            tuple((
+                tuple((tag("fn"), space1, tag("rec"), space1)),
+                Name::parse,
+                tuple((space0, char('('), multispace0)),
+                separated_list(tuple((space0, char(','), multispace0)), Binding::parse),
+                tuple((multispace0, char(')'), space0, char(':'), space0)),
+                Ty::parse,
+                tuple((space0, tag("do"), multispace1)),
+                Self::parse_block0,
+                tuple((multispace0, tag("end"))),
+            )),
+            |(_, name, _, args, _, ty, _, body, _)| Self::FnDef(name, args, body, Some(ty)),
         )(input)
     }
 

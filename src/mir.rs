@@ -36,6 +36,7 @@ pub enum Term<'a> {
     Cond(Box<Term<'a>>, Box<Term<'a>>, Box<Term<'a>>),
     Let(Name<'a>, Box<Term<'a>>, Box<Term<'a>>),
     Seq(Box<Term<'a>>, Box<Term<'a>>),
+    Fix(Box<Term<'a>>),
 }
 
 impl<'a> fmt::Display for Term<'a> {
@@ -48,6 +49,7 @@ impl<'a> fmt::Display for Term<'a> {
             Term::Cond(t1, t2, t3) => write!(f, "(if {} then {} else {})", t1, t2, t3),
             Term::Let(name, t1, t2) => write!(f, "(let {} = {} in {})", name.0, t1, t2),
             Term::Seq(t1, t2) => write!(f, "{} ; {}", t1, t2),
+            Term::Fix(t1) => write!(f, "(fix {})", t1),
         }
     }
 }
@@ -78,7 +80,7 @@ fn lower_node(node: Node<'_>) -> Term<'_> {
         Node::BinaryOp(bin_op, node1, node2) => lower_binary_op(bin_op, *node1, *node2),
         Node::UnaryOp(un_op, node) => lower_unary_op(un_op, *node),
         Node::LetBind(name, node) => lower_let_bind(name, *node),
-        Node::FnDef(name, binds, body) => lower_fn_def(name, binds, body),
+        Node::FnDef(name, binds, body, rec) => lower_fn_def(name, binds, body, rec),
     }
 }
 
@@ -127,8 +129,20 @@ fn lower_let_bind<'a>(name: Name<'a>, node: Node<'a>) -> Term<'a> {
     )
 }
 
-fn lower_fn_def<'a>(name: Name<'a>, binds: Vec<Binding<'a>>, body: Block<'a>) -> Term<'a> {
+fn lower_fn_def<'a>(
+    name: Name<'a>,
+    binds: Vec<Binding<'a>>,
+    body: Block<'a>,
+    rec_ty: Option<Ty>,
+) -> Term<'a> {
     let mut term = lower_blk(body);
+
+    let ty = rec_ty.map(|mut ty| {
+        for bind in binds.iter().rev() {
+            ty = Ty::Arrow(Box::new(bind.ty.clone()), Box::new(ty));
+        }
+        ty
+    });
 
     if binds.is_empty() {
         term = Term::Abs(Abstraction::Lambda(
@@ -142,6 +156,13 @@ fn lower_fn_def<'a>(name: Name<'a>, binds: Vec<Binding<'a>>, body: Block<'a>) ->
         for bind in binds.into_iter().rev() {
             term = Term::Abs(Abstraction::Lambda(bind, Box::new(term)));
         }
+    }
+
+    if let Some(ty) = ty {
+        term = Term::Fix(Box::new(Term::Abs(Abstraction::Lambda(
+            Binding { name, ty },
+            Box::new(term),
+        ))));
     }
 
     Term::Let(name, Box::new(term), Box::new(Term::Lit(Literal::Unit)))

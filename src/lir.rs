@@ -27,6 +27,7 @@ pub enum Term {
     Abs(Abstraction),
     App(Box<Term>, Box<Term>),
     Cond(Box<Term>, Box<Term>, Box<Term>),
+    Fix(Box<Term>),
 }
 
 impl fmt::Display for Term {
@@ -37,6 +38,7 @@ impl fmt::Display for Term {
             Term::App(t1, t2) => write!(f, "({} {})", t1, t2),
             Term::Lit(literal) => write!(f, "{}", literal),
             Term::Cond(t1, t2, t3) => write!(f, "(if {} then {} else {})", t1, t2, t3),
+            Term::Fix(t1) => write!(f, "(fix {})", t1),
         }
     }
 }
@@ -45,6 +47,7 @@ impl Term {
     fn is_value(&self) -> bool {
         match self {
             Term::Abs(_) | Term::Lit(_) => true,
+            Term::App(box Term::Abs(Abstraction::Binary(_)), box v) if v.is_value() => true,
             _ => false,
         }
     }
@@ -76,6 +79,9 @@ impl Term {
                 t2.shift(up, cutoff);
                 t3.shift(up, cutoff);
             }
+            Term::Fix(t1) => {
+                t1.shift(up, cutoff);
+            }
         }
     }
 
@@ -103,6 +109,9 @@ impl Term {
                 t1.replace(index, subs);
                 t2.replace(index, subs);
                 t3.replace(index, subs);
+            }
+            Term::Fix(t1) => {
+                t1.replace(index, subs);
             }
         }
     }
@@ -162,6 +171,16 @@ impl Term {
             },
             Term::Cond(t1, _, _) => t1.step(),
             Term::Abs(Abstraction::Lambda(t1)) => t1.step(),
+            Term::Fix(t1) => match t1.as_ref() {
+                Term::Abs(Abstraction::Lambda(box t2)) => {
+                    let mut fix = Term::Fix(t1.clone());
+                    let mut t2 = t2.clone();
+                    t2.replace(0, &mut fix);
+                    *self = t2;
+                    true
+                }
+                _ => t1.step(),
+            },
             _ => false,
         }
     }

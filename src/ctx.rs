@@ -67,6 +67,10 @@ impl<'a> Context<'a> {
                     Box::new(t1),
                 )
             }
+            mir::Term::Fix(t1) => {
+                let t1 = self.remove_names(*t1);
+                lir::Term::Fix(Box::new(t1))
+            }
         }
     }
 }

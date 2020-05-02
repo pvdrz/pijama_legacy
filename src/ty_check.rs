@@ -129,6 +129,21 @@ impl<'a> Context<'a> {
                     });
                 }
             }
+            Term::Fix(t1) => match self.type_of(t1)? {
+                Ty::Arrow(box ty1, box ty2) => {
+                    if ty1 == ty2 {
+                        ty1
+                    } else {
+                        return Err(TyError::Mismatch {
+                            expected: ty1,
+                            found: ty2,
+                        });
+                    }
+                }
+                ty => {
+                    return Err(TyError::NotFn(ty));
+                }
+            },
         };
         Ok(ty)
     }

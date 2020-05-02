@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::ty::Binding;
+use crate::ty::{Binding, Ty};
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy)]
 pub struct Name<'a>(pub &'a str);
@@ -106,7 +106,7 @@ pub enum Node<'a> {
     UnaryOp(UnOp, Box<Node<'a>>),
     LetBind(Name<'a>, Box<Node<'a>>),
     Cond(Vec<Node<'a>>, Vec<Node<'a>>, Vec<Node<'a>>),
-    FnDef(Name<'a>, Vec<Binding<'a>>, Vec<Node<'a>>),
+    FnDef(Name<'a>, Vec<Binding<'a>>, Vec<Node<'a>>, Option<Ty>),
     Call(Name<'a>, Vec<Node<'a>>),
     Literal(Literal),
     Name(Name<'a>),
