@@ -161,6 +161,7 @@ impl Term {
                 _ => false,
             },
             Term::Cond(t1, _, _) => t1.step(),
+            Term::Abs(Abstraction::Lambda(t1)) => t1.step(),
             _ => false,
         }
     }
