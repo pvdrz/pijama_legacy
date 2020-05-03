@@ -21,6 +21,8 @@ pub type LangResult<T> = Result<T, LangError>;
 pub enum LangError {
     #[error("{0}")]
     Ty(#[from] ty_check::TyError),
+    #[error("{0}")]
+    Eval(#[from] lir::EvalError),
 }
 
 fn run(input: &str) -> Result<(), LangError> {
@@ -28,7 +30,7 @@ fn run(input: &str) -> Result<(), LangError> {
     let mir = mir::lower(ast);
     ty_check::ty_check(&mir)?;
     let mut lir = ctx::remove_names(mir);
-    lir.evaluate();
+    lir.evaluate()?;
     println!("{}", lir);
     Ok(())
 }
