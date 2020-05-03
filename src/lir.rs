@@ -1,6 +1,17 @@
+use thiserror::Error;
+
 use std::fmt;
 
 use crate::ast::*;
+use crate::{LangError, LangResult};
+
+#[derive(Error, Debug)]
+pub enum EvalError {
+    #[error("Term `{0}` cannot be evaluated")]
+    MalformedTerm(Term),
+}
+
+type EvalResult<T> = Result<T, EvalError>;
 
 #[derive(Debug, Clone)]
 pub enum Abstraction {
@@ -44,14 +55,6 @@ impl fmt::Display for Term {
 }
 
 impl Term {
-    fn is_value(&self) -> bool {
-        match self {
-            Term::Abs(_) | Term::Lit(_) => true,
-            Term::App(box Term::Abs(Abstraction::Binary(_)), box v) if v.is_value() => true,
-            _ => false,
-        }
-    }
-
     fn shift(&mut self, up: bool, cutoff: usize) {
         match self {
             Term::Lit(_) => (),
@@ -116,20 +119,19 @@ impl Term {
         }
     }
 
-    fn step(&mut self) -> bool {
+    fn step(&mut self) -> EvalResult<bool> {
         match self {
-            Term::Var(_) | Term::Lit(_) => false,
+            Term::Var(_) | Term::Lit(_) => Ok(false),
             Term::App(
                 box Term::App(box Term::Abs(Abstraction::Binary(op)), box Term::Lit(l1)),
                 box t2,
             ) => {
                 if let Term::Lit(l2) = t2 {
-                    if let Some(lit) = eval_bin_op(op, l1, l2) {
-                        *self = Term::Lit(lit);
-                        true
-                    } else {
-                        false
-                    }
+                    *self = Term::Lit(
+                        eval_bin_op(op, l1, l2)
+                            .ok_or_else(|| EvalError::MalformedTerm(self.clone()))?,
+                    );
+                    Ok(true)
                 } else {
                     t2.step()
                 }
@@ -140,16 +142,15 @@ impl Term {
                     body.replace(0, t2);
                     body.shift(false, 0);
                     *self = *body.clone();
-                    true
+                    Ok(true)
                 }
                 Abstraction::Unary(op) => {
                     if let Term::Lit(l2) = t2 {
-                        if let Some(lit) = eval_un_op(op, l2) {
-                            *self = Term::Lit(lit);
-                            true
-                        } else {
-                            false
-                        }
+                        *self = Term::Lit(
+                            eval_un_op(op, l2)
+                                .ok_or_else(|| EvalError::MalformedTerm(self.clone()))?,
+                        );
+                        Ok(true)
                     } else {
                         t2.step()
                     }
@@ -157,16 +158,16 @@ impl Term {
                 Abstraction::Binary(_) => t2.step(),
             },
             Term::App(t1, _) => t1.step(),
-            Term::Cond(box v1, box t2, box t3) if v1.is_value() => match v1 {
-                Term::Lit(Literal::True) => {
+            Term::Cond(box Term::Lit(l1), box t2, box t3) => match l1 {
+                Literal::True => {
                     *self = t2.clone();
-                    true
+                    Ok(true)
                 }
-                Term::Lit(Literal::False) => {
+                Literal::False => {
                     *self = t3.clone();
-                    true
+                    Ok(true)
                 }
-                _ => false,
+                _ => Err(EvalError::MalformedTerm(self.clone())),
             },
             Term::Cond(t1, _, _) => t1.step(),
             Term::Fix(t1) => match t1.as_ref() {
@@ -175,53 +176,56 @@ impl Term {
                     let mut t2 = t2.clone();
                     t2.replace(0, &mut fix);
                     *self = t2;
-                    true
+                    Ok(true)
                 }
                 _ => t1.step(),
             },
-            _ => false,
+            _ => Ok(false),
         }
     }
 
-    pub fn evaluate(&mut self) {
-        while self.step() {}
+    pub fn evaluate(&mut self) -> LangResult<()> {
+        while self.step().map_err(LangError::Eval)? {}
+        Ok(())
     }
 }
 
 fn eval_bin_op(op: &BinOp, l1: &Literal, l2: &Literal) -> Option<Literal> {
     use BinOp::*;
     use Literal::*;
-    match (op, l1, l2) {
-        (Plus, Number(n1), Number(n2)) => Some((n1 + n2).into()),
-        (Minus, Number(n1), Number(n2)) => Some((n1 - n2).into()),
-        (Times, Number(n1), Number(n2)) => Some((n1 * n2).into()),
-        (Divide, Number(n1), Number(n2)) => Some((n1 / n2).into()),
-        (Modulo, Number(n1), Number(n2)) => Some((n1 % n2).into()),
-        (LessThan, Number(n1), Number(n2)) => Some((n1 < n2).into()),
-        (LessThanOrEqual, Number(n1), Number(n2)) => Some((n1 <= n2).into()),
-        (GreaterThan, Number(n1), Number(n2)) => Some((n1 > n2).into()),
-        (GreaterThanOrEqual, Number(n1), Number(n2)) => Some((n1 >= n2).into()),
-        (Equal, _, _) => Some((l1 == l2).into()),
-        (NotEqual, _, _) => Some((l1 != l2).into()),
-        (And, True, True) => Some(True),
-        (And, True, False) => Some(False),
-        (And, False, True) => Some(False),
-        (And, False, False) => Some(False),
-        (Or, True, True) => Some(True),
-        (Or, True, False) => Some(True),
-        (Or, False, True) => Some(True),
-        (Or, False, False) => Some(False),
-        _ => None,
-    }
+    let lit = match (op, l1, l2) {
+        (Plus, Number(n1), Number(n2)) => (n1 + n2).into(),
+        (Minus, Number(n1), Number(n2)) => (n1 - n2).into(),
+        (Times, Number(n1), Number(n2)) => (n1 * n2).into(),
+        (Divide, Number(n1), Number(n2)) => (n1 / n2).into(),
+        (Modulo, Number(n1), Number(n2)) => (n1 % n2).into(),
+        (LessThan, Number(n1), Number(n2)) => (n1 < n2).into(),
+        (LessThanOrEqual, Number(n1), Number(n2)) => (n1 <= n2).into(),
+        (GreaterThan, Number(n1), Number(n2)) => (n1 > n2).into(),
+        (GreaterThanOrEqual, Number(n1), Number(n2)) => (n1 >= n2).into(),
+        (Equal, _, _) => (l1 == l2).into(),
+        (NotEqual, _, _) => (l1 != l2).into(),
+        (And, True, True) => True,
+        (And, True, False) => False,
+        (And, False, True) => False,
+        (And, False, False) => False,
+        (Or, True, True) => True,
+        (Or, True, False) => True,
+        (Or, False, True) => True,
+        (Or, False, False) => False,
+        _ => return None,
+    };
+    Some(lit)
 }
 
-fn eval_un_op(op: &UnOp, l1: &Literal) -> Option<Literal> {
+fn eval_un_op(op: &UnOp, lit: &Literal) -> Option<Literal> {
     use Literal::*;
     use UnOp::*;
-    match (op, l1) {
-        (Minus, Number(n)) => Some(Number(-*n)),
-        (Not, True) => Some(Literal::False),
-        (Not, False) => Some(Literal::True),
-        _ => None,
-    }
+    let lit = match (op, lit) {
+        (Minus, Number(n)) => Number(-n),
+        (Not, True) => False,
+        (Not, False) => True,
+        _ => return None,
+    };
+    Some(lit)
 }
