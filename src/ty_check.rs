@@ -17,8 +17,8 @@ pub enum TyError {
     Unbound(String),
     #[error("Type mismatch: expected function, found {0}")]
     NotFn(Ty),
-    #[error("Type mismatch: expected a basic function, found {0}")]
-    NotBasicFn(Ty),
+    #[error("Type mismatch: expected a basic type, found {0}")]
+    NotBasicTy(Ty),
 }
 
 type TyResult<T = Ty> = Result<T, TyError>;
@@ -72,21 +72,20 @@ impl<'a> Context<'a> {
                         Box::new(Ty::Int),
                         Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Bool))),
                     ),
-                    BinOp::Equal | BinOp::NotEqual => Ty::Arrow(
-                        Box::new(Ty::Bool),
-                        Box::new(Ty::Arrow(Box::new(Ty::Bool), Box::new(Ty::Bool))),
-                    ),
+                    BinOp::Equal | BinOp::NotEqual => unreachable!(),
                 },
             },
             Term::App(t1, t2) => {
-                let ty1 = if let box Term::App(box Term::Abs(Abstraction::Binary(_)), t3) = t1 {
-                    let ty3 = self.type_of(t3)?;
-                    match ty3 {
-                        Ty::Arrow(_, _) => return Err(TyError::NotBasicFn(ty3)),
-                        _ => Ty::Arrow(Box::new(ty3), Box::new(Ty::Bool))
-                    }
-                } else {
-                    self.type_of(t1)?
+                let ty1 = match t1 {
+                    box Term::App(box Term::Abs(Abstraction::Binary(BinOp::Equal)), t3) 
+                    | box Term::App(box Term::Abs(Abstraction::Binary(BinOp::NotEqual)), t3) => {
+                        let ty3 = self.type_of(t3)?;
+                        match ty3 {
+                            Ty::Arrow(_, _) => return Err(TyError::NotBasicTy(ty3)),
+                            _ => Ty::Arrow(Box::new(ty3), Box::new(Ty::Bool))
+                        }
+                    },
+                    _ => self.type_of(t1)?
                 };
                 let ty2 = self.type_of(t2)?;
                 match ty1 {
