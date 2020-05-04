@@ -17,6 +17,8 @@ pub enum TyError {
     Unbound(String),
     #[error("Type mismatch: expected function, found {0}")]
     NotFn(Ty),
+    #[error("Type mismatch: expected a basic type, found {0}")]
+    NotBasicTy(Ty),
 }
 
 type TyResult<T = Ty> = Result<T, TyError>;
@@ -47,7 +49,7 @@ impl<'a> Context<'a> {
                     let ty = self.type_of(body)?;
                     self.inner.pop().unwrap();
                     Ty::Arrow(Box::new(bind.ty.clone()), Box::new(ty))
-                }
+                },
                 Abstraction::Unary(op) => match op {
                     UnOp::Minus => Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int)),
                     UnOp::Not => Ty::Arrow(Box::new(Ty::Bool), Box::new(Ty::Bool)),
@@ -58,8 +60,7 @@ impl<'a> Context<'a> {
                             Box::new(Ty::Int),
                             Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
                         )
-                    }
-
+                    },
                     BinOp::Or | BinOp::And => Ty::Arrow(
                         Box::new(Ty::Bool),
                         Box::new(Ty::Arrow(Box::new(Ty::Bool), Box::new(Ty::Bool))),
@@ -71,11 +72,21 @@ impl<'a> Context<'a> {
                         Box::new(Ty::Int),
                         Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Bool))),
                     ),
-                    BinOp::Equal | BinOp::NotEqual => todo!(),
+                    BinOp::Equal | BinOp::NotEqual => unreachable!(),
                 },
             },
             Term::App(t1, t2) => {
-                let ty1 = self.type_of(t1)?;
+                let ty1 = match t1 {
+                    box Term::App(box Term::Abs(Abstraction::Binary(BinOp::Equal)), t3) 
+                    | box Term::App(box Term::Abs(Abstraction::Binary(BinOp::NotEqual)), t3) => {
+                        let ty3 = self.type_of(t3)?;
+                        match ty3 {
+                            Ty::Arrow(_, _) => return Err(TyError::NotBasicTy(ty3)),
+                            _ => Ty::Arrow(Box::new(ty3), Box::new(Ty::Bool))
+                        }
+                    },
+                    _ => self.type_of(t1)?
+                };
                 let ty2 = self.type_of(t2)?;
                 match ty1 {
                     Ty::Arrow(ty11, ty) => {
@@ -90,14 +101,14 @@ impl<'a> Context<'a> {
                     }
                     _ => return Err(TyError::NotFn(ty1)),
                 }
-            }
+            },
             &Term::Let(name, ref t1, ref t2) => {
                 let bind = self.type_of(t1).map(|ty| Binding { name, ty })?;
                 self.inner.push(bind);
                 let ty2 = self.type_of(t2)?;
                 self.inner.pop().unwrap();
                 ty2
-            }
+            },
             Term::Cond(t1, t2, t3) => {
                 let ty1 = self.type_of(t1)?;
                 let ty2 = self.type_of(t2)?;
@@ -117,7 +128,7 @@ impl<'a> Context<'a> {
                         found: ty1,
                     });
                 }
-            }
+            },
             Term::Seq(t1, t2) => {
                 let ty1 = self.type_of(t1)?;
                 if ty1 == Ty::Unit {
@@ -128,7 +139,7 @@ impl<'a> Context<'a> {
                         found: ty1,
                     });
                 }
-            }
+            },
             Term::Fix(t1) => match self.type_of(t1)? {
                 Ty::Arrow(box ty1, box ty2) => {
                     if ty1 == ty2 {
@@ -139,7 +150,7 @@ impl<'a> Context<'a> {
                             found: ty2,
                         });
                     }
-                }
+                },
                 ty => {
                     return Err(TyError::NotFn(ty));
                 }
