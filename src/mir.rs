@@ -94,12 +94,8 @@ fn lower_cond<'a>(if_blk: Block<'a>, do_blk: Block<'a>, el_blk: Block<'a>) -> Te
 
 fn lower_call<'a>(name: Name<'a>, args: Block<'a>) -> Term<'a> {
     let mut term = Term::Var(name);
-    if args.is_empty() {
-        term = Term::App(Box::new(term), Box::new(Term::Lit(Literal::Unit)));
-    } else {
-        for node in args {
-            term = Term::App(Box::new(term), Box::new(lower_node(node)));
-        }
+    for node in args {
+        term = Term::App(Box::new(term), Box::new(lower_node(node)));
     }
     term
 }
@@ -144,18 +140,8 @@ fn lower_fn_def<'a>(
         ty
     });
 
-    if binds.is_empty() {
-        term = Term::Abs(Abstraction::Lambda(
-            Binding {
-                name: Name("_"),
-                ty: Ty::Unit,
-            },
-            Box::new(term),
-        ));
-    } else {
-        for bind in binds.into_iter().rev() {
-            term = Term::Abs(Abstraction::Lambda(bind, Box::new(term)));
-        }
+    for bind in binds.into_iter().rev() {
+        term = Term::Abs(Abstraction::Lambda(bind, Box::new(term)));
     }
 
     if let Some(ty) = ty {
