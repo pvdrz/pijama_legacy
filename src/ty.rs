@@ -2,6 +2,10 @@ use std::fmt;
 
 use crate::ast::Name;
 
+mod ty_check;
+
+pub use ty_check::{ty_check, TyError};
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Ty {
     Bool,
@@ -28,7 +32,7 @@ impl<'a> fmt::Display for Ty {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Binding<'a> {
     pub name: Name<'a>,
     pub ty: Ty,

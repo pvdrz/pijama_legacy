@@ -10,7 +10,7 @@ impl<'a> fmt::Display for Name<'a> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum BinOp {
     Plus,
     Minus,
@@ -48,7 +48,7 @@ impl<'a> fmt::Display for BinOp {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum UnOp {
     Minus,
     Not,
@@ -100,7 +100,7 @@ impl<'a> fmt::Display for Literal {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum Node<'a> {
     BinaryOp(BinOp, Box<Node<'a>>, Box<Node<'a>>),
     UnaryOp(UnOp, Box<Node<'a>>),

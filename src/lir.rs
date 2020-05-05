@@ -3,7 +3,14 @@ use thiserror::Error;
 use std::fmt;
 
 use crate::ast::*;
-use crate::{LangError, LangResult};
+use crate::LangResult;
+
+mod ctx;
+
+pub fn evaluate(mut term: Term) -> LangResult<Term> {
+    term.evaluate()?;
+    Ok(term)
+}
 
 #[derive(Error, Debug)]
 pub enum EvalError {
@@ -55,6 +62,10 @@ impl fmt::Display for Term {
 }
 
 impl Term {
+    pub fn from_mir(mir: crate::mir::Term) -> Self {
+        ctx::remove_names(mir)
+    }
+
     fn shift(&mut self, up: bool, cutoff: usize) {
         match self {
             Term::Lit(_) => (),
@@ -184,8 +195,8 @@ impl Term {
         }
     }
 
-    pub fn evaluate(&mut self) -> LangResult<()> {
-        while self.step().map_err(LangError::Eval)? {}
+    fn evaluate(&mut self) -> EvalResult<()> {
+        while self.step()? {}
         Ok(())
     }
 }

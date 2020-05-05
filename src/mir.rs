@@ -5,10 +5,6 @@ use crate::ty::{Binding, Ty};
 
 type Block<'a> = Vec<Node<'a>>;
 
-pub fn lower(blk: Block<'_>) -> Term<'_> {
-    lower_blk(blk)
-}
-
 #[derive(Debug, Clone)]
 pub enum Abstraction<'a> {
     Lambda(Binding<'a>, Box<Term<'a>>),
@@ -51,6 +47,12 @@ impl<'a> fmt::Display for Term<'a> {
             Term::Seq(t1, t2) => write!(f, "{} ; {}", t1, t2),
             Term::Fix(t1) => write!(f, "(fix {})", t1),
         }
+    }
+}
+
+impl<'a> Term<'a> {
+    pub fn from_ast(blk: Block<'a>) -> Self {
+        lower_blk(blk)
     }
 }
 
