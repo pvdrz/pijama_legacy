@@ -11,19 +11,19 @@ use nom::IResult;
 
 use crate::ast::*;
 use crate::ty::{Binding, Ty};
+use crate::{LangError, LangResult};
 
-pub fn parse<'a>(input: &'a str) -> Option<Vec<Node<'a>>> {
+pub fn parse<'a>(input: &'a str) -> LangResult<Vec<Node<'a>>> {
     let result: IResult<&str, Vec<Node>, VerboseError<&str>> = all_consuming(map(
         tuple((multispace0, Node::parse_block0, multispace0)),
         |(_, node, _)| node,
     ))(input);
     match result {
-        Ok((_, block)) => Some(block),
+        Ok((_, block)) => Ok(block),
         Err(nom::Err::Error(e)) | Err(nom::Err::Failure(e)) => {
-            eprintln!("{}", convert_error(input, e));
-            None
+            Err(LangError::Parse(convert_error(input, e)))
         }
-        _ => None,
+        _ => Err(LangError::Parse(String::new())),
     }
 }
 
