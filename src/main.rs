@@ -1,7 +1,7 @@
 use std::env::args;
 use std::fs::read_to_string;
 
-use pijama:: run;
+use pijama::run;
 
 fn main() {
     let mut args = args();

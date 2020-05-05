@@ -3,7 +3,12 @@ use thiserror::Error;
 use std::fmt;
 
 use crate::ast::*;
-use crate::{LangError, LangResult};
+use crate::LangResult;
+
+pub fn evaluate(mut term: Term) -> LangResult<Term> {
+    term.evaluate()?;
+    Ok(term)
+}
 
 #[derive(Error, Debug)]
 pub enum EvalError {
@@ -184,8 +189,8 @@ impl Term {
         }
     }
 
-    pub fn evaluate(&mut self) -> LangResult<()> {
-        while self.step().map_err(LangError::Eval)? {}
+    fn evaluate(&mut self) -> EvalResult<()> {
+        while self.step()? {}
         Ok(())
     }
 }

@@ -25,9 +25,8 @@ pub enum LangError {
 pub fn run(input: &str) -> Result<lir::Term, LangError> {
     let ast = parser::parse(input)?;
     let mir = mir::lower(ast);
-    ty_check::ty_check(&mir)?;
-    let mut lir = ctx::remove_names(mir);
-    lir.evaluate()?;
-    Ok(lir)
+    let _ty = ty_check::ty_check(&mir)?;
+    let lir = ctx::remove_names(mir);
+    let res = lir::evaluate(lir)?;
+    Ok(res)
 }
-
