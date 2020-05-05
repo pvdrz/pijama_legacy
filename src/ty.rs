@@ -2,6 +2,10 @@ use std::fmt;
 
 use crate::ast::Name;
 
+mod ty_check;
+
+pub use ty_check::{ty_check, TyError};
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Ty {
     Bool,

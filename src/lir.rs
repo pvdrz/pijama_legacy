@@ -5,6 +5,8 @@ use std::fmt;
 use crate::ast::*;
 use crate::LangResult;
 
+mod ctx;
+
 pub fn evaluate(mut term: Term) -> LangResult<Term> {
     term.evaluate()?;
     Ok(term)
@@ -60,6 +62,10 @@ impl fmt::Display for Term {
 }
 
 impl Term {
+    pub fn from_mir(mir: crate::mir::Term) -> Self {
+        ctx::remove_names(mir)
+    }
+
     fn shift(&mut self, up: bool, cutoff: usize) {
         match self {
             Term::Lit(_) => (),

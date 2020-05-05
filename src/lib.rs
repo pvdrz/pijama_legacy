@@ -1,21 +1,19 @@
 #![feature(box_patterns)]
 
-mod ast;
-mod ctx;
-mod lir;
-mod mir;
-mod parser;
-mod ty;
-mod ty_check;
-
 use thiserror::Error;
+
+pub mod ast;
+pub mod lir;
+pub mod mir;
+pub mod parser;
+pub mod ty;
 
 pub type LangResult<T> = Result<T, LangError>;
 
 #[derive(Error, Debug)]
 pub enum LangError {
     #[error("{0}")]
-    Ty(#[from] ty_check::TyError),
+    Ty(#[from] ty::TyError),
     #[error("{0}")]
     Eval(#[from] lir::EvalError),
     #[error("{0}")]
@@ -24,9 +22,9 @@ pub enum LangError {
 
 pub fn run(input: &str) -> Result<lir::Term, LangError> {
     let ast = parser::parse(input)?;
-    let mir = mir::lower(ast);
-    let _ty = ty_check::ty_check(&mir)?;
-    let lir = ctx::remove_names(mir);
+    let mir = mir::Term::from_ast(ast);
+    let _ty = ty::ty_check(&mir)?;
+    let lir = lir::Term::from_mir(mir);
     let res = lir::evaluate(lir)?;
     Ok(res)
 }
