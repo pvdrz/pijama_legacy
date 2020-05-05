@@ -32,7 +32,7 @@ impl<'a> fmt::Display for Ty {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Binding<'a> {
     pub name: Name<'a>,
     pub ty: Ty,
