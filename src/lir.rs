@@ -1,24 +1,15 @@
-use thiserror::Error;
-
 use std::fmt;
 
 use crate::ast::*;
-use crate::LangResult;
+
+use Abstraction::*;
+use Term::*;
 
 mod ctx;
 
-pub fn evaluate(mut term: Term) -> LangResult<Term> {
-    term.evaluate()?;
-    Ok(term)
+pub fn evaluate(term: Term) -> Term {
+    term.evaluate()
 }
-
-#[derive(Error, Debug)]
-pub enum EvalError {
-    #[error("Term `{0}` cannot be evaluated")]
-    MalformedTerm(Term),
-}
-
-type EvalResult<T> = Result<T, EvalError>;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Abstraction {
@@ -29,7 +20,6 @@ pub enum Abstraction {
 
 impl fmt::Display for Abstraction {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use Abstraction::*;
         match self {
             Lambda(term) => write!(f, "(λ. {})", term),
             Binary(bin_op) => write!(f, "{}", bin_op),
@@ -46,17 +36,19 @@ pub enum Term {
     App(Box<Term>, Box<Term>),
     Cond(Box<Term>, Box<Term>, Box<Term>),
     Fix(Box<Term>),
+    Hole,
 }
 
 impl fmt::Display for Term {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Term::Var(var) => write!(f, "_{}", var),
-            Term::Abs(abs) => write!(f, "{}", abs),
-            Term::App(t1, t2) => write!(f, "({} {})", t1, t2),
-            Term::Lit(literal) => write!(f, "{}", literal),
-            Term::Cond(t1, t2, t3) => write!(f, "(if {} then {} else {})", t1, t2, t3),
-            Term::Fix(t1) => write!(f, "(fix {})", t1),
+            Hole => write!(f, "hole"),
+            Var(var) => write!(f, "_{}", var),
+            Abs(abs) => write!(f, "{}", abs),
+            App(t1, t2) => write!(f, "({} {})", t1, t2),
+            Lit(literal) => write!(f, "{}", literal),
+            Cond(t1, t2, t3) => write!(f, "(if {} then {} else {})", t1, t2, t3),
+            Fix(t1) => write!(f, "(fix {})", t1),
         }
     }
 }
@@ -68,8 +60,8 @@ impl Term {
 
     fn shift(&mut self, up: bool, cutoff: usize) {
         match self {
-            Term::Lit(_) => (),
-            Term::Var(index) => {
+            Lit(_) | Hole => (),
+            Var(index) => {
                 if *index >= cutoff {
                     if up {
                         *index += 1;
@@ -78,22 +70,22 @@ impl Term {
                     }
                 }
             }
-            Term::Abs(abs) => match abs {
-                Abstraction::Lambda(body) => {
+            Abs(abs) => match abs {
+                Lambda(body) => {
                     body.shift(up, cutoff + 1);
                 }
-                Abstraction::Unary(_) | Abstraction::Binary(_) => (),
+                Unary(_) | Binary(_) => (),
             },
-            Term::App(t1, t2) => {
+            App(t1, t2) => {
                 t1.shift(up, cutoff);
                 t2.shift(up, cutoff);
             }
-            Term::Cond(t1, t2, t3) => {
+            Cond(t1, t2, t3) => {
                 t1.shift(up, cutoff);
                 t2.shift(up, cutoff);
                 t3.shift(up, cutoff);
             }
-            Term::Fix(t1) => {
+            Fix(t1) => {
                 t1.shift(up, cutoff);
             }
         }
@@ -101,110 +93,117 @@ impl Term {
 
     fn replace(&mut self, index: usize, subs: &mut Term) {
         match self {
-            Term::Lit(_) => (),
-            Term::Var(index2) => {
+            Lit(_) | Hole => (),
+            Var(index2) => {
                 if index == *index2 {
                     *self = subs.clone();
                 }
             }
-            Term::Abs(abs) => match abs {
-                Abstraction::Lambda(body) => {
+            Abs(abs) => match abs {
+                Lambda(body) => {
                     subs.shift(true, 0);
                     body.replace(index + 1, subs);
                     subs.shift(false, 0);
                 }
-                Abstraction::Unary(_) | Abstraction::Binary(_) => (),
+                Unary(_) | Binary(_) => (),
             },
-            Term::App(t1, t2) => {
+            App(t1, t2) => {
                 t1.replace(index, subs);
                 t2.replace(index, subs);
             }
-            Term::Cond(t1, t2, t3) => {
+            Cond(t1, t2, t3) => {
                 t1.replace(index, subs);
                 t2.replace(index, subs);
                 t3.replace(index, subs);
             }
-            Term::Fix(t1) => {
+            Fix(t1) => {
                 t1.replace(index, subs);
             }
         }
     }
 
-    fn step(&mut self) -> EvalResult<bool> {
+    fn step_in_place(&mut self) -> bool {
+        let term = std::mem::replace(self, Hole);
+        let (cont, term) = term.step();
+        *self = term;
+        cont
+    }
+
+    fn step(mut self) -> (bool, Term) {
         match self {
-            Term::Var(_) | Term::Lit(_) => Ok(false),
-            Term::App(
-                box Term::App(box Term::Abs(Abstraction::Binary(op)), box Term::Lit(l1)),
-                box t2,
-            ) => {
-                if let Term::Lit(l2) = t2 {
-                    *self = Term::Lit(
-                        eval_bin_op(op, l1, l2)
-                            .ok_or_else(|| EvalError::MalformedTerm(self.clone()))?,
-                    );
-                    Ok(true)
-                } else {
-                    t2.step()
-                }
+            // Binary operations ((op t1) t2)
+            // If t1 and t2 are literals, do the operation.
+            App(box App(box Abs(Binary(op)), box Lit(l1)), box Lit(l2)) => {
+                (true, Lit(eval_bin_op(op, l1, l2)))
             }
-            Term::App(box Term::Abs(abs), box t2) => match abs {
-                Abstraction::Lambda(body) => {
-                    t2.shift(true, 0);
-                    body.replace(0, t2);
-                    body.shift(false, 0);
-                    *self = *body.clone();
-                    Ok(true)
-                }
-                Abstraction::Unary(op) => {
-                    if let Term::Lit(l2) = t2 {
-                        *self = Term::Lit(
-                            eval_un_op(op, l2)
-                                .ok_or_else(|| EvalError::MalformedTerm(self.clone()))?,
-                        );
-                        Ok(true)
-                    } else {
-                        t2.step()
-                    }
-                }
-                Abstraction::Binary(_) => t2.step(),
-            },
-            Term::App(t1, _) => t1.step(),
-            Term::Cond(box Term::Lit(l1), box t2, box t3) => match l1 {
-                Literal::True => {
-                    *self = t2.clone();
-                    Ok(true)
-                }
-                Literal::False => {
-                    *self = t3.clone();
-                    Ok(true)
-                }
-                _ => Err(EvalError::MalformedTerm(self.clone())),
-            },
-            Term::Cond(t1, _, _) => t1.step(),
-            Term::Fix(t1) => match t1.as_ref() {
-                Term::Abs(Abstraction::Lambda(box t2)) => {
-                    let mut fix = Term::Fix(t1.clone());
-                    let mut t2 = t2.clone();
-                    t2.replace(0, &mut fix);
-                    *self = t2;
-                    Ok(true)
-                }
-                _ => t1.step(),
-            },
-            _ => Ok(false),
+            // If t2 is not a literal, evaluate it.
+            App(box App(box Abs(Binary(_)), box Lit(_)), ref mut t2) => (t2.step_in_place(), self),
+
+            // Beta Reduction ((\. b) t2)
+            // Replace the argument of the function by t2 inside b and evaluate to b.
+            App(box Abs(Lambda(box mut body)), box mut t2) => {
+                t2.shift(true, 0);
+                body.replace(0, &mut t2);
+                body.shift(false, 0);
+                (true, body)
+            }
+
+            // Unary Operations (op t1)
+            // If t1 is a literal, do the operation.
+            App(box Abs(Unary(op)), box Lit(lit)) => (true, Lit(eval_un_op(op, lit))),
+
+            // Application of abstraction with unevaluated parameter
+            // This rule takes care of:
+            // - Binary Operations ((op t1) t2) where t1 is not a literal.
+            // - Unary Operations (op t1) where t1 is not a literal.
+            // In both cases it evaluates t1.
+            App(box Abs(_), ref mut t) => (t.step_in_place(), self),
+
+            // Application with unevaluated first term (t1 t2)
+            // Evaluate t1.
+            App(ref mut t1, _) => (t1.step_in_place(), self),
+
+            // Conditionals (if t1 then t2 else t3)
+            // If t1 is true, evaluate to t2.
+            Cond(box Lit(Literal::True), box t2, _) => (true, t2),
+            // If t1 is false, evaluate to t3.
+            Cond(box Lit(Literal::False), _, box t3) => (true, t3),
+            // If t1 is any other literal, this is an error.
+            Cond(box Lit(lit), _, _) => panic!("Found non-boolean literal {} in condition", lit),
+            // If t1 is not a literal, evaluate it.
+            Cond(ref mut t1, _, _) => (t1.step_in_place(), self),
+
+            // Fixed-point operation (fix t1)
+            // If t1 is an abstraction (\. t2), replace the argument of t1 by (fix t1) inside t2
+            // and evaluate to t2.
+            Fix(box Abs(Lambda(box ref t2))) => {
+                let mut t2 = t2.clone();
+                t2.replace(0, &mut self);
+                (true, t2)
+            }
+            // If t1 is not an abstraction, evaluate it.
+            Fix(ref mut t1) => (t1.step_in_place(), self),
+
+            // Any other term stops the evaluation.
+            Var(_) | Lit(_) | Abs(_) | Hole => (false, self),
         }
     }
 
-    fn evaluate(&mut self) -> EvalResult<()> {
-        while self.step()? {}
-        Ok(())
+    fn evaluate(self) -> Term {
+        let mut term = self;
+        while {
+            let (eval, new_term) = term.step();
+            term = new_term;
+            eval
+        } {}
+        term
     }
 }
 
-fn eval_bin_op(op: &BinOp, l1: &Literal, l2: &Literal) -> Option<Literal> {
+fn eval_bin_op(op: BinOp, l1: Literal, l2: Literal) -> Literal {
     use BinOp::*;
     use Literal::*;
-    let lit = match (op, l1, l2) {
+    match (op, l1, l2) {
         (Plus, Number(n1), Number(n2)) => (n1 + n2).into(),
         (Minus, Number(n1), Number(n2)) => (n1 - n2).into(),
         (Times, Number(n1), Number(n2)) => (n1 * n2).into(),
@@ -214,8 +213,8 @@ fn eval_bin_op(op: &BinOp, l1: &Literal, l2: &Literal) -> Option<Literal> {
         (LessThanOrEqual, Number(n1), Number(n2)) => (n1 <= n2).into(),
         (GreaterThan, Number(n1), Number(n2)) => (n1 > n2).into(),
         (GreaterThanOrEqual, Number(n1), Number(n2)) => (n1 >= n2).into(),
-        (Equal, _, _) => (l1 == l2).into(),
-        (NotEqual, _, _) => (l1 != l2).into(),
+        (Equal, l1, l2) => (l1 == l2).into(),
+        (NotEqual, l1, l2) => (l1 != l2).into(),
         (And, True, True) => True,
         (And, True, False) => False,
         (And, False, True) => False,
@@ -224,19 +223,17 @@ fn eval_bin_op(op: &BinOp, l1: &Literal, l2: &Literal) -> Option<Literal> {
         (Or, True, False) => True,
         (Or, False, True) => True,
         (Or, False, False) => False,
-        _ => return None,
-    };
-    Some(lit)
+        (op, l1, l2) => panic!("Unexpected operation `{} {} {}`", l1, op, l2),
+    }
 }
 
-fn eval_un_op(op: &UnOp, lit: &Literal) -> Option<Literal> {
+fn eval_un_op(op: UnOp, lit: Literal) -> Literal {
     use Literal::*;
     use UnOp::*;
-    let lit = match (op, lit) {
+    match (op, lit) {
         (Minus, Number(n)) => Number(-n),
         (Not, True) => False,
         (Not, False) => True,
-        _ => return None,
-    };
-    Some(lit)
+        (op, lit) => panic!("Unexpected operation `{} {}`", op, lit),
+    }
 }

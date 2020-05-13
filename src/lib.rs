@@ -15,8 +15,6 @@ pub enum LangError {
     #[error("{0}")]
     Ty(#[from] ty::TyError),
     #[error("{0}")]
-    Eval(#[from] lir::EvalError),
-    #[error("{0}")]
     Parse(String),
 }
 
@@ -25,6 +23,6 @@ pub fn run(input: &str) -> LangResult<lir::Term> {
     let mir = mir::Term::from_ast(ast);
     let _ty = ty::ty_check(&mir)?;
     let lir = lir::Term::from_mir(mir);
-    let res = lir::evaluate(lir)?;
+    let res = lir::evaluate(lir);
     Ok(res)
 }
