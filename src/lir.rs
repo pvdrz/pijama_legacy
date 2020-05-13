@@ -1,23 +1,12 @@
-use thiserror::Error;
-
 use std::fmt;
 
 use crate::ast::*;
-use crate::LangResult;
 
 mod ctx;
 
-pub fn evaluate(term: Term) -> LangResult<Term> {
-    Ok(term.evaluate()?)
+pub fn evaluate(term: Term) -> Term {
+    term.evaluate()
 }
-
-#[derive(Error, Debug)]
-pub enum EvalError {
-    #[error("Term `{0}` cannot be evaluated")]
-    MalformedTerm(Term),
-}
-
-type EvalResult<T> = Result<T, EvalError>;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Abstraction {
@@ -131,29 +120,26 @@ impl Term {
         }
     }
 
-    fn step_in_place(&mut self) -> EvalResult<bool> {
+    fn step_in_place(&mut self) -> bool {
         let term = std::mem::replace(self, Term::Hole);
-        let (cont, term) = term.step()?;
+        let (cont, term) = term.step();
         *self = term;
-        Ok(cont)
+        cont
     }
 
-    fn step(mut self) -> EvalResult<(bool, Term)> {
+    fn step(mut self) -> (bool, Term) {
         match self {
             // Binary operations ((op t1) t2)
             // If t1 and t2 are literals, do the operation.
             Term::App(
                 box Term::App(box Term::Abs(Abstraction::Binary(op)), box Term::Lit(l1)),
                 box Term::Lit(l2),
-            ) => Ok((true, Term::Lit(eval_bin_op(op, l1, l2).unwrap()))),
+            ) => (true, Term::Lit(eval_bin_op(op, l1, l2))),
             // If t2 is not a literal, evaluate it.
             Term::App(
                 box Term::App(box Term::Abs(Abstraction::Binary(_)), box Term::Lit(_)),
                 ref mut t2,
-            ) => {
-                let cont = t2.step_in_place()?;
-                Ok((cont, self))
-            }
+            ) => (t2.step_in_place(), self),
 
             // Beta Reduction ((\. b) t2)
             // Replace the argument of the function by t2 inside b and evaluate to b.
@@ -161,43 +147,37 @@ impl Term {
                 t2.shift(true, 0);
                 body.replace(0, &mut t2);
                 body.shift(false, 0);
-                Ok((true, body))
+                (true, body)
             }
 
-            // Binary Operations (op t1)
+            // Unary Operations (op t1)
             // If t1 is a literal, do the operation.
             Term::App(box Term::Abs(Abstraction::Unary(op)), box Term::Lit(lit)) => {
-                Ok((true, Term::Lit(eval_un_op(op, lit).unwrap())))
+                (true, Term::Lit(eval_un_op(op, lit)))
             }
 
             // Application of abstraction with unevaluated parameter
             // This rule takes care of:
             // - Binary Operations ((op t1) t2) where t1 is not a literal.
             // - Unary Operations (op t1) where t1 is not a literal.
-            Term::App(box Term::Abs(_), ref mut t) => {
-                let cont = t.step_in_place()?;
-                Ok((cont, self))
-            }
+            // In both cases it evaluates t1.
+            Term::App(box Term::Abs(_), ref mut t) => (t.step_in_place(), self),
 
             // Application with unevaluated first term (t1 t2)
             // Evaluate t1.
-            Term::App(ref mut t1, _) => {
-                let cont = t1.step_in_place()?;
-                Ok((cont, self))
-            }
+            Term::App(ref mut t1, _) => (t1.step_in_place(), self),
 
             // Conditionals (if t1 then t2 else t3)
             // If t1 is true, evaluate to t2.
-            Term::Cond(box Term::Lit(Literal::True), box t2, _) => Ok((true, t2)),
+            Term::Cond(box Term::Lit(Literal::True), box t2, _) => (true, t2),
             // If t1 is false, evaluate to t3.
-            Term::Cond(box Term::Lit(Literal::False), _, box t3) => Ok((true, t3)),
+            Term::Cond(box Term::Lit(Literal::False), _, box t3) => (true, t3),
             // If t1 is any other literal, this is an error.
-            Term::Cond(box Term::Lit(_), _, _) => Err(EvalError::MalformedTerm(self)),
-            // If t1 is not a literal, evaluate it.
-            Term::Cond(ref mut t1, _, _) => {
-                let cont = t1.step_in_place()?;
-                Ok((cont, self))
+            Term::Cond(box Term::Lit(lit), _, _) => {
+                panic!("Found non-boolean literal {} in condition", lit)
             }
+            // If t1 is not a literal, evaluate it.
+            Term::Cond(ref mut t1, _, _) => (t1.step_in_place(), self),
 
             // Fixed-point operation (fix t1)
             // If t1 is an abstraction (\. t2), replace the argument of t1 by (fix t1) inside t2
@@ -205,34 +185,31 @@ impl Term {
             Term::Fix(box Term::Abs(Abstraction::Lambda(box ref t2))) => {
                 let mut t2 = t2.clone();
                 t2.replace(0, &mut self);
-                Ok((true, t2))
+                (true, t2)
             }
             // If t1 is not an abstraction, evaluate it.
-            Term::Fix(ref mut t1) => {
-                let cont = t1.step_in_place()?;
-                Ok((cont, self))
-            }
+            Term::Fix(ref mut t1) => (t1.step_in_place(), self),
 
             // Any other term stops the evaluation.
-            Term::Var(_) | Term::Lit(_) | Term::Abs(_) | Term::Hole => Ok((false, self)),
+            Term::Var(_) | Term::Lit(_) | Term::Abs(_) | Term::Hole => (false, self),
         }
     }
 
-    fn evaluate(self) -> EvalResult<Term> {
+    fn evaluate(self) -> Term {
         let mut term = self;
         while {
-            let (eval, new_term) = term.step()?;
+            let (eval, new_term) = term.step();
             term = new_term;
             eval
         } {}
-        Ok(term)
+        term
     }
 }
 
-fn eval_bin_op(op: BinOp, l1: Literal, l2: Literal) -> Option<Literal> {
+fn eval_bin_op(op: BinOp, l1: Literal, l2: Literal) -> Literal {
     use BinOp::*;
     use Literal::*;
-    let lit = match (op, l1, l2) {
+    match (op, l1, l2) {
         (Plus, Number(n1), Number(n2)) => (n1 + n2).into(),
         (Minus, Number(n1), Number(n2)) => (n1 - n2).into(),
         (Times, Number(n1), Number(n2)) => (n1 * n2).into(),
@@ -252,19 +229,17 @@ fn eval_bin_op(op: BinOp, l1: Literal, l2: Literal) -> Option<Literal> {
         (Or, True, False) => True,
         (Or, False, True) => True,
         (Or, False, False) => False,
-        _ => return None,
-    };
-    Some(lit)
+        (op, l1, l2) => panic!("Unexpected operation `{} {} {}`", l1, op, l2),
+    }
 }
 
-fn eval_un_op(op: UnOp, lit: Literal) -> Option<Literal> {
+fn eval_un_op(op: UnOp, lit: Literal) -> Literal {
     use Literal::*;
     use UnOp::*;
-    let lit = match (op, lit) {
+    match (op, lit) {
         (Minus, Number(n)) => Number(-n),
         (Not, True) => False,
         (Not, False) => True,
-        _ => return None,
-    };
-    Some(lit)
+        (op, lit) => panic!("Unexpected operation `{} {}`", op, lit),
+    }
 }
