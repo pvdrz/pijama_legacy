@@ -2,7 +2,6 @@ use std::fmt;
 
 use crate::ast::*;
 
-use Abstraction::*;
 use Term::*;
 
 mod ctx;
@@ -12,27 +11,12 @@ pub fn evaluate(term: Term) -> Term {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub enum Abstraction {
-    Lambda(Box<Term>),
-    Binary(BinOp),
-    Unary(UnOp),
-}
-
-impl fmt::Display for Abstraction {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Lambda(term) => write!(f, "(λ. {})", term),
-            Binary(bin_op) => write!(f, "{}", bin_op),
-            Unary(un_op) => write!(f, "{}", un_op),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Term {
     Var(usize),
     Lit(Literal),
-    Abs(Abstraction),
+    Abs(Box<Term>),
+    UnaryOp(UnOp, Box<Term>),
+    BinaryOp(BinOp, Box<Term>, Box<Term>),
     App(Box<Term>, Box<Term>),
     Cond(Box<Term>, Box<Term>, Box<Term>),
     Fix(Box<Term>),
@@ -44,7 +28,9 @@ impl fmt::Display for Term {
         match self {
             Hole => write!(f, "hole"),
             Var(var) => write!(f, "_{}", var),
-            Abs(abs) => write!(f, "{}", abs),
+            Abs(term) => write!(f, "(λ. {})", term),
+            UnaryOp(op, term) => write!(f, "({}{})", op, term),
+            BinaryOp(op, t1, t2) => write!(f, "({} {} {})", t1, op, t2),
             App(t1, t2) => write!(f, "({} {})", t1, t2),
             Lit(literal) => write!(f, "{}", literal),
             Cond(t1, t2, t3) => write!(f, "(if {} then {} else {})", t1, t2, t3),
@@ -70,12 +56,16 @@ impl Term {
                     }
                 }
             }
-            Abs(abs) => match abs {
-                Lambda(body) => {
-                    body.shift(up, cutoff + 1);
-                }
-                Unary(_) | Binary(_) => (),
-            },
+            Abs(body) => {
+                body.shift(up, cutoff + 1);
+            }
+            UnaryOp(_, t1) => {
+                t1.shift(up, cutoff);
+            }
+            BinaryOp(_, t1, t2) => {
+                t1.shift(up, cutoff);
+                t2.shift(up, cutoff);
+            }
             App(t1, t2) => {
                 t1.shift(up, cutoff);
                 t2.shift(up, cutoff);
@@ -99,14 +89,18 @@ impl Term {
                     *self = subs.clone();
                 }
             }
-            Abs(abs) => match abs {
-                Lambda(body) => {
+            Abs(body) =>  {
                     subs.shift(true, 0);
                     body.replace(index + 1, subs);
                     subs.shift(false, 0);
-                }
-                Unary(_) | Binary(_) => (),
             },
+            UnaryOp(_, t1) => {
+                t1.replace(index, subs);
+            }
+            BinaryOp(_, t1, t2) => {
+                t1.replace(index, subs);
+                t2.replace(index, subs);
+            }
             App(t1, t2) => {
                 t1.replace(index, subs);
                 t2.replace(index, subs);
@@ -131,17 +125,19 @@ impl Term {
 
     fn step(mut self) -> (bool, Term) {
         match self {
-            // Binary operations ((op t1) t2)
+            // Binary operations (t1 op t2)
             // If t1 and t2 are literals, do the operation.
-            App(box App(box Abs(Binary(op)), box Lit(l1)), box Lit(l2)) => {
+            BinaryOp(op, box Lit(l1), box Lit(l2)) => {
                 (true, Lit(eval_bin_op(op, l1, l2)))
             }
             // If t2 is not a literal, evaluate it.
-            App(box App(box Abs(Binary(_)), box Lit(_)), ref mut t2) => (t2.step_in_place(), self),
+            BinaryOp(_, box Lit(_), ref mut t2) => (t2.step_in_place(), self),
+            // If t1 is not a literal, evaluate it.
+            BinaryOp(_, ref mut t1, _) => (t1.step_in_place(), self),
 
             // Beta Reduction ((\. b) t2)
             // Replace the argument of the function by t2 inside b and evaluate to b.
-            App(box Abs(Lambda(box mut body)), box mut t2) => {
+            App(box Abs(box mut body), box mut t2) => {
                 t2.shift(true, 0);
                 body.replace(0, &mut t2);
                 body.shift(false, 0);
@@ -150,14 +146,9 @@ impl Term {
 
             // Unary Operations (op t1)
             // If t1 is a literal, do the operation.
-            App(box Abs(Unary(op)), box Lit(lit)) => (true, Lit(eval_un_op(op, lit))),
-
-            // Application of abstraction with unevaluated parameter
-            // This rule takes care of:
-            // - Binary Operations ((op t1) t2) where t1 is not a literal.
-            // - Unary Operations (op t1) where t1 is not a literal.
-            // In both cases it evaluates t1.
-            App(box Abs(_), ref mut t) => (t.step_in_place(), self),
+            UnaryOp(op, box Lit(lit)) => (true, Lit(eval_un_op(op, lit))),
+            // If t1 is not a literal, evaluate it.
+            UnaryOp(_, ref mut t1) => (t1.step_in_place(), self),
 
             // Application with unevaluated first term (t1 t2)
             // Evaluate t1.
@@ -176,7 +167,7 @@ impl Term {
             // Fixed-point operation (fix t1)
             // If t1 is an abstraction (\. t2), replace the argument of t1 by (fix t1) inside t2
             // and evaluate to t2.
-            Fix(box Abs(Lambda(box ref t2))) => {
+            Fix(box Abs(box ref t2)) => {
                 let mut t2 = t2.clone();
                 t2.replace(0, &mut self);
                 (true, t2)

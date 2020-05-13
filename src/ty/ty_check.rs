@@ -1,7 +1,7 @@
 use thiserror::Error;
 
 use crate::ast::{BinOp, Literal, UnOp};
-use crate::mir::{Abstraction, Term};
+use crate::mir::Term;
 use crate::ty::{Binding, Ty};
 use crate::LangResult;
 
@@ -43,50 +43,77 @@ impl<'a> Context<'a> {
                 .ok_or_else(|| TyError::Unbound(name.0.to_owned()))?
                 .ty
                 .clone(),
-            Term::Abs(abs) => match abs {
-                Abstraction::Lambda(bind, body) => {
-                    self.inner.push(bind.clone());
-                    let ty = self.type_of(body)?;
-                    self.inner.pop().unwrap();
-                    Ty::Arrow(Box::new(bind.ty.clone()), Box::new(ty))
-                }
-                Abstraction::Unary(op) => match op {
-                    UnOp::Minus => Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int)),
-                    UnOp::Not => Ty::Arrow(Box::new(Ty::Bool), Box::new(Ty::Bool)),
-                },
-                Abstraction::Binary(op) => match op {
-                    BinOp::Plus | BinOp::Minus | BinOp::Times | BinOp::Divide | BinOp::Modulo => {
-                        Ty::Arrow(
-                            Box::new(Ty::Int),
-                            Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int))),
-                        )
+            Term::Abs(bind, body) => {
+                self.inner.push(bind.clone());
+                let ty = self.type_of(body)?;
+                self.inner.pop().unwrap();
+                Ty::Arrow(Box::new(bind.ty.clone()), Box::new(ty))
+            }
+            Term::UnaryOp(op, term) => match op {
+                UnOp::Minus => match self.type_of(term)? {
+                    Ty::Int => Ty::Int,
+                    found => {
+                        return Err(TyError::Mismatch {
+                            expected: Ty::Int,
+                            found,
+                        })
                     }
-                    BinOp::Or | BinOp::And => Ty::Arrow(
-                        Box::new(Ty::Bool),
-                        Box::new(Ty::Arrow(Box::new(Ty::Bool), Box::new(Ty::Bool))),
-                    ),
+                },
+                UnOp::Not => match self.type_of(term)? {
+                    Ty::Bool => Ty::Bool,
+                    found => {
+                        return Err(TyError::Mismatch {
+                            expected: Ty::Bool,
+                            found,
+                        })
+                    }
+                },
+            },
+            Term::BinaryOp(op, t1, t2) => {
+                let ty1 = self.type_of(t1)?;
+                let ty2 = self.type_of(t2)?;
+                if ty1 != ty2 {
+                    return Err(TyError::Mismatch {
+                        expected: ty1,
+                        found: ty2,
+                    });
+                }
+                match op {
+                    BinOp::Plus | BinOp::Minus | BinOp::Times | BinOp::Divide | BinOp::Modulo => {
+                        if ty1 != Ty::Int {
+                            return Err(TyError::Mismatch {
+                                expected: Ty::Int,
+                                found: ty1,
+                            });
+                        }
+                        Ty::Int
+                    }
+                    BinOp::Or | BinOp::And => {
+                        if ty2 != Ty::Bool {
+                            return Err(TyError::Mismatch {
+                                expected: Ty::Bool,
+                                found: ty1,
+                            });
+                        }
+                        Ty::Bool
+                    }
                     BinOp::LessThan
                     | BinOp::GreaterThan
                     | BinOp::LessThanOrEqual
-                    | BinOp::GreaterThanOrEqual => Ty::Arrow(
-                        Box::new(Ty::Int),
-                        Box::new(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Bool))),
-                    ),
-                    BinOp::Equal | BinOp::NotEqual => unreachable!(),
-                },
-            },
-            Term::App(t1, t2) => {
-                let ty1 = match t1 {
-                    box Term::App(box Term::Abs(Abstraction::Binary(BinOp::Equal)), t3)
-                    | box Term::App(box Term::Abs(Abstraction::Binary(BinOp::NotEqual)), t3) => {
-                        let ty3 = self.type_of(t3)?;
-                        match ty3 {
-                            Ty::Arrow(_, _) => return Err(TyError::NotBasicTy(ty3)),
-                            _ => Ty::Arrow(Box::new(ty3), Box::new(Ty::Bool)),
+                    | BinOp::GreaterThanOrEqual => {
+                        if ty1 != Ty::Int {
+                            return Err(TyError::Mismatch {
+                                expected: Ty::Int,
+                                found: ty1,
+                            });
                         }
+                        Ty::Bool
                     }
-                    _ => self.type_of(t1)?,
-                };
+                    BinOp::Equal | BinOp::NotEqual => Ty::Bool,
+                }
+            }
+            Term::App(t1, t2) => {
+                let ty1 = self.type_of(t1)?;
                 let ty2 = self.type_of(t2)?;
                 match ty1 {
                     Ty::Arrow(ty11, ty) => {
