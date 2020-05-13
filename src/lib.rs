@@ -20,7 +20,7 @@ pub enum LangError {
     Parse(String),
 }
 
-pub fn run(input: &str) -> Result<lir::Term, LangError> {
+pub fn run(input: &str) -> LangResult<lir::Term> {
     let ast = parser::parse(input)?;
     let mir = mir::Term::from_ast(ast);
     let _ty = ty::ty_check(&mir)?;
