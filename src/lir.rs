@@ -7,9 +7,8 @@ use crate::LangResult;
 
 mod ctx;
 
-pub fn evaluate(mut term: Term) -> LangResult<Term> {
-    term.evaluate()?;
-    Ok(term)
+pub fn evaluate(term: Term) -> LangResult<Term> {
+    Ok(term.evaluate()?)
 }
 
 #[derive(Error, Debug)]
@@ -46,11 +45,13 @@ pub enum Term {
     App(Box<Term>, Box<Term>),
     Cond(Box<Term>, Box<Term>, Box<Term>),
     Fix(Box<Term>),
+    Hole,
 }
 
 impl fmt::Display for Term {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
+            Term::Hole => write!(f, "hole"),
             Term::Var(var) => write!(f, "_{}", var),
             Term::Abs(abs) => write!(f, "{}", abs),
             Term::App(t1, t2) => write!(f, "({} {})", t1, t2),
@@ -68,7 +69,7 @@ impl Term {
 
     fn shift(&mut self, up: bool, cutoff: usize) {
         match self {
-            Term::Lit(_) => (),
+            Term::Lit(_) | Term::Hole => (),
             Term::Var(index) => {
                 if *index >= cutoff {
                     if up {
@@ -101,7 +102,7 @@ impl Term {
 
     fn replace(&mut self, index: usize, subs: &mut Term) {
         match self {
-            Term::Lit(_) => (),
+            Term::Lit(_) | Term::Hole => (),
             Term::Var(index2) => {
                 if index == *index2 {
                     *self = subs.clone();
@@ -130,78 +131,105 @@ impl Term {
         }
     }
 
-    fn step(&mut self) -> EvalResult<bool> {
+    fn step_in_place(&mut self) -> EvalResult<bool> {
+        let term = std::mem::replace(self, Term::Hole);
+        let (cont, term) = term.step()?;
+        *self = term;
+        Ok(cont)
+    }
+
+    fn step(mut self) -> EvalResult<(bool, Term)> {
         match self {
-            Term::Var(_) | Term::Lit(_) => Ok(false),
+            // Binary operations ((op t1) t2)
+            // If t1 and t2 are literals, do the operation.
             Term::App(
                 box Term::App(box Term::Abs(Abstraction::Binary(op)), box Term::Lit(l1)),
-                box t2,
+                box Term::Lit(l2),
+            ) => Ok((true, Term::Lit(eval_bin_op(op, l1, l2).unwrap()))),
+            // If t2 is not a literal, evaluate it.
+            Term::App(
+                box Term::App(box Term::Abs(Abstraction::Binary(_)), box Term::Lit(_)),
+                ref mut t2,
             ) => {
-                if let Term::Lit(l2) = t2 {
-                    *self = Term::Lit(
-                        eval_bin_op(op, l1, l2)
-                            .ok_or_else(|| EvalError::MalformedTerm(self.clone()))?,
-                    );
-                    Ok(true)
-                } else {
-                    t2.step()
-                }
+                let cont = t2.step_in_place()?;
+                Ok((cont, self))
             }
-            Term::App(box Term::Abs(abs), box t2) => match abs {
-                Abstraction::Lambda(body) => {
-                    t2.shift(true, 0);
-                    body.replace(0, t2);
-                    body.shift(false, 0);
-                    *self = *body.clone();
-                    Ok(true)
-                }
-                Abstraction::Unary(op) => {
-                    if let Term::Lit(l2) = t2 {
-                        *self = Term::Lit(
-                            eval_un_op(op, l2)
-                                .ok_or_else(|| EvalError::MalformedTerm(self.clone()))?,
-                        );
-                        Ok(true)
-                    } else {
-                        t2.step()
-                    }
-                }
-                Abstraction::Binary(_) => t2.step(),
-            },
-            Term::App(t1, _) => t1.step(),
-            Term::Cond(box Term::Lit(l1), box t2, box t3) => match l1 {
-                Literal::True => {
-                    *self = t2.clone();
-                    Ok(true)
-                }
-                Literal::False => {
-                    *self = t3.clone();
-                    Ok(true)
-                }
-                _ => Err(EvalError::MalformedTerm(self.clone())),
-            },
-            Term::Cond(t1, _, _) => t1.step(),
-            Term::Fix(t1) => match t1.as_ref() {
-                Term::Abs(Abstraction::Lambda(box t2)) => {
-                    let mut fix = Term::Fix(t1.clone());
-                    let mut t2 = t2.clone();
-                    t2.replace(0, &mut fix);
-                    *self = t2;
-                    Ok(true)
-                }
-                _ => t1.step(),
-            },
-            _ => Ok(false),
+
+            // Beta Reduction ((\. b) t2)
+            // Replace the argument of the function by t2 inside b and evaluate to b.
+            Term::App(box Term::Abs(Abstraction::Lambda(box mut body)), box mut t2) => {
+                t2.shift(true, 0);
+                body.replace(0, &mut t2);
+                body.shift(false, 0);
+                Ok((true, body))
+            }
+
+            // Binary Operations (op t1)
+            // If t1 is a literal, do the operation.
+            Term::App(box Term::Abs(Abstraction::Unary(op)), box Term::Lit(lit)) => {
+                Ok((true, Term::Lit(eval_un_op(op, lit).unwrap())))
+            }
+
+            // Application of abstraction with unevaluated parameter
+            // This rule takes care of:
+            // - Binary Operations ((op t1) t2) where t1 is not a literal.
+            // - Unary Operations (op t1) where t1 is not a literal.
+            Term::App(box Term::Abs(_), ref mut t) => {
+                let cont = t.step_in_place()?;
+                Ok((cont, self))
+            }
+
+            // Application with unevaluated first term (t1 t2)
+            // Evaluate t1.
+            Term::App(ref mut t1, _) => {
+                let cont = t1.step_in_place()?;
+                Ok((cont, self))
+            }
+
+            // Conditionals (if t1 then t2 else t3)
+            // If t1 is true, evaluate to t2.
+            Term::Cond(box Term::Lit(Literal::True), box t2, _) => Ok((true, t2)),
+            // If t1 is false, evaluate to t3.
+            Term::Cond(box Term::Lit(Literal::False), _, box t3) => Ok((true, t3)),
+            // If t1 is any other literal, this is an error.
+            Term::Cond(box Term::Lit(_), _, _) => Err(EvalError::MalformedTerm(self)),
+            // If t1 is not a literal, evaluate it.
+            Term::Cond(ref mut t1, _, _) => {
+                let cont = t1.step_in_place()?;
+                Ok((cont, self))
+            }
+
+            // Fixed-point operation (fix t1)
+            // If t1 is an abstraction (\. t2), replace the argument of t1 by (fix t1) inside t2
+            // and evaluate to t2.
+            Term::Fix(box Term::Abs(Abstraction::Lambda(box ref t2))) => {
+                let mut t2 = t2.clone();
+                t2.replace(0, &mut self);
+                Ok((true, t2))
+            }
+            // If t1 is not an abstraction, evaluate it.
+            Term::Fix(ref mut t1) => {
+                let cont = t1.step_in_place()?;
+                Ok((cont, self))
+            }
+
+            // Any other term stops the evaluation.
+            Term::Var(_) | Term::Lit(_) | Term::Abs(_) | Term::Hole => Ok((false, self)),
         }
     }
 
-    fn evaluate(&mut self) -> EvalResult<()> {
-        while self.step()? {}
-        Ok(())
+    fn evaluate(self) -> EvalResult<Term> {
+        let mut term = self;
+        while {
+            let (eval, new_term) = term.step()?;
+            term = new_term;
+            eval
+        } {}
+        Ok(term)
     }
 }
 
-fn eval_bin_op(op: &BinOp, l1: &Literal, l2: &Literal) -> Option<Literal> {
+fn eval_bin_op(op: BinOp, l1: Literal, l2: Literal) -> Option<Literal> {
     use BinOp::*;
     use Literal::*;
     let lit = match (op, l1, l2) {
@@ -214,8 +242,8 @@ fn eval_bin_op(op: &BinOp, l1: &Literal, l2: &Literal) -> Option<Literal> {
         (LessThanOrEqual, Number(n1), Number(n2)) => (n1 <= n2).into(),
         (GreaterThan, Number(n1), Number(n2)) => (n1 > n2).into(),
         (GreaterThanOrEqual, Number(n1), Number(n2)) => (n1 >= n2).into(),
-        (Equal, _, _) => (l1 == l2).into(),
-        (NotEqual, _, _) => (l1 != l2).into(),
+        (Equal, l1, l2) => (l1 == l2).into(),
+        (NotEqual, l1, l2) => (l1 != l2).into(),
         (And, True, True) => True,
         (And, True, False) => False,
         (And, False, True) => False,
@@ -229,7 +257,7 @@ fn eval_bin_op(op: &BinOp, l1: &Literal, l2: &Literal) -> Option<Literal> {
     Some(lit)
 }
 
-fn eval_un_op(op: &UnOp, lit: &Literal) -> Option<Literal> {
+fn eval_un_op(op: UnOp, lit: Literal) -> Option<Literal> {
     use Literal::*;
     use UnOp::*;
     let lit = match (op, lit) {
