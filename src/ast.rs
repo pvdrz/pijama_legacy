@@ -66,8 +66,7 @@ impl<'a> fmt::Display for UnOp {
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Literal {
-    True,
-    False,
+    Bool(bool),
     Unit,
     Number(i128),
 }
@@ -80,11 +79,7 @@ impl Into<Literal> for i128 {
 
 impl Into<Literal> for bool {
     fn into(self) -> Literal {
-        if self {
-            Literal::True
-        } else {
-            Literal::False
-        }
+        Literal::Bool(self)
     }
 }
 
@@ -92,8 +87,7 @@ impl<'a> fmt::Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use Literal::*;
         match self {
-            True => write!(f, "true"),
-            False => write!(f, "false"),
+            Bool(b) => write!(f, "{}", b),
             Unit => write!(f, "unit"),
             Number(num) => write!(f, "{}", num),
         }

@@ -29,8 +29,8 @@ fn literal() -> LangResult<()> {
         Literal(ast::Literal::Number(0)),
         Literal(ast::Literal::Number(-1)),
         Literal(ast::Literal::Number(14142)),
-        Literal(ast::Literal::True),
-        Literal(ast::Literal::False),
+        Literal(ast::Literal::Bool(true)),
+        Literal(ast::Literal::Bool(false)),
         Literal(ast::Literal::Unit),
     ];
 

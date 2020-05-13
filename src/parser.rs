@@ -106,8 +106,8 @@ impl<'a> UnOp {
 impl<'a> Literal {
     fn parse<E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Self, E> {
         alt((
-            map(tag("true"), |_| Self::True),
-            map(tag("false"), |_| Self::False),
+            map(tag("true"), |_| Self::Bool(true)),
+            map(tag("false"), |_| Self::Bool(false)),
             map(tag("unit"), |_| Self::Unit),
             map(
                 tuple((opt(char('-')), digit1)),
