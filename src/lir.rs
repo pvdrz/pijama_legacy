@@ -2,9 +2,12 @@ use std::fmt;
 
 use crate::ast::*;
 
+use eval::*;
+
 use Term::*;
 
 mod ctx;
+mod eval;
 
 pub fn evaluate(term: Term) -> Term {
     term.evaluate()
@@ -89,11 +92,11 @@ impl Term {
                     *self = subs.clone();
                 }
             }
-            Abs(body) =>  {
-                    subs.shift(true, 0);
-                    body.replace(index + 1, subs);
-                    subs.shift(false, 0);
-            },
+            Abs(body) => {
+                subs.shift(true, 0);
+                body.replace(index + 1, subs);
+                subs.shift(false, 0);
+            }
             UnaryOp(_, t1) => {
                 t1.replace(index, subs);
             }
@@ -127,9 +130,7 @@ impl Term {
         match self {
             // Binary operations (t1 op t2)
             // If t1 and t2 are literals, do the operation.
-            BinaryOp(op, box Lit(l1), box Lit(l2)) => {
-                (true, Lit(eval_bin_op(op, l1, l2)))
-            }
+            BinaryOp(op, box Lit(l1), box Lit(l2)) => (true, Lit(eval_bin_op(op, l1, l2))),
             // If t2 is not a literal, evaluate it.
             BinaryOp(_, box Lit(_), ref mut t2) => (t2.step_in_place(), self),
             // If t1 is not a literal, evaluate it.
@@ -154,15 +155,8 @@ impl Term {
             // Evaluate t1.
             App(ref mut t1, _) => (t1.step_in_place(), self),
 
-            // Conditionals (if t1 then t2 else t3)
-            // If t1 is true, evaluate to t2.
-            Cond(box Lit(Literal::Bool(true)), box t2, _) => (true, t2),
-            // If t1 is false, evaluate to t3.
-            Cond(box Lit(Literal::Bool(false)), _, box t3) => (true, t3),
-            // If t1 is any other literal, this is an error.
-            Cond(box Lit(lit), _, _) => panic!("Found non-boolean literal {} in condition", lit),
-            // If t1 is not a literal, evaluate it.
-            Cond(ref mut t1, _, _) => (t1.step_in_place(), self),
+            // Dispatch step for conditionals
+            Cond(t1, t2, t3) => step_conditional(t1, t2, t3),
 
             // Fixed-point operation (fix t1)
             // If t1 is an abstraction (\. t2), replace the argument of t1 by (fix t1) inside t2
