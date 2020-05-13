@@ -20,7 +20,7 @@ pub enum EvalError {
 
 type EvalResult<T> = Result<T, EvalError>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Abstraction {
     Lambda(Box<Term>),
     Binary(BinOp),
@@ -38,7 +38,7 @@ impl fmt::Display for Abstraction {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Term {
     Var(usize),
     Lit(Literal),

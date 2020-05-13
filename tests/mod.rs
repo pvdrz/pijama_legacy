@@ -3,3 +3,4 @@
 extern crate pijama;
 
 mod parse;
+mod eval;
