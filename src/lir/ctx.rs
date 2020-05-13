@@ -25,18 +25,20 @@ impl<'a> Context<'a> {
                     .unwrap();
                 lir::Term::Var(index)
             }
-            mir::Term::Abs(abs) => {
-                let abs = match abs {
-                    mir::Abstraction::Lambda(bind, body) => {
-                        self.inner.push(bind.name);
-                        let body = self.remove_names(*body);
-                        self.inner.pop().unwrap();
-                        lir::Abstraction::Lambda(Box::new(body))
-                    }
-                    mir::Abstraction::Binary(bin_op) => lir::Abstraction::Binary(bin_op),
-                    mir::Abstraction::Unary(un_op) => lir::Abstraction::Unary(un_op),
-                };
-                lir::Term::Abs(abs)
+            mir::Term::Abs(bind, body) => {
+                self.inner.push(bind.name);
+                let body = self.remove_names(*body);
+                self.inner.pop().unwrap();
+                lir::Term::Abs(Box::new(body))
+            }
+            mir::Term::UnaryOp(op, t1) => {
+                let t1 = self.remove_names(*t1);
+                lir::Term::UnaryOp(op, Box::new(t1))
+            }
+            mir::Term::BinaryOp(op, t1, t2) => {
+                let t1 = self.remove_names(*t1);
+                let t2 = self.remove_names(*t2);
+                lir::Term::BinaryOp(op, Box::new(t1), Box::new(t2))
             }
             mir::Term::App(t1, t2) => {
                 let t1 = self.remove_names(*t1);
@@ -49,7 +51,7 @@ impl<'a> Context<'a> {
                 let t2 = self.remove_names(*t2);
                 self.inner.pop().unwrap();
                 lir::Term::App(
-                    Box::new(lir::Term::Abs(lir::Abstraction::Lambda(Box::new(t2)))),
+                    Box::new(lir::Term::Abs(Box::new(t2))),
                     Box::new(t1),
                 )
             }
@@ -63,7 +65,7 @@ impl<'a> Context<'a> {
                 let t1 = self.remove_names(*t1);
                 let t2 = self.remove_names(*t2);
                 lir::Term::App(
-                    Box::new(lir::Term::Abs(lir::Abstraction::Lambda(Box::new(t2)))),
+                    Box::new(lir::Term::Abs(Box::new(t2))),
                     Box::new(t1),
                 )
             }

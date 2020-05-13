@@ -6,27 +6,11 @@ use crate::ty::{Binding, Ty};
 type Block<'a> = Vec<Node<'a>>;
 
 #[derive(Debug, Clone)]
-pub enum Abstraction<'a> {
-    Lambda(Binding<'a>, Box<Term<'a>>),
-    Binary(BinOp),
-    Unary(UnOp),
-}
-
-impl<'a> fmt::Display for Abstraction<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use Abstraction::*;
-        match self {
-            Lambda(Binding { name, ty }, term) => write!(f, "(λ{}:{}. {})", name.0, ty, term),
-            Binary(bin_op) => write!(f, "{}", bin_op),
-            Unary(un_op) => write!(f, "{}", un_op),
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
 pub enum Term<'a> {
     Var(Name<'a>),
-    Abs(Abstraction<'a>),
+    Abs(Binding<'a>, Box<Term<'a>>),
+    UnaryOp(UnOp, Box<Term<'a>>),
+    BinaryOp(BinOp, Box<Term<'a>>, Box<Term<'a>>),
     App(Box<Term<'a>>, Box<Term<'a>>),
     Lit(Literal),
     Cond(Box<Term<'a>>, Box<Term<'a>>, Box<Term<'a>>),
@@ -39,7 +23,9 @@ impl<'a> fmt::Display for Term<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Term::Var(var) => write!(f, "{}", var.0),
-            Term::Abs(abs) => write!(f, "{}", abs),
+            Term::Abs(Binding { name, ty }, term) => write!(f, "(λ{}:{}. {})", name.0, ty, term),
+            Term::UnaryOp(op, term) => write!(f, "({}{})", op, term),
+            Term::BinaryOp(op, t1, t2) => write!(f, "({} {} {})", t1, op, t2),
             Term::App(t1, t2) => write!(f, "({} {})", t1, t2),
             Term::Lit(literal) => write!(f, "{}", literal),
             Term::Cond(t1, t2, t3) => write!(f, "(if {} then {} else {})", t1, t2, t3),
@@ -103,20 +89,11 @@ fn lower_call<'a>(name: Name<'a>, args: Block<'a>) -> Term<'a> {
 }
 
 fn lower_binary_op<'a>(bin_op: BinOp, node1: Node<'a>, node2: Node<'a>) -> Term<'a> {
-    Term::App(
-        Box::new(Term::App(
-            Box::new(Term::Abs(Abstraction::Binary(bin_op))),
-            Box::new(lower_node(node1)),
-        )),
-        Box::new(lower_node(node2)),
-    )
+    Term::BinaryOp(bin_op, Box::new(lower_node(node1)), Box::new(lower_node(node2)))
 }
 
 fn lower_unary_op(un_op: UnOp, node: Node<'_>) -> Term<'_> {
-    Term::App(
-        Box::new(Term::Abs(Abstraction::Unary(un_op))),
-        Box::new(lower_node(node)),
-    )
+    Term::UnaryOp(un_op, Box::new(lower_node(node)))
 }
 
 fn lower_let_bind<'a>(name: Name<'a>, node: Node<'a>) -> Term<'a> {
@@ -143,14 +120,11 @@ fn lower_fn_def<'a>(
     });
 
     for bind in binds.into_iter().rev() {
-        term = Term::Abs(Abstraction::Lambda(bind, Box::new(term)));
+        term = Term::Abs(bind, Box::new(term));
     }
 
     if let Some(ty) = ty {
-        term = Term::Fix(Box::new(Term::Abs(Abstraction::Lambda(
-            Binding { name, ty },
-            Box::new(term),
-        ))));
+        term = Term::Fix(Box::new(Term::Abs(Binding { name, ty }, Box::new(term))));
     }
 
     Term::Let(name, Box::new(term), Box::new(Term::Lit(Literal::Unit)))
