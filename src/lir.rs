@@ -156,9 +156,9 @@ impl Term {
 
             // Conditionals (if t1 then t2 else t3)
             // If t1 is true, evaluate to t2.
-            Cond(box Lit(Literal::True), box t2, _) => (true, t2),
+            Cond(box Lit(Literal::Bool(true)), box t2, _) => (true, t2),
             // If t1 is false, evaluate to t3.
-            Cond(box Lit(Literal::False), _, box t3) => (true, t3),
+            Cond(box Lit(Literal::Bool(false)), _, box t3) => (true, t3),
             // If t1 is any other literal, this is an error.
             Cond(box Lit(lit), _, _) => panic!("Found non-boolean literal {} in condition", lit),
             // If t1 is not a literal, evaluate it.
@@ -206,14 +206,8 @@ fn eval_bin_op(op: BinOp, l1: Literal, l2: Literal) -> Literal {
         (GreaterThanOrEqual, Number(n1), Number(n2)) => (n1 >= n2).into(),
         (Equal, l1, l2) => (l1 == l2).into(),
         (NotEqual, l1, l2) => (l1 != l2).into(),
-        (And, True, True) => True,
-        (And, True, False) => False,
-        (And, False, True) => False,
-        (And, False, False) => False,
-        (Or, True, True) => True,
-        (Or, True, False) => True,
-        (Or, False, True) => True,
-        (Or, False, False) => False,
+        (And, Bool(b1), Bool(b2)) => (b1 && b2).into(),
+        (Or, Bool(b1), Bool(b2)) => (b1 || b2).into(),
         (op, l1, l2) => panic!("Unexpected operation `{} {} {}`", l1, op, l2),
     }
 }
@@ -222,9 +216,8 @@ fn eval_un_op(op: UnOp, lit: Literal) -> Literal {
     use Literal::*;
     use UnOp::*;
     match (op, lit) {
-        (Minus, Number(n)) => Number(-n),
-        (Not, True) => False,
-        (Not, False) => True,
+        (Minus, Number(n)) => (-n).into(),
+        (Not, Bool(b)) => (!b).into(),
         (op, lit) => panic!("Unexpected operation `{} {}`", op, lit),
     }
 }

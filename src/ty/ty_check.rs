@@ -33,7 +33,7 @@ impl<'a> Context<'a> {
         let ty = match term {
             Term::Lit(lit) => match lit {
                 Literal::Unit => Ty::Unit,
-                Literal::True | Literal::False => Ty::Bool,
+                Literal::Bool(_) => Ty::Bool,
                 Literal::Number(_) => Ty::Int,
             },
             Term::Var(name) => self
