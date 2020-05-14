@@ -14,7 +14,7 @@ pub enum Ty {
     Arrow(Box<Ty>, Box<Ty>),
 }
 
-impl<'a> fmt::Display for Ty {
+impl fmt::Display for Ty {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use Ty::*;
         match self {

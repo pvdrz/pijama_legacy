@@ -2,9 +2,9 @@ use criterion::{criterion_group, criterion_main, Criterion};
 
 use std::include_str;
 
-use pijama::lir::{Term, evaluate};
-use pijama::parser::parse;
+use pijama::lir::{evaluate, Term};
 use pijama::mir::Term as MirTerm;
+use pijama::parser::parse;
 use pijama::ty::ty_check;
 use pijama::LangResult;
 

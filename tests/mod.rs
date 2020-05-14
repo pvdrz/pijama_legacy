@@ -1,7 +1,8 @@
 #![feature(box_syntax)]
+#![feature(box_patterns)]
 
 extern crate pijama;
 
-mod parse;
 mod eval;
+mod parse;
 mod type_check;
