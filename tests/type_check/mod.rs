@@ -10,8 +10,8 @@ fn type_check(input: &str) -> LangResult<Ty> {
 }
 
 #[test]
-fn cond_ty_mismatch() {
-    let input = include_str!("cond_ty_mismatch.pj");
+fn wrong_cond_input() {
+    let input = include_str!("wrong_cond_input.pj");
     let error = type_check(input);
     assert!(matches!(
         error,
@@ -23,14 +23,105 @@ fn cond_ty_mismatch() {
 }
 
 #[test]
-fn cond_res_ty_mismatch() {
-    let input = include_str!("cond_res_ty_mismatch.pj");
+fn wrong_cond_result() {
+    let input = include_str!("wrong_cond_result.pj");
     let error = type_check(input);
     assert!(matches!(
         error,
         Result::Err(LangError::Ty(TyError::Mismatch {
             expected: Ty::Bool,
             found: Ty::Int
+        }))
+    ));
+}
+
+#[test]
+fn unary_minus_mismatch() {
+    let input = include_str!("unary_minus_mismatch.pj");
+    let error = type_check(input);
+    assert!(matches!(
+        error,
+        Result::Err(LangError::Ty(TyError::Mismatch {
+            expected: Ty::Int,
+            found: Ty::Bool
+        }))
+    ));
+}
+
+#[test]
+fn not_mismatch() {
+    let input = include_str!("not_mismatch.pj");
+    let error = type_check(input);
+    assert!(matches!(
+        error,
+        Result::Err(LangError::Ty(TyError::Mismatch {
+            expected: Ty::Bool,
+            found: Ty::Int
+        }))
+    ));
+}
+
+#[test]
+fn mixed_type_binop_mismatch() {
+    let input = include_str!("mixed_type_binop_mismatch.pj");
+    let error = type_check(input);
+    assert!(matches!(
+        error,
+        Result::Err(LangError::Ty(TyError::Mismatch {
+            expected: Ty::Int,
+            found: Ty::Bool
+        }))
+    ));
+}
+
+#[test]
+fn wrong_type_int_binop_mismatch() {
+    let input = include_str!("wrong_type_int_binop_mismatch.pj");
+    let error = type_check(input);
+    assert!(matches!(
+        error,
+        Result::Err(LangError::Ty(TyError::Mismatch {
+            expected: Ty::Int,
+            found: Ty::Bool
+        }))
+    ));
+}
+
+#[test]
+fn wrong_type_bool_binop_mismatch() {
+    let input = include_str!("wrong_type_bool_binop_mismatch.pj");
+    let error = type_check(input);
+    assert!(matches!(
+        error,
+        Result::Err(LangError::Ty(TyError::Mismatch {
+            expected: Ty::Bool,
+            found: Ty::Int
+        }))
+    ));
+}
+
+#[test]
+fn wrong_type_cmp_mismatch() {
+    let input = include_str!("wrong_type_cmp_mismatch.pj");
+    let error = type_check(input);
+    assert!(matches!(
+        error,
+        Result::Err(LangError::Ty(TyError::Mismatch {
+            expected: Ty::Int,
+            found: Ty::Bool
+        }))
+    ));
+}
+
+#[test]
+fn fn_arg_mismatch() {
+    let input = include_str!("fn_arg_mismatch.pj");
+    let error = type_check(input);
+    assert!(matches!(
+        error,
+        Result::Err(LangError::Ty(TyError::Mismatch {
+            expected: Ty::Int,
+            found: Ty::Bool
         }))
     ));
 }
