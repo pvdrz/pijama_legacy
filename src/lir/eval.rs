@@ -19,3 +19,17 @@ pub fn step_conditional(mut t1: Box<Term>, t2: Box<Term>, t3: Box<Term>) -> (boo
         (t1.step_in_place(), Term::Cond(t1, t2, t3))
     }
 }
+
+/// Evaluation step for beta reduction ((λ. body) arg)
+#[inline(always)]
+pub fn step_beta_reduction(mut body: Box<Term>, mut arg: Box<Term>) -> (bool, Term) {
+    // increase the indices of the argument so they can coincide with the indices of the body.
+    arg.shift(true, 0);
+    // replace the index 0 by the argument inside the body.
+    body.replace(0, &mut arg);
+    // decrease the indices of the body to take into account the fact that the abstraction no
+    // longer exists.
+    body.shift(false, 0);
+    // return the body
+    (true, *body)
+}
