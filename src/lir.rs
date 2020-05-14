@@ -129,12 +129,7 @@ impl Term {
     fn step(mut self) -> (bool, Term) {
         match self {
             // Binary operations (t1 op t2)
-            // If t1 and t2 are literals, do the operation.
-            BinaryOp(op, box Lit(l1), box Lit(l2)) => (true, Lit(eval_bin_op(op, l1, l2))),
-            // If t2 is not a literal, evaluate it.
-            BinaryOp(_, box Lit(_), ref mut t2) => (t2.step_in_place(), self),
-            // If t1 is not a literal, evaluate it.
-            BinaryOp(_, ref mut t1, _) => (t1.step_in_place(), self),
+            BinaryOp(op, t1, t2) => step_bin_op(op, t1, t2),
 
             // Dispatch step for beta reduction
             App(box Abs(body), arg) => step_beta_reduction(body, arg),
@@ -176,30 +171,6 @@ impl Term {
             eval
         } {}
         term
-    }
-}
-
-fn eval_bin_op(op: BinOp, l1: Literal, l2: Literal) -> Literal {
-    use BinOp::*;
-    use Literal::*;
-    match (op, l1, l2) {
-        (Plus, Number(n1), Number(n2)) => (n1 + n2).into(),
-        (Minus, Number(n1), Number(n2)) => (n1 - n2).into(),
-        (Times, Number(n1), Number(n2)) => (n1 * n2).into(),
-        (Divide, Number(n1), Number(n2)) => (n1 / n2).into(),
-        (Modulo, Number(n1), Number(n2)) => (n1 % n2).into(),
-        (LessThan, Number(n1), Number(n2)) => (n1 < n2).into(),
-        (LessThanOrEqual, Number(n1), Number(n2)) => (n1 <= n2).into(),
-        (GreaterThan, Number(n1), Number(n2)) => (n1 > n2).into(),
-        (GreaterThanOrEqual, Number(n1), Number(n2)) => (n1 >= n2).into(),
-        (Equal, l1, l2) => (l1 == l2).into(),
-        (NotEqual, l1, l2) => (l1 != l2).into(),
-        (And, Bool(b1), Bool(b2)) => (b1 && b2).into(),
-        (Or, Bool(b1), Bool(b2)) => (b1 || b2).into(),
-        (BitAnd, Number(n1), Number(n2)) => (n1 & n2).into(),
-        (BitOr, Number(n1), Number(n2)) => (n1 | n2).into(),
-        (BitXor, Number(n1), Number(n2)) => (n1 ^ n2).into(),
-        (op, l1, l2) => panic!("Unexpected operation `{} {} {}`", l1, op, l2),
     }
 }
 
