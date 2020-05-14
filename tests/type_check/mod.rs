@@ -1,7 +1,7 @@
 use pijama::ty::Ty;
 use pijama::{mir, parser, ty, LangResult};
 
-mod error;
+mod fail;
 mod pass;
 
 fn type_check(input: &str) -> LangResult<Ty> {
