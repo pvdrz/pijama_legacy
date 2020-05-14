@@ -136,14 +136,8 @@ impl Term {
             // If t1 is not a literal, evaluate it.
             BinaryOp(_, ref mut t1, _) => (t1.step_in_place(), self),
 
-            // Beta Reduction ((\. b) t2)
-            // Replace the argument of the function by t2 inside b and evaluate to b.
-            App(box Abs(box mut body), box mut t2) => {
-                t2.shift(true, 0);
-                body.replace(0, &mut t2);
-                body.shift(false, 0);
-                (true, body)
-            }
+            // Dispatch step for beta reduction
+            App(box Abs(body), arg) => step_beta_reduction(body, arg),
 
             // Unary Operations (op t1)
             // If t1 is a literal, do the operation.
