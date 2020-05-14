@@ -1,0 +1,5 @@
+fn foo(n: Int) do
+    1
+end
+
+foo(true)
