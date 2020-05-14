@@ -1,8 +1,8 @@
 use std::include_str;
 
-use pijama::ty::{Ty, TyError};
-use pijama::{mir, parser, ty, LangError, LangResult};
 use super::type_check;
+use pijama::ty::{Ty, TyError};
+use pijama::LangError;
 
 #[test]
 fn wrong_cond_input_mismatch() {
