@@ -43,3 +43,27 @@ fn step() -> LangResult<()> {
     assert_eq!(Term::Lit(Literal::Number(1)), term);
     Ok(())
 }
+
+#[test]
+fn bit_and() -> LangResult<()> {
+    let input = include_str!("bit_and.pj");
+    let term = run(input)?;
+    assert_eq!(Term::Lit(Literal::Number(64)), term);
+    Ok(())
+}
+
+#[test]
+fn bit_or() -> LangResult<()> {
+    let input = include_str!("bit_or.pj");
+    let term = run(input)?;
+    assert_eq!(Term::Lit(Literal::Number(192)), term);
+    Ok(())
+}
+
+#[test]
+fn bit_xor() -> LangResult<()> {
+    let input = include_str!("bit_xor.pj");
+    let term = run(input)?;
+    assert_eq!(Term::Lit(Literal::Number(128)), term);
+    Ok(())
+}

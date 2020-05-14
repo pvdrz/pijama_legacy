@@ -90,6 +90,9 @@ impl<'a> BinOp {
             map(tag("!="), |_| Self::NotEqual),
             map(tag("&&"), |_| Self::And),
             map(tag("||"), |_| Self::Or),
+            map(char('&'), |_| Self::BitAnd),
+            map(char('|'), |_| Self::BitOr),
+            map(char('^'), |_| Self::BitXor),
         ))(input)
     }
 }
