@@ -50,10 +50,7 @@ impl<'a> Context<'a> {
                 self.inner.push(name);
                 let t2 = self.remove_names(*t2);
                 self.inner.pop().unwrap();
-                lir::Term::App(
-                    Box::new(lir::Term::Abs(Box::new(t2))),
-                    Box::new(t1),
-                )
+                lir::Term::App(Box::new(lir::Term::Abs(Box::new(t2))), Box::new(t1))
             }
             mir::Term::Cond(t1, t2, t3) => {
                 let t1 = self.remove_names(*t1);
@@ -64,10 +61,7 @@ impl<'a> Context<'a> {
             mir::Term::Seq(t1, t2) => {
                 let t1 = self.remove_names(*t1);
                 let t2 = self.remove_names(*t2);
-                lir::Term::App(
-                    Box::new(lir::Term::Abs(Box::new(t2))),
-                    Box::new(t1),
-                )
+                lir::Term::App(Box::new(lir::Term::Abs(Box::new(t2))), Box::new(t1))
             }
             mir::Term::Fix(t1) => {
                 let t1 = self.remove_names(*t1);

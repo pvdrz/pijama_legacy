@@ -19,5 +19,5 @@ macro_rules! test_type {
             let ty = crate::type_check::type_check(input);
             assert!(matches!(ty, $pattern), "{:#?}", ty);
         }
-    }
+    };
 }

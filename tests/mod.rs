@@ -3,6 +3,6 @@
 
 extern crate pijama;
 
-mod parse;
 mod eval;
+mod parse;
 mod type_check;

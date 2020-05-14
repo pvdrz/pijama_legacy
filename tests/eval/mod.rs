@@ -1,8 +1,8 @@
 use std::include_str;
 
-use pijama::{LangResult, run};
-use pijama::lir::Term;
 use pijama::ast::Literal;
+use pijama::lir::Term;
+use pijama::{run, LangResult};
 
 #[test]
 fn arithmetic() -> LangResult<()> {

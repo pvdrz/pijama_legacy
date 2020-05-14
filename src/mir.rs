@@ -89,7 +89,11 @@ fn lower_call<'a>(name: Name<'a>, args: Block<'a>) -> Term<'a> {
 }
 
 fn lower_binary_op<'a>(bin_op: BinOp, node1: Node<'a>, node2: Node<'a>) -> Term<'a> {
-    Term::BinaryOp(bin_op, Box::new(lower_node(node1)), Box::new(lower_node(node2)))
+    Term::BinaryOp(
+        bin_op,
+        Box::new(lower_node(node1)),
+        Box::new(lower_node(node2)),
+    )
 }
 
 fn lower_unary_op(un_op: UnOp, node: Node<'_>) -> Term<'_> {
