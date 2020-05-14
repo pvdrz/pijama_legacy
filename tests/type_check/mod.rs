@@ -9,86 +9,73 @@ fn type_check(input: &str) -> LangResult<Ty> {
     ty::ty_check(&mir)
 }
 
-#[test]
-fn true_is_bool() {
-    let input = include_str!("true_is_bool.pj");
-    let typ = type_check(input);
-    assert!(matches!(typ, Ok(Ty::Bool)))
+macro_rules! test_type {
+    ($name:ident, $pattern:pat) => {
+        #[test]
+        fn $name() {
+            let input = include_str!(concat!(stringify!($name), ".pj"));
+            let ty = type_check(input);
+            assert!(matches!(ty, $pattern));
+        }
+    }
 }
 
-#[test]
-fn false_is_bool() {
-    let input = include_str!("false_is_bool.pj");
-    let typ = type_check(input);
-    assert!(matches!(typ, Ok(Ty::Bool)))
+// Literals
+mod literals {
+    use super::*;
+    test_type!(true_is_bool, Ok(Ty::Bool));
+    test_type!(false_is_bool, Ok(Ty::Bool));
+    test_type!(number_is_int, Ok(Ty::Int));
+    test_type!(unit_is_unit, Ok(Ty::Unit));
 }
 
-#[test]
-fn number_is_int() {
-    let input = include_str!("number_is_int.pj");
-    let typ = type_check(input);
-    assert!(matches!(typ, Ok(Ty::Int)))
+// Non-recursive functions
+test_type!(fn_from_int_to_int, Ok(Ty::Arrow(box Ty::Int, box Ty::Int)));
+
+// Arithmetic operations
+mod arithmetic {
+    use super::*;
+    // Unary operations
+    test_type!(minus_is_int, Ok(Ty::Int));
+    // Binary operations
+    test_type!(add_is_int, Ok(Ty::Int));
+    test_type!(sub_is_int, Ok(Ty::Int));
+    test_type!(mul_is_int, Ok(Ty::Int));
+    test_type!(div_is_int, Ok(Ty::Int));
+    test_type!(mod_is_int, Ok(Ty::Int));
+    test_type!(bitand_is_int, Ok(Ty::Int));
+    test_type!(bitor_is_int, Ok(Ty::Int));
+    test_type!(bitxor_is_int, Ok(Ty::Int));
 }
 
-#[test]
-fn bool_eq_is_bool() {
-    let input = include_str!("bool_eq_is_bool.pj");
-    let typ = type_check(input);
-    assert!(matches!(typ, Ok(Ty::Bool)))
+// Logic operations
+mod logic {
+    use super::*;
+    // Unary operations
+    test_type!(not_is_bool, Ok(Ty::Bool));
+    // Binary operations
+    test_type!(and_is_bool, Ok(Ty::Bool));
+    test_type!(or_is_bool, Ok(Ty::Bool));
 }
 
-#[test]
-fn int_eq_is_bool() {
-    let input = include_str!("int_eq_is_bool.pj");
-    let typ = type_check(input);
-    assert!(matches!(typ, Ok(Ty::Bool)))
+// Comparison operations
+mod comparison {
+    use super::*;
+    // Binary operations
+    test_type!(lt_is_bool, Ok(Ty::Bool));
+    test_type!(gt_is_bool, Ok(Ty::Bool));
+    test_type!(leq_is_bool, Ok(Ty::Bool));
+    test_type!(geq_is_bool, Ok(Ty::Bool));
+    test_type!(bool_eq_is_bool, Ok(Ty::Bool));
+    test_type!(int_eq_is_bool, Ok(Ty::Bool));
+    test_type!(unit_eq_is_bool, Ok(Ty::Bool));
+    test_type!(bool_neq_is_bool, Ok(Ty::Bool));
+    test_type!(int_neq_is_bool, Ok(Ty::Bool));
+    test_type!(unit_neq_is_bool, Ok(Ty::Bool));
 }
 
-#[test]
-fn arith_op_is_int() {
-    let input = include_str!("arith_op_is_int.pj");
-    let typ = type_check(input);
-    assert!(matches!(typ, Ok(Ty::Int)))
-}
-
-#[test]
-fn logical_op_is_bool() {
-    let input = include_str!("logical_op_is_bool.pj");
-    let typ = type_check(input);
-    assert!(matches!(typ, Ok(Ty::Bool)))
-}
-
-#[test]
-fn int_cmp_is_bool() {
-    let input = include_str!("int_cmp_is_bool.pj");
-    let typ = type_check(input);
-    assert!(matches!(typ, Ok(Ty::Bool)))
-}
-
-#[test]
-fn negate_is_int() {
-    let input = include_str!("negate_is_int.pj");
-    let typ = type_check(input);
-    assert!(matches!(typ, Ok(Ty::Int)))
-}
-
-#[test]
-fn not_is_bool() {
-    let input = include_str!("not_is_bool.pj");
-    let typ = type_check(input);
-    assert!(matches!(typ, Ok(Ty::Bool)))
-}
-
-#[test]
-fn cond_result_bool_is_bool() {
-    let input = include_str!("cond_result_bool_is_bool.pj");
-    let typ = type_check(input);
-    assert!(matches!(typ, Ok(Ty::Bool)))
-}
-
-#[test]
-fn cond_result_int_is_int() {
-    let input = include_str!("cond_result_int_is_int.pj");
-    let typ = type_check(input);
-    assert!(matches!(typ, Ok(Ty::Int)))
+mod conditionals {
+    use super::*;
+    test_type!(cond_result_bool_is_bool, Ok(Ty::Bool));
+    test_type!(cond_result_int_is_int, Ok(Ty::Int));
 }
