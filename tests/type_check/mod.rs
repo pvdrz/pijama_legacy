@@ -2,12 +2,7 @@ use pijama::ty::Ty;
 use pijama::{mir, parser, ty, LangResult};
 
 mod error;
-mod literals;
-mod arithmetic;
-mod logic;
-mod comparison;
-mod conditionals;
-mod functions;
+mod pass;
 
 fn type_check(input: &str) -> LangResult<Ty> {
     let ast = parser::parse(input)?;
