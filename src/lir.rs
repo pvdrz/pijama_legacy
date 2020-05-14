@@ -196,6 +196,9 @@ fn eval_bin_op(op: BinOp, l1: Literal, l2: Literal) -> Literal {
         (NotEqual, l1, l2) => (l1 != l2).into(),
         (And, Bool(b1), Bool(b2)) => (b1 && b2).into(),
         (Or, Bool(b1), Bool(b2)) => (b1 || b2).into(),
+        (BitAnd, Number(n1), Number(n2)) => (n1 & n2).into(),
+        (BitOr, Number(n1), Number(n2)) => (n1 | n2).into(),
+        (BitXor, Number(n1), Number(n2)) => (n1 ^ n2).into(),
         (op, l1, l2) => panic!("Unexpected operation `{} {} {}`", l1, op, l2),
     }
 }

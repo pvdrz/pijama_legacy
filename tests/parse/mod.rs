@@ -86,6 +86,62 @@ fn unary_op() -> LangResult<()> {
 }
 
 #[test]
+fn logic_op() -> LangResult<()> {
+    let input = include_str!("logic_op.pj");
+    let result = parse(input)?;
+    let expected = vec![
+        BinaryOp(And, box Name(ast::Name("a")), box Name(ast::Name("b"))),
+        BinaryOp(
+            Or,
+            box BinaryOp(And, box Name(ast::Name("a")), box Name(ast::Name("b"))),
+            box Name(ast::Name("c")),
+        ),
+        BinaryOp(
+            And,
+            box Name(ast::Name("a")),
+            box BinaryOp(Or, box Name(ast::Name("b")), box Name(ast::Name("c"))),
+        ),
+    ];
+
+    assert_eq!(expected[0], result[0], "simple");
+    assert_eq!(expected[1], result[1], "left-associative");
+    assert_eq!(expected[2], result[2], "brackets");
+    Ok(())
+}
+
+#[test]
+fn bit_op() -> LangResult<()> {
+    let input = include_str!("bit_op.pj");
+    let result = parse(input)?;
+    let expected = vec![
+        BinaryOp(BitAnd, box Name(ast::Name("a")), box Name(ast::Name("b"))),
+        BinaryOp(
+            BitXor,
+            box BinaryOp(
+                BitOr,
+                box BinaryOp(BitAnd, box Name(ast::Name("a")), box Name(ast::Name("b"))),
+                box Name(ast::Name("c")),
+            ),
+            box Name(ast::Name("d")),
+        ),
+        BinaryOp(
+            BitXor,
+            box BinaryOp(
+                BitAnd,
+                box Name(ast::Name("a")),
+                box BinaryOp(BitOr, box Name(ast::Name("b")), box Name(ast::Name("c"))),
+            ),
+            box Name(ast::Name("d")),
+        ),
+    ];
+
+    assert_eq!(expected[0], result[0], "simple");
+    assert_eq!(expected[1], result[1], "left-associative");
+    assert_eq!(expected[2], result[2], "brackets");
+    Ok(())
+}
+
+#[test]
 fn let_bind() -> LangResult<()> {
     let input = include_str!("let_bind.pj");
     let result = parse(input)?;

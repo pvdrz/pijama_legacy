@@ -79,7 +79,14 @@ impl<'a> Context<'a> {
                     });
                 }
                 match op {
-                    BinOp::Plus | BinOp::Minus | BinOp::Times | BinOp::Divide | BinOp::Modulo => {
+                    BinOp::Plus
+                    | BinOp::Minus
+                    | BinOp::Times
+                    | BinOp::Divide
+                    | BinOp::Modulo
+                    | BinOp::BitAnd
+                    | BinOp::BitOr
+                    | BinOp::BitXor => {
                         if ty1 != Ty::Int {
                             return Err(TyError::Mismatch {
                                 expected: Ty::Int,
