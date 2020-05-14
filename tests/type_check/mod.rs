@@ -17,7 +17,7 @@ macro_rules! test_type {
         fn $name() {
             let input = include_str!(concat!(stringify!($name), ".pj"));
             let ty = crate::type_check::type_check(input);
-            assert!(matches!(ty, $pattern));
+            assert!(matches!(ty, $pattern), "{:#?}", ty);
         }
     }
 }
