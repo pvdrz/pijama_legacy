@@ -1,0 +1,5 @@
+if true do
+    true
+else
+    0
+end
