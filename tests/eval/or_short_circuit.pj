@@ -6,4 +6,4 @@ fn rec loop(): Bool do
     end
 end
 
-loop() || true || loop()
+true || loop()

@@ -43,10 +43,10 @@ pub fn step_bin_op(op: BinOp, t1: Box<Term>, t2: Box<Term>) -> (bool, Term) {
 
     match (op, t1, t2) {
         (op, box Lit(l1), box Lit(l2)) => (true, Lit(native_bin_op(op, l1, l2))),
-        // If op is && and t1 or t2 is false evaluate to false
-        (And, t @ box Lit(Bool(false)), _) | (And, _, t @ box Lit(Bool(false))) => (true, *t),
-        // If op is || and t1 or t2 is true evaluate to true
-        (Or, t @ box Lit(Bool(true)), _) | (Or, _, t @ box Lit(Bool(true))) => (true, *t),
+        // If op is && and t1 is false evaluate to false
+        (And, box Lit(Bool(false)), _) => (true, Lit(Bool(false))),
+        // If op is || and t1 is true evaluate to true
+        (Or, box Lit(Bool(true)), _) => (true, Lit(Bool(true))),
         // If t2 is not a literal, evaluate it.
         (op, t1 @ box Lit(_), mut t2) => (t2.step_in_place(), Term::BinaryOp(op, t1, t2)),
         // If t1 is not a literal, evaluate it.
