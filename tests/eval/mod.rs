@@ -1,8 +1,10 @@
 use std::include_str;
 
+use crate::panic_after;
 use pijama::ast::Literal;
 use pijama::lir::Term;
 use pijama::{run, LangResult};
+use std::time::Duration;
 
 #[test]
 fn arithmetic() -> LangResult<()> {
@@ -66,4 +68,24 @@ fn bit_xor() -> LangResult<()> {
     let term = run(input)?;
     assert_eq!(Term::Lit(Literal::Number(128)), term);
     Ok(())
+}
+
+#[test]
+fn or_short_circuit() -> LangResult<()> {
+    panic_after(Duration::from_secs(1), || {
+        let input = include_str!("or_short_circuit.pj");
+        let term = run(input)?;
+        assert_eq!(Term::Lit(Literal::Bool(true)), term);
+        Ok(())
+    })
+}
+
+#[test]
+fn and_short_circuit() -> LangResult<()> {
+    panic_after(Duration::from_secs(1), || {
+        let input = include_str!("and_short_circuit.pj");
+        let term = run(input)?;
+        assert_eq!(Term::Lit(Literal::Bool(false)), term);
+        Ok(())
+    })
 }
