@@ -21,3 +21,23 @@ macro_rules! test_type {
         }
     };
 }
+
+#[macro_export]
+macro_rules! test_type_with_placeholder {
+    ($name:ident, $pattern:pat, $placeholder:tt, $( $replacement:tt ),*) => {
+        #[test]
+        fn $name() {
+            let input = include_str!(concat!(stringify!($name), ".pj"));
+            let replacements = [
+                $(
+                    stringify!($replacement),
+                )*
+            ];
+            for replacement in &replacements {
+                let input = input.replace(stringify!($placeholder), replacement);
+                let ty = crate::type_check::type_check(&input);
+                assert!(matches!(ty, $pattern), "failed with replacement {}\n{:#?}", replacement, ty);
+            }
+        }
+    };
+}
