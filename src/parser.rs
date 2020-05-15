@@ -3,7 +3,7 @@ use nom::bytes::complete::tag;
 use nom::character::complete::{
     alpha1, char, digit1, line_ending, multispace0, multispace1, space0, space1,
 };
-use nom::combinator::{all_consuming, map, map_opt, opt, recognize, verify};
+use nom::combinator::{all_consuming, cut, map, map_opt, opt, peek, recognize, verify};
 use nom::error::{convert_error, ParseError, VerboseError};
 use nom::multi::{separated_list, separated_nonempty_list};
 use nom::sequence::{delimited, pair, preceded, separated_pair, terminated, tuple};
@@ -129,7 +129,9 @@ fn number<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, i128, 
 
 fn node<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {
     let (mut input, mut node) = base_node(input)?;
-    while let (rem, Some((op, node2))) = opt(pair(surrounded(bin_op, space0), base_node))(input)? {
+    while let (rem, Some((op, node2))) =
+        opt(pair(surrounded(bin_op, space0), cut(base_node)))(input)?
+    {
         input = rem;
         node = Node::BinaryOp(op, Box::new(node), Box::new(node2));
     }
@@ -138,15 +140,16 @@ fn node<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E>
 
 fn base_node<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {
     alt((
-        let_bind,
-        cond,
-        func_rec,
-        func,
+        (in_brackets(surrounded(node, space0))),
         map(literal, Node::Literal),
-        un_oper,
-        call,
-        map(name, Node::Name),
-        in_brackets(surrounded(node, space0)),
+        preceded(peek(tag("if")), cut(cond)),
+        preceded(peek(tuple((tag("fn"), space1, tag("rec")))), cut(func_rec)),
+        preceded(peek(tag("fn")), cut(func)),
+        preceded(
+            peek(name),
+            cut(alt((let_bind, call, map(name, Node::Name)))),
+        ),
+        preceded(peek(alt((tag("-"), tag("!")))), cut(un_oper)),
     ))(input)
 }
 
