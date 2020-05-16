@@ -128,36 +128,19 @@ impl Term {
 
     fn step(mut self) -> (bool, Term) {
         match self {
-            // Binary operations (t1 op t2)
+            // Dispatch step for binary operations
             BinaryOp(op, t1, t2) => step_bin_op(op, t1, t2),
-
+            // Dispatch step for unary operations
+            UnaryOp(op, t1) => step_un_op(op, t1),
             // Dispatch step for beta reduction
             App(box Abs(body), arg) => step_beta_reduction(body, arg),
-
-            // Unary Operations (op t1)
-            // If t1 is a literal, do the operation.
-            UnaryOp(op, box Lit(lit)) => (true, Lit(eval_un_op(op, lit))),
-            // If t1 is not a literal, evaluate it.
-            UnaryOp(_, ref mut t1) => (t1.step_in_place(), self),
-
             // Application with unevaluated first term (t1 t2)
             // Evaluate t1.
             App(ref mut t1, _) => (t1.step_in_place(), self),
-
             // Dispatch step for conditionals
             Cond(t1, t2, t3) => step_conditional(t1, t2, t3),
-
-            // Fixed-point operation (fix t1)
-            // If t1 is an abstraction (\. t2), replace the argument of t1 by (fix t1) inside t2
-            // and evaluate to t2.
-            Fix(box Abs(box ref t2)) => {
-                let mut t2 = t2.clone();
-                t2.replace(0, &mut self);
-                (true, t2)
-            }
-            // If t1 is not an abstraction, evaluate it.
-            Fix(ref mut t1) => (t1.step_in_place(), self),
-
+            // Dispatch step for fixed point operation
+            Fix(t1) => step_fix(t1),
             // Any other term stops the evaluation.
             Var(_) | Lit(_) | Abs(_) | Hole => (false, self),
         }
@@ -171,15 +154,5 @@ impl Term {
             eval
         } {}
         term
-    }
-}
-
-fn eval_un_op(op: UnOp, lit: Literal) -> Literal {
-    use Literal::*;
-    use UnOp::*;
-    match (op, lit) {
-        (Minus, Number(n)) => (-n).into(),
-        (Not, Bool(b)) => (!b).into(),
-        (op, lit) => panic!("Unexpected operation `{} {}`", op, lit),
     }
 }
