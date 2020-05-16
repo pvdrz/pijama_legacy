@@ -1,5 +1,5 @@
 use super::Term;
-use crate::ast::{BinOp, Literal};
+use crate::ast::{BinOp, Literal, UnOp};
 
 /// Evaluation step for conditionals (if t1 then t2 else t3)
 #[inline(always)]
@@ -54,6 +54,18 @@ pub fn step_bin_op(op: BinOp, t1: Box<Term>, t2: Box<Term>) -> (bool, Term) {
     }
 }
 
+/// Evaluation step for unary operations (op t1)
+#[inline(always)]
+pub fn step_un_op(op: UnOp, mut t1: Box<Term>) -> (bool, Term) {
+    // If t1 is a literal, do the operation.
+    if let box Term::Lit(lit) = t1 {
+        (true, Term::Lit(native_un_op(op, lit)))
+    // If t1 is not a literal, evaluate it.
+    } else {
+        (t1.step_in_place(), Term::UnaryOp(op, t1))
+    }
+}
+
 fn native_bin_op(op: BinOp, l1: Literal, l2: Literal) -> Literal {
     use BinOp::*;
     use Literal::*;
@@ -76,5 +88,16 @@ fn native_bin_op(op: BinOp, l1: Literal, l2: Literal) -> Literal {
         (BitOr, Number(n1), Number(n2)) => (n1 | n2).into(),
         (BitXor, Number(n1), Number(n2)) => (n1 ^ n2).into(),
         (op, l1, l2) => panic!("Unexpected operation `{} {} {}`", l1, op, l2),
+    }
+}
+
+fn native_un_op(op: UnOp, lit: Literal) -> Literal {
+    use Literal::*;
+    use UnOp::*;
+
+    match (op, lit) {
+        (Minus, Number(n)) => (-n).into(),
+        (Not, Bool(b)) => (!b).into(),
+        (op, lit) => panic!("Unexpected operation `{} {}`", op, lit),
     }
 }
