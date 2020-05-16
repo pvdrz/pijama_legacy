@@ -256,8 +256,12 @@ fn cond<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E>
 
 fn let_bind<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {
     map(
-        separated_pair(name, tuple((space0, char('='), space0)), node),
-        |(name, node)| Node::LetBind(name, None, Box::new(node)),
+        separated_pair(
+            pair(name, opt(preceded(surrounded(char(':'), space0), ty))),
+            tuple((space0, char('='), space0)),
+            node,
+        ),
+        |((name, opt_ty), node)| Node::LetBind(name, opt_ty, Box::new(node)),
     )(input)
 }
 

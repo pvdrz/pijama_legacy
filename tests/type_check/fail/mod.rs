@@ -1,4 +1,5 @@
 mod arithmetic;
+mod bindings;
 mod comparison;
 mod conditionals;
 mod functions;
