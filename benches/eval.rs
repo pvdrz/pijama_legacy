@@ -21,6 +21,12 @@ fn arithmetic(c: &mut Criterion) {
     c.bench_function("arithmetic", |b| b.iter(|| evaluate(term.clone())));
 }
 
+fn logic(c: &mut Criterion) {
+    let input = include_str!("../tests/eval/logic.pj");
+    let term = compile(input).unwrap();
+    c.bench_function("logic", |b| b.iter(|| evaluate(term.clone())));
+}
+
 fn factorial(c: &mut Criterion) {
     let input = include_str!("../tests/eval/factorial.pj");
     let term = compile(input).unwrap();
@@ -78,6 +84,7 @@ fn calling(c: &mut Criterion) {
 criterion_group!(
     benches,
     arithmetic,
+    logic,
     factorial,
     factorial_tail,
     fibonacci,

@@ -15,6 +15,14 @@ fn arithmetic() -> LangResult<()> {
 }
 
 #[test]
+fn logic() -> LangResult<()> {
+    let input = include_str!("logic.pj");
+    let term = run(input)?;
+    assert_eq!(Term::Lit(Literal::Bool(false)), term);
+    Ok(())
+}
+
+#[test]
 fn factorial() -> LangResult<()> {
     let input = include_str!("factorial.pj");
     let term = run(input)?;
