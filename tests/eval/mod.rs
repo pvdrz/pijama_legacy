@@ -63,6 +63,14 @@ fn gcd() -> LangResult<()> {
 }
 
 #[test]
+fn ackermann() -> LangResult<()> {
+    let input = include_str!("ackermann.pj");
+    let term = run(input)?;
+    assert_eq!(Term::Lit(Literal::Number(5)), term);
+    Ok(())
+}
+
+#[test]
 fn step() -> LangResult<()> {
     let input = include_str!("step.pj");
     let term = run(input)?;
