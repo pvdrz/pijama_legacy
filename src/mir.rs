@@ -71,7 +71,8 @@ fn lower_node(node: Node<'_>) -> TyResult<Term<'_>> {
         Node::BinaryOp(bin_op, node1, node2) => lower_binary_op(bin_op, *node1, *node2),
         Node::UnaryOp(un_op, node) => lower_unary_op(un_op, *node),
         Node::LetBind(name, opt_ty, node) => lower_let_bind(name, opt_ty, *node),
-        Node::FnDef(name, binds, body, rec) => lower_fn_def(name, binds, body, rec),
+        Node::FnDef(name, binds, body) => lower_fn_def(name, binds, body),
+        Node::FnRecDef(name, binds, body, ty) => lower_fn_rec_def(name, binds, body, ty),
     }
 }
 
@@ -122,24 +123,34 @@ fn lower_fn_def<'a>(
     name: Name<'a>,
     binds: Vec<Binding<'a>>,
     body: Block<'a>,
-    rec_ty: Option<Ty>,
 ) -> TyResult<Term<'a>> {
     let mut term = lower_blk(body)?;
-
-    let ty = rec_ty.map(|mut ty| {
-        for bind in binds.iter().rev() {
-            ty = Ty::Arrow(Box::new(bind.ty.clone()), Box::new(ty));
-        }
-        ty
-    });
 
     for bind in binds.into_iter().rev() {
         term = Term::Abs(bind, Box::new(term));
     }
 
-    if let Some(ty) = ty {
-        term = Term::Fix(Box::new(Term::Abs(Binding { name, ty }, Box::new(term))));
+    Ok(Term::Let(
+        name,
+        Box::new(term),
+        Box::new(Term::Lit(Literal::Unit)),
+    ))
+}
+
+fn lower_fn_rec_def<'a>(
+    name: Name<'a>,
+    binds: Vec<Binding<'a>>,
+    body: Block<'a>,
+    mut ty: Ty,
+) -> TyResult<Term<'a>> {
+    let mut term = lower_blk(body)?;
+
+    for bind in binds.into_iter().rev() {
+        ty = Ty::Arrow(Box::new(bind.ty.clone()), Box::new(ty));
+        term = Term::Abs(bind, Box::new(term));
     }
+
+    term = Term::Fix(Box::new(Term::Abs(Binding { name, ty }, Box::new(term))));
 
     Ok(Term::Let(
         name,

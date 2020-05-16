@@ -107,6 +107,7 @@ pub enum Node<'a> {
     LetBind(Name<'a>, Option<Ty>, Box<Node<'a>>),
     Cond(Vec<Node<'a>>, Vec<Node<'a>>, Vec<Node<'a>>),
     FnDef(Name<'a>, Vec<Binding<'a>>, Vec<Node<'a>>, Option<Ty>),
+    FnRecDef(Name<'a>, Vec<Binding<'a>>, Vec<Node<'a>>, Ty),
     Call(Name<'a>, Vec<Node<'a>>),
     Literal(Literal),
     Name(Name<'a>),

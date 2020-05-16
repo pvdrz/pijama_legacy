@@ -274,16 +274,22 @@ fn un_oper<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node,
 fn func<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {
     map(
         tuple((
-            pair(tag("fn"), space1),
-            name,
-            tuple((space0, char('('), multispace0)),
-            separated_list(tuple((space0, char(','), multispace0)), binding),
-            tuple((multispace0, char(')'), space0)),
-            tuple((tag("do"), multispace1)),
-            block0,
-            tuple((multispace0, tag("end"))),
+            preceded(pair(tag("fn"), space1), name),
+            surrounded(
+                in_brackets(surrounded(
+                    separated_list(delimited(space0, char(','), multispace0), binding),
+                    multispace0,
+                )),
+                space0,
+            ),
+            opt(preceded(pair(char(':'), space0), ty)),
+            delimited(
+                delimited(space0, tag("do"), multispace1),
+                block0,
+                pair(multispace0, tag("end")),
+            ),
         )),
-        |(_, name, _, args, _, _, body, _)| Node::FnDef(name, args, body, None),
+        |(name, args, opt_ty, body)| Node::FnDef(name, args, body, opt_ty),
     )(input)
 }
 
@@ -305,7 +311,7 @@ fn func_rec<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node
                 pair(multispace0, tag("end")),
             ),
         )),
-        |(name, args, ty, body)| Node::FnDef(name, args, body, Some(ty)),
+        |(name, args, ty, body)| Node::FnRecDef(name, args, body, ty),
     )(input)
 }
 

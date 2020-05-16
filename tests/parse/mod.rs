@@ -221,11 +221,11 @@ fn fn_def() -> LangResult<()> {
             vec![Name(ast::Name("x"))],
             None,
         ),
-        FnDef(
+        FnRecDef(
             ast::Name("foo"),
             vec![],
             vec![Call(ast::Name("foo"), vec![])],
-            Some(Ty::Unit),
+            Ty::Unit,
         ),
         FnDef(
             ast::Name("foo"),
