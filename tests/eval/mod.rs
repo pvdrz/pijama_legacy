@@ -15,16 +15,16 @@ fn arithmetic() -> LangResult<()> {
 }
 
 #[test]
-fn fact_rec() -> LangResult<()> {
-    let input = include_str!("fact_rec.pj");
+fn factorial() -> LangResult<()> {
+    let input = include_str!("factorial.pj");
     let term = run(input)?;
-    assert_eq!(Term::Lit(Literal::Number(2432902008176640000)), term);
+    assert_eq!(Term::Lit(Literal::Number(3628800)), term);
     Ok(())
 }
 
 #[test]
-fn fact_tail() -> LangResult<()> {
-    let input = include_str!("fact_tail.pj");
+fn factorial_tail() -> LangResult<()> {
+    let input = include_str!("factorial_tail.pj");
     let term = run(input)?;
     assert_eq!(Term::Lit(Literal::Number(3628800)), term);
     Ok(())

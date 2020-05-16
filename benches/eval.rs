@@ -21,16 +21,16 @@ fn arithmetic(c: &mut Criterion) {
     c.bench_function("arithmetic", |b| b.iter(|| evaluate(term.clone())));
 }
 
-fn fact_rec(c: &mut Criterion) {
-    let input = include_str!("../tests/eval/fact_rec.pj");
+fn factorial(c: &mut Criterion) {
+    let input = include_str!("../tests/eval/factorial.pj");
     let term = compile(input).unwrap();
-    c.bench_function("fact_rec", |b| b.iter(|| evaluate(term.clone())));
+    c.bench_function("factorial", |b| b.iter(|| evaluate(term.clone())));
 }
 
-fn fact_tail(c: &mut Criterion) {
-    let input = include_str!("../tests/eval/fact_tail.pj");
+fn factorial_tail(c: &mut Criterion) {
+    let input = include_str!("../tests/eval/factorial_tail.pj");
     let term = compile(input).unwrap();
-    c.bench_function("fact_tail", |b| b.iter(|| evaluate(term.clone())));
+    c.bench_function("factorial_tail", |b| b.iter(|| evaluate(term.clone())));
 }
 
 fn fibonacci(c: &mut Criterion) {
@@ -57,5 +57,14 @@ fn step(c: &mut Criterion) {
     c.bench_function("step", |b| b.iter(|| evaluate(term.clone())));
 }
 
-criterion_group!(benches, arithmetic, fact_rec, fact_tail, fibonacci, fibonacci_tail, fancy_max, step);
+criterion_group!(
+    benches,
+    arithmetic,
+    factorial,
+    factorial_tail,
+    fibonacci,
+    fibonacci_tail,
+    fancy_max,
+    step
+);
 criterion_main!(benches);
