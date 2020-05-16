@@ -55,6 +55,14 @@ fn fibonacci_tail() -> LangResult<()> {
 }
 
 #[test]
+fn gcd() -> LangResult<()> {
+    let input = include_str!("gcd.pj");
+    let term = run(input)?;
+    assert_eq!(Term::Lit(Literal::Number(1)), term);
+    Ok(())
+}
+
+#[test]
 fn step() -> LangResult<()> {
     let input = include_str!("step.pj");
     let term = run(input)?;

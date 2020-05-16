@@ -57,6 +57,12 @@ fn step(c: &mut Criterion) {
     c.bench_function("step", |b| b.iter(|| evaluate(term.clone())));
 }
 
+fn gcd(c: &mut Criterion) {
+    let input = include_str!("../tests/eval/gcd.pj");
+    let term = compile(input).unwrap();
+    c.bench_function("gcd", |b| b.iter(|| evaluate(term.clone())));
+}
+
 criterion_group!(
     benches,
     arithmetic,
@@ -64,6 +70,7 @@ criterion_group!(
     factorial_tail,
     fibonacci,
     fibonacci_tail,
+    gcd,
     fancy_max,
     step
 );
