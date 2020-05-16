@@ -10,7 +10,7 @@ use std::time::Duration;
 fn arithmetic() -> LangResult<()> {
     let input = include_str!("arithmetic.pj");
     let term = run(input)?;
-    assert_eq!(Term::Lit(Literal::Number(55)), term);
+    assert_eq!(Term::Lit(Literal::Number(121)), term);
     Ok(())
 }
 

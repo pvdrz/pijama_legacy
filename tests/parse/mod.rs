@@ -152,11 +152,7 @@ fn let_bind() -> LangResult<()> {
             None,
             box BinaryOp(Plus, box Name(ast::Name("y")), box Name(ast::Name("z"))),
         ),
-        LetBind(
-            ast::Name("x"),
-            Some(Ty::Int),
-            box Name(ast::Name("y")),
-        ),
+        LetBind(ast::Name("x"), Some(Ty::Int), box Name(ast::Name("y"))),
     ];
 
     assert_eq!(expected[0], result[0], "simple");
