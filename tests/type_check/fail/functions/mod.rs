@@ -9,3 +9,11 @@ test_type!(
         found: Ty::Bool
     }))
 );
+
+test_type!(
+    wrong_return_type_fn_int_to_int,
+    Err(LangError::Ty(TyError::Mismatch {
+        expected: Ty::Arrow(box Ty::Int, box Ty::Bool),
+        found: Ty::Arrow(box Ty::Int, box Ty::Int),
+    }))
+);
