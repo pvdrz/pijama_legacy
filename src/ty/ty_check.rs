@@ -9,6 +9,14 @@ pub fn ty_check(term: &Term<'_>) -> LangResult<Ty> {
     Context::default().type_of(term).map_err(Into::into)
 }
 
+pub fn expect_ty(expected: Ty, found: Ty) -> TyResult<Ty> {
+    if expected == found {
+        Ok(expected)
+    } else {
+        Err(TyError::Mismatch { expected, found })
+    }
+}
+
 #[derive(Error, Debug)]
 pub enum TyError {
     #[error("Type mismatch: expected {expected}, found {found}")]
@@ -49,35 +57,17 @@ impl<'a> Context<'a> {
                 self.inner.pop().unwrap();
                 Ty::Arrow(Box::new(bind.ty.clone()), Box::new(ty))
             }
-            Term::UnaryOp(op, term) => match op {
-                UnOp::Minus => match self.type_of(term)? {
-                    Ty::Int => Ty::Int,
-                    found => {
-                        return Err(TyError::Mismatch {
-                            expected: Ty::Int,
-                            found,
-                        })
-                    }
-                },
-                UnOp::Not => match self.type_of(term)? {
-                    Ty::Bool => Ty::Bool,
-                    found => {
-                        return Err(TyError::Mismatch {
-                            expected: Ty::Bool,
-                            found,
-                        })
-                    }
-                },
-            },
+            Term::UnaryOp(op, term) => {
+                let ty = self.type_of(term)?;
+                match op {
+                    UnOp::Minus => expect_ty(Ty::Int, ty)?,
+                    UnOp::Not => expect_ty(Ty::Bool, ty)?,
+                }
+            }
             Term::BinaryOp(op, t1, t2) => {
                 let ty1 = self.type_of(t1)?;
                 let ty2 = self.type_of(t2)?;
-                if ty1 != ty2 {
-                    return Err(TyError::Mismatch {
-                        expected: ty1,
-                        found: ty2,
-                    });
-                }
+                let ty = expect_ty(ty1, ty2)?;
                 match op {
                     BinOp::Plus
                     | BinOp::Minus
@@ -86,34 +76,13 @@ impl<'a> Context<'a> {
                     | BinOp::Modulo
                     | BinOp::BitAnd
                     | BinOp::BitOr
-                    | BinOp::BitXor => {
-                        if ty1 != Ty::Int {
-                            return Err(TyError::Mismatch {
-                                expected: Ty::Int,
-                                found: ty1,
-                            });
-                        }
-                        Ty::Int
-                    }
-                    BinOp::Or | BinOp::And => {
-                        if ty2 != Ty::Bool {
-                            return Err(TyError::Mismatch {
-                                expected: Ty::Bool,
-                                found: ty1,
-                            });
-                        }
-                        Ty::Bool
-                    }
+                    | BinOp::BitXor => expect_ty(Ty::Int, ty)?,
+                    BinOp::Or | BinOp::And => expect_ty(Ty::Bool, ty)?,
                     BinOp::LessThan
                     | BinOp::GreaterThan
                     | BinOp::LessThanOrEqual
                     | BinOp::GreaterThanOrEqual => {
-                        if ty1 != Ty::Int {
-                            return Err(TyError::Mismatch {
-                                expected: Ty::Int,
-                                found: ty1,
-                            });
-                        }
+                        expect_ty(Ty::Int, ty)?;
                         Ty::Bool
                     }
                     BinOp::Equal | BinOp::NotEqual => Ty::Bool,
@@ -124,14 +93,8 @@ impl<'a> Context<'a> {
                 let ty2 = self.type_of(t2)?;
                 match ty1 {
                     Ty::Arrow(ty11, ty) => {
-                        if *ty11 == ty2 {
-                            *ty
-                        } else {
-                            return Err(TyError::Mismatch {
-                                expected: *ty11,
-                                found: ty2,
-                            });
-                        }
+                        expect_ty(*ty11, ty2)?;
+                        *ty
                     }
                     _ => return Err(TyError::NotFn(ty1)),
                 }
@@ -147,44 +110,16 @@ impl<'a> Context<'a> {
                 let ty1 = self.type_of(t1)?;
                 let ty2 = self.type_of(t2)?;
                 let ty3 = self.type_of(t3)?;
-                if ty1 == Ty::Bool {
-                    if ty2 == ty3 {
-                        ty3
-                    } else {
-                        return Err(TyError::Mismatch {
-                            expected: ty2,
-                            found: ty3,
-                        });
-                    }
-                } else {
-                    return Err(TyError::Mismatch {
-                        expected: Ty::Bool,
-                        found: ty1,
-                    });
-                }
+                expect_ty(Ty::Bool, ty1)?;
+                expect_ty(ty2, ty3)?
             }
             Term::Seq(t1, t2) => {
                 let ty1 = self.type_of(t1)?;
-                if ty1 == Ty::Unit {
-                    self.type_of(t2)?
-                } else {
-                    return Err(TyError::Mismatch {
-                        expected: Ty::Unit,
-                        found: ty1,
-                    });
-                }
+                expect_ty(Ty::Unit, ty1)?;
+                self.type_of(t2)?
             }
             Term::Fix(t1) => match self.type_of(t1)? {
-                Ty::Arrow(box ty1, box ty2) => {
-                    if ty1 == ty2 {
-                        ty1
-                    } else {
-                        return Err(TyError::Mismatch {
-                            expected: ty1,
-                            found: ty2,
-                        });
-                    }
-                }
+                Ty::Arrow(box ty1, box ty2) => expect_ty(ty1, ty2)?,
                 ty => {
                     return Err(TyError::NotFn(ty));
                 }
