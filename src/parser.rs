@@ -3,7 +3,7 @@ use nom::bytes::complete::tag;
 use nom::character::complete::{
     alpha1, char, digit1, line_ending, multispace0, multispace1, space0, space1,
 };
-use nom::combinator::{all_consuming, cut, map, map_opt, opt, peek, recognize, verify};
+use nom::combinator::{all_consuming, cut, map, map_opt, not, opt, peek, recognize, verify};
 use nom::error::{convert_error, ParseError, VerboseError};
 use nom::multi::{separated_list, separated_nonempty_list};
 use nom::sequence::{delimited, pair, preceded, separated_pair, terminated, tuple};
@@ -76,28 +76,6 @@ fn name<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Name<'a>
     )(input)
 }
 
-fn bin_op<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, BinOp, E> {
-    use BinOp::*;
-    alt((
-        map(char('+'), |_| Plus),
-        map(char('-'), |_| Minus),
-        map(char('*'), |_| Times),
-        map(char('/'), |_| Divide),
-        map(char('%'), |_| Modulo),
-        map(tag("<="), |_| LessThanOrEqual),
-        map(tag(">="), |_| GreaterThanOrEqual),
-        map(char('<'), |_| LessThan),
-        map(char('>'), |_| GreaterThan),
-        map(tag("=="), |_| Equal),
-        map(tag("!="), |_| NotEqual),
-        map(tag("&&"), |_| And),
-        map(tag("||"), |_| Or),
-        map(char('&'), |_| BitAnd),
-        map(char('|'), |_| BitOr),
-        map(char('^'), |_| BitXor),
-    ))(input)
-}
-
 fn un_op<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, UnOp, E> {
     alt((
         map(char('!'), |_| UnOp::Not),
@@ -128,9 +106,9 @@ fn number<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, i128, 
 }
 
 fn node<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {
-    let (mut input, mut node) = base_node(input)?;
+    let (mut input, mut node) = node_1(input)?;
     while let (rem, Some((op, node2))) =
-        opt(pair(surrounded(bin_op, space0), cut(base_node)))(input)?
+        opt(pair(surrounded(bin_op_1, space0), cut(node_1)))(input)?
     {
         input = rem;
         node = Node::BinaryOp(op, Box::new(node), Box::new(node2));
@@ -138,7 +116,82 @@ fn node<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E>
     Ok((input, node))
 }
 
-fn base_node<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {
+fn bin_op_1<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, BinOp, E> {
+    use BinOp::*;
+    alt((map(tag("&&"), |_| And), map(tag("||"), |_| Or)))(input)
+}
+
+fn node_1<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {
+    let (mut input, mut node) = node_2(input)?;
+    while let (rem, Some((op, node2))) =
+        opt(pair(surrounded(bin_op_2, space0), cut(node_2)))(input)?
+    {
+        input = rem;
+        node = Node::BinaryOp(op, Box::new(node), Box::new(node2));
+    }
+    Ok((input, node))
+}
+
+fn bin_op_2<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, BinOp, E> {
+    use BinOp::*;
+    alt((
+        map(tag("<="), |_| LessThanOrEqual),
+        map(tag(">="), |_| GreaterThanOrEqual),
+        map(char('<'), |_| LessThan),
+        map(char('>'), |_| GreaterThan),
+        map(tag("=="), |_| Equal),
+        map(tag("!="), |_| NotEqual),
+    ))(input)
+}
+
+fn node_2<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {
+    let (mut input, mut node) = node_3(input)?;
+    while let (rem, Some((op, node2))) =
+        opt(pair(surrounded(bin_op_3, space0), cut(node_3)))(input)?
+    {
+        input = rem;
+        node = Node::BinaryOp(op, Box::new(node), Box::new(node2));
+    }
+    Ok((input, node))
+}
+
+fn bin_op_3<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, BinOp, E> {
+    use BinOp::*;
+    alt((
+        map(terminated(char('&'), peek(not(char('&')))), |_| BitAnd),
+        map(terminated(char('|'), peek(not(char('|')))), |_| BitOr),
+        map(char('^'), |_| BitXor),
+    ))(input)
+}
+
+fn node_3<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {
+    let (mut input, mut node) = node_4(input)?;
+    while let (rem, Some((op, node2))) =
+        opt(pair(surrounded(bin_op_4, space0), cut(node_4)))(input)?
+    {
+        input = rem;
+        node = Node::BinaryOp(op, Box::new(node), Box::new(node2));
+    }
+    Ok((input, node))
+}
+
+fn node_4<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {
+    let (mut input, mut node) = node_5(input)?;
+    while let (rem, Some((op, node2))) =
+        opt(pair(surrounded(bin_op_5, space0), cut(node_5)))(input)?
+    {
+        input = rem;
+        node = Node::BinaryOp(op, Box::new(node), Box::new(node2));
+    }
+    Ok((input, node))
+}
+
+fn bin_op_4<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, BinOp, E> {
+    use BinOp::*;
+    alt((map(char('+'), |_| Plus), map(char('-'), |_| Minus)))(input)
+}
+
+fn node_5<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {
     alt((
         (in_brackets(surrounded(node, space0))),
         map(literal, Node::Literal),
@@ -150,6 +203,15 @@ fn base_node<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Nod
             cut(alt((let_bind, call, map(name, Node::Name)))),
         ),
         preceded(peek(alt((tag("-"), tag("!")))), cut(un_oper)),
+    ))(input)
+}
+
+fn bin_op_5<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, BinOp, E> {
+    use BinOp::*;
+    alt((
+        map(char('*'), |_| Times),
+        map(char('/'), |_| Divide),
+        map(char('%'), |_| Modulo),
     ))(input)
 }
 
@@ -200,7 +262,7 @@ fn let_bind<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node
 }
 
 fn un_oper<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {
-    map(separated_pair(un_op, space0, base_node), |(un_op, node)| {
+    map(separated_pair(un_op, space0, node), |(un_op, node)| {
         Node::UnaryOp(un_op, Box::new(node))
     })(input)
 }
