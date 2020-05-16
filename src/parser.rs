@@ -88,7 +88,7 @@ fn literal<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Liter
         map(tag("true"), |_| Literal::Bool(true)),
         map(tag("false"), |_| Literal::Bool(false)),
         map(tag("unit"), |_| Literal::Unit),
-        map(number, |n| Literal::Number(n)),
+        map(number, Literal::Number),
     ))(input)
 }
 
