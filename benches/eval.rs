@@ -69,6 +69,12 @@ fn ackermann(c: &mut Criterion) {
     c.bench_function("ackermann", |b| b.iter(|| evaluate(term.clone())));
 }
 
+fn calling(c: &mut Criterion) {
+    let input = include_str!("../tests/eval/calling.pj");
+    let term = compile(input).unwrap();
+    c.bench_function("calling", |b| b.iter(|| evaluate(term.clone())));
+}
+
 criterion_group!(
     benches,
     arithmetic,
@@ -78,6 +84,7 @@ criterion_group!(
     fibonacci_tail,
     gcd,
     ackermann,
+    calling,
     fancy_max,
     step
 );
