@@ -29,7 +29,7 @@ pub enum TyError {
     NotBasicTy(Ty),
 }
 
-type TyResult<T = Ty> = Result<T, TyError>;
+pub type TyResult<T = Ty> = Result<T, TyError>;
 
 #[derive(Default)]
 struct Context<'a> {

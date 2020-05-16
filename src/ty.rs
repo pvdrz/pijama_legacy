@@ -4,7 +4,7 @@ use crate::ast::Name;
 
 mod ty_check;
 
-pub use ty_check::{ty_check, TyError};
+pub use ty_check::{expect_ty, ty_check, TyError, TyResult};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Ty {

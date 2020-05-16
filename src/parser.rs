@@ -257,7 +257,7 @@ fn cond<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E>
 fn let_bind<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {
     map(
         separated_pair(name, tuple((space0, char('='), space0)), node),
-        |(name, node)| Node::LetBind(name, Box::new(node)),
+        |(name, node)| Node::LetBind(name, None, Box::new(node)),
     )(input)
 }
 

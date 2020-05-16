@@ -146,9 +146,10 @@ fn let_bind() -> LangResult<()> {
     let input = include_str!("let_bind.pj");
     let result = parse(input)?;
     let expected = vec![
-        LetBind(ast::Name("x"), box Name(ast::Name("y"))),
+        LetBind(ast::Name("x"), None, box Name(ast::Name("y"))),
         LetBind(
             ast::Name("x"),
+            None,
             box BinaryOp(Plus, box Name(ast::Name("y")), box Name(ast::Name("z"))),
         ),
     ];

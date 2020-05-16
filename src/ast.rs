@@ -104,7 +104,7 @@ impl<'a> fmt::Display for Literal {
 pub enum Node<'a> {
     BinaryOp(BinOp, Box<Node<'a>>, Box<Node<'a>>),
     UnaryOp(UnOp, Box<Node<'a>>),
-    LetBind(Name<'a>, Box<Node<'a>>),
+    LetBind(Name<'a>, Option<Ty>, Box<Node<'a>>),
     Cond(Vec<Node<'a>>, Vec<Node<'a>>, Vec<Node<'a>>),
     FnDef(Name<'a>, Vec<Binding<'a>>, Vec<Node<'a>>, Option<Ty>),
     Call(Name<'a>, Vec<Node<'a>>),
