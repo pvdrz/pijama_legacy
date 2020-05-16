@@ -39,6 +39,22 @@ fn fancy_max() -> LangResult<()> {
 }
 
 #[test]
+fn fibonacci() -> LangResult<()> {
+    let input = include_str!("fibonacci.pj");
+    let term = run(input)?;
+    assert_eq!(Term::Lit(Literal::Number(21)), term);
+    Ok(())
+}
+
+#[test]
+fn fibonacci_tail() -> LangResult<()> {
+    let input = include_str!("fibonacci_tail.pj");
+    let term = run(input)?;
+    assert_eq!(Term::Lit(Literal::Number(21)), term);
+    Ok(())
+}
+
+#[test]
 fn step() -> LangResult<()> {
     let input = include_str!("step.pj");
     let term = run(input)?;

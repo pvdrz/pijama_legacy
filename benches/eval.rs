@@ -33,6 +33,18 @@ fn fact_tail(c: &mut Criterion) {
     c.bench_function("fact_tail", |b| b.iter(|| evaluate(term.clone())));
 }
 
+fn fibonacci(c: &mut Criterion) {
+    let input = include_str!("../tests/eval/fibonacci.pj");
+    let term = compile(input).unwrap();
+    c.bench_function("fibonacci", |b| b.iter(|| evaluate(term.clone())));
+}
+
+fn fibonacci_tail(c: &mut Criterion) {
+    let input = include_str!("../tests/eval/fibonacci_tail.pj");
+    let term = compile(input).unwrap();
+    c.bench_function("fibonacci_tail", |b| b.iter(|| evaluate(term.clone())));
+}
+
 fn fancy_max(c: &mut Criterion) {
     let input = include_str!("../tests/eval/fancy_max.pj");
     let term = compile(input).unwrap();
@@ -45,5 +57,5 @@ fn step(c: &mut Criterion) {
     c.bench_function("step", |b| b.iter(|| evaluate(term.clone())));
 }
 
-criterion_group!(benches, arithmetic, fact_rec, fact_tail, fancy_max, step);
+criterion_group!(benches, arithmetic, fact_rec, fact_tail, fibonacci, fibonacci_tail, fancy_max, step);
 criterion_main!(benches);
