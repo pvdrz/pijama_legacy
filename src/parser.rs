@@ -137,8 +137,8 @@ fn bin_op_2<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, BinO
     alt((
         map(tag("<="), |_| LessThanOrEqual),
         map(tag(">="), |_| GreaterThanOrEqual),
-        map(char('<'), |_| LessThan),
-        map(char('>'), |_| GreaterThan),
+        map(terminated(char('<'), peek(not(char('<')))), |_| LessThan),
+        map(terminated(char('>'), peek(not(char('>')))), |_| GreaterThan),
         map(tag("=="), |_| Equal),
         map(tag("!="), |_| NotEqual),
     ))(input)
