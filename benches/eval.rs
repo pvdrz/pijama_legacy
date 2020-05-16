@@ -10,7 +10,7 @@ use pijama::LangResult;
 
 fn compile(input: &str) -> LangResult<Term> {
     let ast = parse(input)?;
-    let mir = MirTerm::from_ast(ast);
+    let mir = MirTerm::from_ast(ast)?;
     ty_check(&mir)?;
     Ok(Term::from_mir(mir))
 }
