@@ -7,7 +7,7 @@ mod pass;
 fn type_check(input: &str) -> LangResult<Ty> {
     let ast = parser::parse(input)?;
     let mir = mir::Term::from_ast(ast)?;
-    ty::ty_check(&mir)
+    Ok(ty::ty_check(&mir)?)
 }
 
 #[macro_export]

@@ -5,8 +5,8 @@ use crate::mir::Term;
 use crate::ty::{Binding, Ty};
 use crate::LangResult;
 
-pub fn ty_check(term: &Term<'_>) -> LangResult<Ty> {
-    Context::default().type_of(term).map_err(Into::into)
+pub fn ty_check(term: &Term<'_>) -> TyResult<Ty> {
+    Context::default().type_of(term)
 }
 
 pub fn expect_ty(expected: Ty, found: Ty) -> TyResult<Ty> {
