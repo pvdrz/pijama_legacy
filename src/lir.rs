@@ -139,16 +139,8 @@ impl Term {
             App(ref mut t1, _) => (t1.step_in_place(), self),
             // Dispatch step for conditionals
             Cond(t1, t2, t3) => step_conditional(t1, t2, t3),
-            // Fixed-point operation (fix t1)
-            // If t1 is an abstraction (\. t2), replace the argument of t1 by (fix t1) inside t2
-            // and evaluate to t2.
-            Fix(box Abs(box ref t2)) => {
-                let mut t2 = t2.clone();
-                t2.replace(0, &mut self);
-                (true, t2)
-            }
-            // If t1 is not an abstraction, evaluate it.
-            Fix(ref mut t1) => (t1.step_in_place(), self),
+            // Dispatch step for fixed point operation
+            Fix(t1) => step_fix(t1),
             // Any other term stops the evaluation.
             Var(_) | Lit(_) | Abs(_) | Hole => (false, self),
         }

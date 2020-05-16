@@ -66,6 +66,20 @@ pub fn step_un_op(op: UnOp, mut t1: Box<Term>) -> (bool, Term) {
     }
 }
 
+/// Evaluation step for the fixed-point operation (fix t1)
+pub fn step_fix(mut t1: Box<Term>) -> (bool, Term) {
+    // If t1 is an abstraction (\. t2), replace the argument of t1 by (fix t1) inside t2
+    // and evaluate to t2.
+    if let box Term::Abs(box ref t2) = t1 {
+        let mut t2 = t2.clone();
+        t2.replace(0, &mut Term::Fix(t1));
+        (true, t2)
+    // If t1 is not an abstraction, evaluate it.
+    } else {
+        (t1.step_in_place(), Term::Fix(t1))
+    }
+}
+
 fn native_bin_op(op: BinOp, l1: Literal, l2: Literal) -> Literal {
     use BinOp::*;
     use Literal::*;
