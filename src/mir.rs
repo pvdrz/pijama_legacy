@@ -1,7 +1,7 @@
 use std::fmt;
 
 use crate::ast::*;
-use crate::ty::{Binding, Ty, TyResult};
+use crate::ty::{expect_ty, ty_check, Binding, Ty, TyResult};
 use crate::{LangError, LangResult};
 
 type Block<'a> = Vec<Node<'a>>;
@@ -70,7 +70,7 @@ fn lower_node(node: Node<'_>) -> TyResult<Term<'_>> {
         Node::Call(name, args) => lower_call(name, args),
         Node::BinaryOp(bin_op, node1, node2) => lower_binary_op(bin_op, *node1, *node2),
         Node::UnaryOp(un_op, node) => lower_unary_op(un_op, *node),
-        Node::LetBind(name, opt_ty, node) => lower_let_bind(name, *node),
+        Node::LetBind(name, opt_ty, node) => lower_let_bind(name, opt_ty, *node),
         Node::FnDef(name, binds, body, rec) => lower_fn_def(name, binds, body, rec),
     }
 }
@@ -103,10 +103,17 @@ fn lower_unary_op(un_op: UnOp, node: Node<'_>) -> TyResult<Term<'_>> {
     Ok(Term::UnaryOp(un_op, Box::new(lower_node(node)?)))
 }
 
-fn lower_let_bind<'a>(name: Name<'a>, node: Node<'a>) -> TyResult<Term<'a>> {
+fn lower_let_bind<'a>(name: Name<'a>, opt_ty: Option<Ty>, node: Node<'a>) -> TyResult<Term<'a>> {
+    let term = lower_node(node)?;
+
+    if let Some(ty) = opt_ty {
+        let term_ty = ty_check(&term)?;
+        expect_ty(ty, term_ty)?;
+    }
+
     Ok(Term::Let(
         name,
-        Box::new(lower_node(node)?),
+        Box::new(term),
         Box::new(Term::Lit(Literal::Unit)),
     ))
 }

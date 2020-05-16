@@ -3,7 +3,6 @@ use thiserror::Error;
 use crate::ast::{BinOp, Literal, UnOp};
 use crate::mir::Term;
 use crate::ty::{Binding, Ty};
-use crate::LangResult;
 
 pub fn ty_check(term: &Term<'_>) -> TyResult<Ty> {
     Context::default().type_of(term)
