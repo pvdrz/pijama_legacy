@@ -243,3 +243,36 @@ fn fn_def() -> LangResult<()> {
     assert_eq!(expected[3], result[3], "long body");
     Ok(())
 }
+
+#[test]
+fn precedence() -> LangResult<()> {
+    let input = include_str!("precedence.pj");
+    let result = parse(input)?;
+    let expected = vec![
+        BinaryOp(
+            Plus,
+            box Name(ast::Name("a")),
+            box BinaryOp(Times, box Name(ast::Name("b")), box Name(ast::Name("c"))),
+        ),
+        BinaryOp(
+            BitAnd,
+            box Name(ast::Name("a")),
+            box BinaryOp(Plus, box Name(ast::Name("b")), box Name(ast::Name("c"))),
+        ),
+        BinaryOp(
+            Equal,
+            box Name(ast::Name("a")),
+            box BinaryOp(BitAnd, box Name(ast::Name("b")), box Name(ast::Name("c"))),
+        ),
+        BinaryOp(
+            And,
+            box Name(ast::Name("a")),
+            box BinaryOp(Equal, box Name(ast::Name("b")), box Name(ast::Name("c"))),
+        ),
+    ];
+    assert_eq!(expected[0], result[0], "mul precedes add");
+    assert_eq!(expected[1], result[1], "add precedes bitwise and");
+    assert_eq!(expected[2], result[2], "bitwise and precedes equal");
+    assert_eq!(expected[3], result[3], "equal precedes and");
+    Ok(())
+}
