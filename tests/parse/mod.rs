@@ -146,15 +146,22 @@ fn let_bind() -> LangResult<()> {
     let input = include_str!("let_bind.pj");
     let result = parse(input)?;
     let expected = vec![
-        LetBind(ast::Name("x"), box Name(ast::Name("y"))),
+        LetBind(ast::Name("x"), None, box Name(ast::Name("y"))),
         LetBind(
             ast::Name("x"),
+            None,
             box BinaryOp(Plus, box Name(ast::Name("y")), box Name(ast::Name("z"))),
+        ),
+        LetBind(
+            ast::Name("x"),
+            Some(Ty::Int),
+            box Name(ast::Name("y")),
         ),
     ];
 
     assert_eq!(expected[0], result[0], "simple");
     assert_eq!(expected[1], result[1], "bind to bin op");
+    assert_eq!(expected[2], result[2], "type binding");
     Ok(())
 }
 
@@ -214,11 +221,11 @@ fn fn_def() -> LangResult<()> {
             vec![Name(ast::Name("x"))],
             None,
         ),
-        FnDef(
+        FnRecDef(
             ast::Name("foo"),
             vec![],
             vec![Call(ast::Name("foo"), vec![])],
-            Some(Ty::Unit),
+            Ty::Unit,
         ),
         FnDef(
             ast::Name("foo"),

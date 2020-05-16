@@ -1,0 +1,3 @@
+fn foo(x: Int): Bool do x end
+foo
+
