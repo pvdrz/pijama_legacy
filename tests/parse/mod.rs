@@ -257,29 +257,17 @@ fn precedence() -> LangResult<()> {
         BinaryOp(
             BitAnd,
             box Name(ast::Name("a")),
-            box BinaryOp(
-                Plus,
-                box Name(ast::Name("b")),
-                box Name(ast::Name("c")),
-            ),
+            box BinaryOp(Plus, box Name(ast::Name("b")), box Name(ast::Name("c"))),
         ),
         BinaryOp(
             Equal,
             box Name(ast::Name("a")),
-            box BinaryOp(
-                BitAnd,
-                box Name(ast::Name("b")),
-                box Name(ast::Name("c")),
-            ),
+            box BinaryOp(BitAnd, box Name(ast::Name("b")), box Name(ast::Name("c"))),
         ),
         BinaryOp(
             And,
             box Name(ast::Name("a")),
-            box BinaryOp(
-                Equal,
-                box Name(ast::Name("b")),
-                box Name(ast::Name("c")),
-            ),
+            box BinaryOp(Equal, box Name(ast::Name("b")), box Name(ast::Name("c"))),
         ),
     ];
     assert_eq!(expected[0], result[0], "mul precedes add");
