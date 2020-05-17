@@ -12,11 +12,11 @@ impl<'a> fmt::Display for Name<'a> {
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum BinOp {
-    Plus,
-    Minus,
-    Times,
-    Divide,
-    Modulo,
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Rem,
     And,
     Or,
     BitAnd,
@@ -24,23 +24,23 @@ pub enum BinOp {
     BitXor,
     Shr,
     Shl,
-    Equal,
-    NotEqual,
-    LessThan,
-    GreaterThan,
-    LessThanOrEqual,
-    GreaterThanOrEqual,
+    Eq,
+    Neq,
+    Lt,
+    Gt,
+    Lte,
+    Gte,
 }
 
 impl<'a> fmt::Display for BinOp {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use BinOp::*;
         match self {
-            Plus => write!(f, "+"),
-            Minus => write!(f, "-"),
-            Times => write!(f, "*"),
-            Divide => write!(f, "/"),
-            Modulo => write!(f, "%"),
+            Add => write!(f, "+"),
+            Sub => write!(f, "-"),
+            Mul => write!(f, "*"),
+            Div => write!(f, "/"),
+            Rem => write!(f, "%"),
             And => write!(f, "&&"),
             Or => write!(f, "||"),
             BitAnd => write!(f, "&"),
@@ -48,19 +48,19 @@ impl<'a> fmt::Display for BinOp {
             BitXor => write!(f, "^"),
             Shr => write!(f, ">>"),
             Shl => write!(f, "<<"),
-            Equal => write!(f, "=="),
-            NotEqual => write!(f, "!="),
-            LessThan => write!(f, "<"),
-            GreaterThan => write!(f, ">"),
-            LessThanOrEqual => write!(f, "<="),
-            GreaterThanOrEqual => write!(f, ">="),
+            Eq => write!(f, "=="),
+            Neq => write!(f, "!="),
+            Lt => write!(f, "<"),
+            Gt => write!(f, ">"),
+            Lte => write!(f, "<="),
+            Gte => write!(f, ">="),
         }
     }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum UnOp {
-    Minus,
+    Neg,
     Not,
 }
 
@@ -69,7 +69,7 @@ impl<'a> fmt::Display for UnOp {
         use UnOp::*;
         match self {
             Not => write!(f, "!"),
-            Minus => write!(f, "-"),
+            Neg => write!(f, "-"),
         }
     }
 }

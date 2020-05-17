@@ -59,7 +59,7 @@ impl<'a> Context<'a> {
             Term::UnaryOp(op, term) => {
                 let ty = self.type_of(term)?;
                 match op {
-                    UnOp::Minus => expect_ty(Ty::Int, ty)?,
+                    UnOp::Neg => expect_ty(Ty::Int, ty)?,
                     UnOp::Not => expect_ty(Ty::Bool, ty)?,
                 }
             }
@@ -68,25 +68,22 @@ impl<'a> Context<'a> {
                 let ty2 = self.type_of(t2)?;
                 let ty = expect_ty(ty1, ty2)?;
                 match op {
-                    BinOp::Plus
-                    | BinOp::Minus
-                    | BinOp::Times
-                    | BinOp::Divide
-                    | BinOp::Modulo
+                    BinOp::Add
+                    | BinOp::Sub
+                    | BinOp::Mul
+                    | BinOp::Div
+                    | BinOp::Rem
                     | BinOp::BitAnd
                     | BinOp::BitOr
                     | BinOp::BitXor
                     | BinOp::Shr
                     | BinOp::Shl => expect_ty(Ty::Int, ty)?,
                     BinOp::Or | BinOp::And => expect_ty(Ty::Bool, ty)?,
-                    BinOp::LessThan
-                    | BinOp::GreaterThan
-                    | BinOp::LessThanOrEqual
-                    | BinOp::GreaterThanOrEqual => {
+                    BinOp::Lt | BinOp::Gt | BinOp::Lte | BinOp::Gte => {
                         expect_ty(Ty::Int, ty)?;
                         Ty::Bool
                     }
-                    BinOp::Equal | BinOp::NotEqual => Ty::Bool,
+                    BinOp::Eq | BinOp::Neq => Ty::Bool,
                 }
             }
             Term::App(t1, t2) => {
