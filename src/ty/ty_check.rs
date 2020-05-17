@@ -16,8 +16,18 @@ pub fn expect_ty(expected: Ty, found: Ty) -> TyResult<Ty> {
     }
 }
 
-fn expect_ty2(expected: Ty, ty1: Ty, ty2: Ty) -> TyResult<Ty> {
-    expect_ty(expect_ty(expected, ty1)?, ty2)
+/// Macro version of `expect_ty` that accepts a comma separated list of types to check.
+macro_rules! ensure_ty {
+    ($expected:path, $found:ident, $( $other:ident ),*) => {
+        // Using a closure to benefit from early exit via ? without interfering with the caller
+        move || -> TyResult<Ty> {
+            let ty = expect_ty($expected, $found)?;
+            $(
+                let ty = expect_ty(ty, $other)?;
+            )*
+            Ok(ty)
+        }()
+    }
 }
 
 #[derive(Error, Debug)]
@@ -80,10 +90,10 @@ impl<'a> Context<'a> {
                     | BinOp::BitOr
                     | BinOp::BitXor
                     | BinOp::Shr
-                    | BinOp::Shl => expect_ty2(Ty::Int, ty1, ty2)?,
-                    BinOp::Or | BinOp::And => expect_ty2(Ty::Bool, ty1, ty2)?,
+                    | BinOp::Shl => ensure_ty!(Ty::Int, ty1, ty2)?,
+                    BinOp::Or | BinOp::And => ensure_ty!(Ty::Bool, ty1, ty2)?,
                     BinOp::Lt | BinOp::Gt | BinOp::Lte | BinOp::Gte => {
-                        expect_ty2(Ty::Int, ty1, ty2)?;
+                        ensure_ty!(Ty::Int, ty1, ty2)?;
                         Ty::Bool
                     }
                     BinOp::Eq | BinOp::Neq => {
