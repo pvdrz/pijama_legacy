@@ -81,6 +81,12 @@ fn calling(c: &mut Criterion) {
     c.bench_function("calling", |b| b.iter(|| evaluate(term.clone())));
 }
 
+fn complex_calling(c: &mut Criterion) {
+    let input = include_str!("../tests/eval/complex_calling.pj");
+    let term = compile(input).unwrap();
+    c.bench_function("complex_calling", |b| b.iter(|| evaluate(term.clone())));
+}
+
 criterion_group!(
     benches,
     arithmetic,
@@ -92,6 +98,7 @@ criterion_group!(
     gcd,
     ackermann,
     calling,
+    complex_calling,
     fancy_max,
     step
 );

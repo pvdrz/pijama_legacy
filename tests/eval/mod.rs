@@ -87,6 +87,14 @@ fn calling() -> LangResult<()> {
 }
 
 #[test]
+fn complex_calling() -> LangResult<()> {
+    let input = include_str!("complex_calling.pj");
+    let term = run(input)?;
+    assert_eq!(Term::Lit(Literal::Number(1)), term);
+    Ok(())
+}
+
+#[test]
 fn step() -> LangResult<()> {
     let input = include_str!("step.pj");
     let term = run(input)?;
