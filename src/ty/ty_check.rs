@@ -75,7 +75,9 @@ impl<'a> Context<'a> {
                     | BinOp::Modulo
                     | BinOp::BitAnd
                     | BinOp::BitOr
-                    | BinOp::BitXor => expect_ty(Ty::Int, ty)?,
+                    | BinOp::BitXor
+                    | BinOp::Shr
+                    | BinOp::Shl => expect_ty(Ty::Int, ty)?,
                     BinOp::Or | BinOp::And => expect_ty(Ty::Bool, ty)?,
                     BinOp::LessThan
                     | BinOp::GreaterThan

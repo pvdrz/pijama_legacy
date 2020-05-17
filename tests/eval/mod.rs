@@ -71,6 +71,22 @@ fn bit_xor() -> LangResult<()> {
 }
 
 #[test]
+fn bit_shift_l() -> LangResult<()> {
+    let input = include_str!("bit_shift_l.pj");
+    let term = run(input)?;
+    assert_eq!(Term::Lit(Literal::Number(128)), term);
+    Ok(())
+}
+
+#[test]
+fn bit_shift_r() -> LangResult<()> {
+    let input = include_str!("bit_shift_r.pj");
+    let term = run(input)?;
+    assert_eq!(Term::Lit(Literal::Number(32)), term);
+    Ok(())
+}
+
+#[test]
 fn or_short_circuit() -> LangResult<()> {
     panic_after(Duration::from_secs(1), || {
         let input = include_str!("or_short_circuit.pj");
