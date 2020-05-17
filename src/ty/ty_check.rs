@@ -79,10 +79,7 @@ impl<'a> Context<'a> {
                     | BinOp::Shr
                     | BinOp::Shl => expect_ty(Ty::Int, ty)?,
                     BinOp::Or | BinOp::And => expect_ty(Ty::Bool, ty)?,
-                    BinOp::Lt
-                    | BinOp::Gt
-                    | BinOp::Lte
-                    | BinOp::Gte => {
+                    BinOp::Lt | BinOp::Gt | BinOp::Lte | BinOp::Gte => {
                         expect_ty(Ty::Int, ty)?;
                         Ty::Bool
                     }

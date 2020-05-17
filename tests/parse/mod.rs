@@ -300,11 +300,7 @@ fn cmp_and_shift() -> LangResult<()> {
             box BinaryOp(
                 Shr,
                 box Name(ast::Name("a")),
-                box BinaryOp(
-                    Gt,
-                    box Name(ast::Name("b")),
-                    box Name(ast::Name("c")),
-                ),
+                box BinaryOp(Gt, box Name(ast::Name("b")), box Name(ast::Name("c"))),
             ),
             box Name(ast::Name("d")),
         ),

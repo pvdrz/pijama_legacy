@@ -39,7 +39,7 @@ impl<'a> fmt::Display for BinOp {
             Add => write!(f, "+"),
             Sub => write!(f, "-"),
             Mul => write!(f, "*"),
-            Div=> write!(f, "/"),
+            Div => write!(f, "/"),
             Rem => write!(f, "%"),
             And => write!(f, "&&"),
             Or => write!(f, "||"),
