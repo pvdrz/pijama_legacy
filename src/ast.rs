@@ -22,6 +22,8 @@ pub enum BinOp {
     BitAnd,
     BitOr,
     BitXor,
+    Shr,
+    Shl,
     Eq,
     Neq,
     Lt,
@@ -44,12 +46,14 @@ impl<'a> fmt::Display for BinOp {
             BitAnd => write!(f, "&"),
             BitOr => write!(f, "|"),
             BitXor => write!(f, "^"),
+            Shr => write!(f, ">>"),
+            Shl => write!(f, "<<"),
             Eq => write!(f, "=="),
             Neq => write!(f, "!="),
             Lt => write!(f, "<"),
             Gt => write!(f, ">"),
             Lte => write!(f, "<="),
-            Gte => write!(f, ">="),
+            Gte => write!(f, ">="),   
         }
     }
 }

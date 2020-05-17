@@ -152,11 +152,7 @@ fn let_bind() -> LangResult<()> {
             None,
             box BinaryOp(Add, box Name(ast::Name("y")), box Name(ast::Name("z"))),
         ),
-        LetBind(
-            ast::Name("x"),
-            Some(Ty::Int),
-            box Name(ast::Name("y")),
-        ),
+        LetBind(ast::Name("x"), Some(Ty::Int), box Name(ast::Name("y"))),
     ];
 
     assert_eq!(expected[0], result[0], "simple");
@@ -281,5 +277,41 @@ fn precedence() -> LangResult<()> {
     assert_eq!(expected[1], result[1], "add precedes bitwise and");
     assert_eq!(expected[2], result[2], "bitwise and precedes equal");
     assert_eq!(expected[3], result[3], "equal precedes and");
+    Ok(())
+}
+
+#[test]
+fn cmp_and_shift() -> LangResult<()> {
+    let input = include_str!("cmp_and_shift.pj");
+    let result = parse(input)?;
+    let expected = vec![
+        BinaryOp(
+            LessThan,
+            box BinaryOp(Shl, box Name(ast::Name("a")), box Name(ast::Name("b"))),
+            box BinaryOp(Shl, box Name(ast::Name("c")), box Name(ast::Name("d"))),
+        ),
+        BinaryOp(
+            GreaterThan,
+            box BinaryOp(Shr, box Name(ast::Name("a")), box Name(ast::Name("b"))),
+            box BinaryOp(Shr, box Name(ast::Name("c")), box Name(ast::Name("d"))),
+        ),
+        BinaryOp(
+            Shr,
+            box BinaryOp(
+                Shr,
+                box Name(ast::Name("a")),
+                box BinaryOp(
+                    GreaterThan,
+                    box Name(ast::Name("b")),
+                    box Name(ast::Name("c")),
+                ),
+            ),
+            box Name(ast::Name("d")),
+        ),
+    ];
+
+    assert_eq!(expected[0], result[0], "left shift");
+    assert_eq!(expected[1], result[1], "right shift");
+    assert_eq!(expected[2], result[2], "brackets");
     Ok(())
 }

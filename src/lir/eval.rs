@@ -101,6 +101,8 @@ fn native_bin_op(op: BinOp, l1: Literal, l2: Literal) -> Literal {
         (BitAnd, Number(n1), Number(n2)) => (n1 & n2).into(),
         (BitOr, Number(n1), Number(n2)) => (n1 | n2).into(),
         (BitXor, Number(n1), Number(n2)) => (n1 ^ n2).into(),
+        (Shr, Number(n1), Number(n2)) => (n1 >> n2).into(),
+        (Shl, Number(n1), Number(n2)) => (n1 << n2).into(),
         (op, l1, l2) => panic!("Unexpected operation `{} {} {}`", l1, op, l2),
     }
 }

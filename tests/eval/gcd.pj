@@ -1,0 +1,9 @@
+fn rec gcd(x: Int, y: Int): Int do
+    if y == 0 do
+        x
+    else
+        gcd(y, x % y)
+    end
+end
+
+gcd(144, 233)

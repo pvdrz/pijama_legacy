@@ -1,0 +1,27 @@
+fn foo_z(x: Int) do x end
+fn foo_y(x: Int) do foo_z(x) end
+fn foo_x(x: Int) do foo_y(x) end
+fn foo_w(x: Int) do foo_x(x) end
+fn foo_v(x: Int) do foo_w(x) end
+fn foo_u(x: Int) do foo_v(x) end
+fn foo_t(x: Int) do foo_u(x) end
+fn foo_s(x: Int) do foo_t(x) end
+fn foo_r(x: Int) do foo_s(x) end
+fn foo_q(x: Int) do foo_r(x) end
+fn foo_p(x: Int) do foo_q(x) end
+fn foo_o(x: Int) do foo_p(x) end
+fn foo_n(x: Int) do foo_o(x) end
+fn foo_m(x: Int) do foo_n(x) end
+fn foo_l(x: Int) do foo_m(x) end
+fn foo_k(x: Int) do foo_l(x) end
+fn foo_j(x: Int) do foo_k(x) end
+fn foo_i(x: Int) do foo_j(x) end
+fn foo_h(x: Int) do foo_i(x) end
+fn foo_g(x: Int) do foo_h(x) end
+fn foo_f(x: Int) do foo_g(x) end
+fn foo_e(x: Int) do foo_f(x) end
+fn foo_d(x: Int) do foo_e(x) end
+fn foo_c(x: Int) do foo_d(x) end
+fn foo_b(x: Int) do foo_c(x) end
+fn foo_a(x: Int) do foo_b(x) end
+foo_a(1)

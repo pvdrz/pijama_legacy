@@ -137,8 +137,8 @@ fn bin_op_2<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, BinO
     alt((
         map(tag("<="), |_| Lte),
         map(tag(">="), |_| Gte),
-        map(char('<'), |_| Lt),
-        map(char('>'), |_| Gt),
+        map(terminated(char('<'), peek(not(char('<')))), |_| Lt),
+        map(terminated(char('>'), peek(not(char('>')))), |_| Gt),
         map(tag("=="), |_| Eq),
         map(tag("!="), |_| Neq),
     ))(input)
@@ -161,6 +161,8 @@ fn bin_op_3<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, BinO
         map(terminated(char('&'), peek(not(char('&')))), |_| BitAnd),
         map(terminated(char('|'), peek(not(char('|')))), |_| BitOr),
         map(char('^'), |_| BitXor),
+        map(tag(">>"), |_| Shr),
+        map(tag("<<"), |_| Shl),
     ))(input)
 }
 

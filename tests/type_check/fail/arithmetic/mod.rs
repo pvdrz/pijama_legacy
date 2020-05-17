@@ -26,5 +26,5 @@ test_type_with_placeholder!(
         found: Ty::Bool
     })),
     OPERATOR,
-    /, *, +, -, &, |, ^
+    /, *, +, -, &, |, ^, <<, >>
 );

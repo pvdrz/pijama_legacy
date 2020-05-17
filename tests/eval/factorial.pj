@@ -6,5 +6,4 @@ fn rec fact(n: Int): Int do
     end
 end
 
-fact(20)
-
+fact(10)
