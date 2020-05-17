@@ -2,6 +2,8 @@ use std::fmt;
 
 use crate::ty::{Binding, Ty};
 
+pub type Block<'a> = Vec<Node<'a>>;
+
 #[derive(Debug, Eq, PartialEq, Clone, Copy)]
 pub struct Name<'a>(pub &'a str);
 impl<'a> fmt::Display for Name<'a> {
@@ -109,10 +111,10 @@ pub enum Node<'a> {
     BinaryOp(BinOp, Box<Node<'a>>, Box<Node<'a>>),
     UnaryOp(UnOp, Box<Node<'a>>),
     LetBind(Name<'a>, Option<Ty>, Box<Node<'a>>),
-    Cond(Vec<Node<'a>>, Vec<Node<'a>>, Vec<Node<'a>>),
-    FnDef(Name<'a>, Vec<Binding<'a>>, Vec<Node<'a>>, Option<Ty>),
-    FnRecDef(Name<'a>, Vec<Binding<'a>>, Vec<Node<'a>>, Ty),
-    Call(Name<'a>, Vec<Node<'a>>),
+    Cond(Block<'a>, Block<'a>, Block<'a>),
+    FnDef(Name<'a>, Vec<Binding<'a>>, Block<'a>, Option<Ty>),
+    FnRecDef(Name<'a>, Vec<Binding<'a>>, Block<'a>, Ty),
+    Call(Name<'a>, Block<'a>),
     Literal(Literal),
     Name(Name<'a>),
 }

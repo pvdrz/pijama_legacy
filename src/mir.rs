@@ -4,8 +4,6 @@ use crate::ast::*;
 use crate::ty::{expect_ty, ty_check, Binding, Ty, TyResult};
 use crate::{LangError, LangResult};
 
-type Block<'a> = Vec<Node<'a>>;
-
 #[derive(Debug, Clone)]
 pub enum Term<'a> {
     Var(Name<'a>),
