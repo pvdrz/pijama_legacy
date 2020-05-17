@@ -1,0 +1,13 @@
+fn rec fib(x: Int): Int do
+    if x == 0 do
+        0
+    else
+        if x == 1 do
+            1
+        else
+            fib(x - 1) + fib(x - 2)
+        end
+    end
+end
+
+fib(8)

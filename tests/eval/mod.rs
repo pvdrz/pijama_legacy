@@ -10,21 +10,29 @@ use std::time::Duration;
 fn arithmetic() -> LangResult<()> {
     let input = include_str!("arithmetic.pj");
     let term = run(input)?;
-    assert_eq!(Term::Lit(Literal::Number(55)), term);
+    assert_eq!(Term::Lit(Literal::Number(121)), term);
     Ok(())
 }
 
 #[test]
-fn fact_rec() -> LangResult<()> {
-    let input = include_str!("fact_rec.pj");
+fn logic() -> LangResult<()> {
+    let input = include_str!("logic.pj");
     let term = run(input)?;
-    assert_eq!(Term::Lit(Literal::Number(2432902008176640000)), term);
+    assert_eq!(Term::Lit(Literal::Bool(false)), term);
     Ok(())
 }
 
 #[test]
-fn fact_tail() -> LangResult<()> {
-    let input = include_str!("fact_tail.pj");
+fn factorial() -> LangResult<()> {
+    let input = include_str!("factorial.pj");
+    let term = run(input)?;
+    assert_eq!(Term::Lit(Literal::Number(3628800)), term);
+    Ok(())
+}
+
+#[test]
+fn factorial_tail() -> LangResult<()> {
+    let input = include_str!("factorial_tail.pj");
     let term = run(input)?;
     assert_eq!(Term::Lit(Literal::Number(3628800)), term);
     Ok(())
@@ -35,6 +43,54 @@ fn fancy_max() -> LangResult<()> {
     let input = include_str!("fancy_max.pj");
     let term = run(input)?;
     assert_eq!(Term::Lit(Literal::Number(10)), term);
+    Ok(())
+}
+
+#[test]
+fn fibonacci() -> LangResult<()> {
+    let input = include_str!("fibonacci.pj");
+    let term = run(input)?;
+    assert_eq!(Term::Lit(Literal::Number(21)), term);
+    Ok(())
+}
+
+#[test]
+fn fibonacci_tail() -> LangResult<()> {
+    let input = include_str!("fibonacci_tail.pj");
+    let term = run(input)?;
+    assert_eq!(Term::Lit(Literal::Number(21)), term);
+    Ok(())
+}
+
+#[test]
+fn gcd() -> LangResult<()> {
+    let input = include_str!("gcd.pj");
+    let term = run(input)?;
+    assert_eq!(Term::Lit(Literal::Number(1)), term);
+    Ok(())
+}
+
+#[test]
+fn ackermann() -> LangResult<()> {
+    let input = include_str!("ackermann.pj");
+    let term = run(input)?;
+    assert_eq!(Term::Lit(Literal::Number(5)), term);
+    Ok(())
+}
+
+#[test]
+fn calling() -> LangResult<()> {
+    let input = include_str!("calling.pj");
+    let term = run(input)?;
+    assert_eq!(Term::Lit(Literal::Number(1)), term);
+    Ok(())
+}
+
+#[test]
+fn complex_calling() -> LangResult<()> {
+    let input = include_str!("complex_calling.pj");
+    let term = run(input)?;
+    assert_eq!(Term::Lit(Literal::Number(1)), term);
     Ok(())
 }
 

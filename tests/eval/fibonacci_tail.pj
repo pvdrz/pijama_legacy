@@ -1,0 +1,13 @@
+fn rec fib(x: Int, a: Int, b: Int): Int do
+    if x == 0 do
+        a
+    else
+        if x == 1 do
+            b
+        else
+            fib(x - 1, b, a + b)
+        end
+    end
+end
+
+fib(8, 0, 1)
