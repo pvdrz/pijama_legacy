@@ -16,6 +16,10 @@ pub fn expect_ty(expected: Ty, found: Ty) -> TyResult<Ty> {
     }
 }
 
+fn expect_ty2(expected: Ty, ty1: Ty, ty2: Ty) -> TyResult<Ty> {
+    expect_ty(expect_ty(expected, ty1)?, ty2)
+}
+
 #[derive(Error, Debug)]
 pub enum TyError {
     #[error("Type mismatch: expected {expected}, found {found}")]
@@ -66,7 +70,6 @@ impl<'a> Context<'a> {
             Term::BinaryOp(op, t1, t2) => {
                 let ty1 = self.type_of(t1)?;
                 let ty2 = self.type_of(t2)?;
-                let ty = expect_ty(ty1, ty2)?;
                 match op {
                     BinOp::Add
                     | BinOp::Sub
@@ -77,13 +80,16 @@ impl<'a> Context<'a> {
                     | BinOp::BitOr
                     | BinOp::BitXor
                     | BinOp::Shr
-                    | BinOp::Shl => expect_ty(Ty::Int, ty)?,
-                    BinOp::Or | BinOp::And => expect_ty(Ty::Bool, ty)?,
+                    | BinOp::Shl => expect_ty2(Ty::Int, ty1, ty2)?,
+                    BinOp::Or | BinOp::And => expect_ty2(Ty::Bool, ty1, ty2)?,
                     BinOp::Lt | BinOp::Gt | BinOp::Lte | BinOp::Gte => {
-                        expect_ty(Ty::Int, ty)?;
+                        expect_ty2(Ty::Int, ty1, ty2)?;
                         Ty::Bool
                     }
-                    BinOp::Eq | BinOp::Neq => Ty::Bool,
+                    BinOp::Eq | BinOp::Neq => {
+                        expect_ty(ty1, ty2)?;
+                        Ty::Bool
+                    }
                 }
             }
             Term::App(t1, t2) => {
