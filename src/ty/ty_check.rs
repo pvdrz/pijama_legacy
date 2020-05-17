@@ -16,6 +16,20 @@ pub fn expect_ty(expected: Ty, found: Ty) -> TyResult<Ty> {
     }
 }
 
+/// Macro version of `expect_ty` that accepts a comma separated list of types to check.
+macro_rules! ensure_ty {
+    ($expected:path, $found:ident, $( $other:ident ),*) => {
+        // Using a closure to benefit from early exit via ? without interfering with the caller
+        move || -> TyResult<Ty> {
+            let ty = expect_ty($expected, $found)?;
+            $(
+                let ty = expect_ty(ty, $other)?;
+            )*
+            Ok(ty)
+        }()
+    }
+}
+
 #[derive(Error, Debug)]
 pub enum TyError {
     #[error("Type mismatch: expected {expected}, found {found}")]
@@ -66,7 +80,6 @@ impl<'a> Context<'a> {
             Term::BinaryOp(op, t1, t2) => {
                 let ty1 = self.type_of(t1)?;
                 let ty2 = self.type_of(t2)?;
-                let ty = expect_ty(ty1, ty2)?;
                 match op {
                     BinOp::Add
                     | BinOp::Sub
@@ -77,13 +90,16 @@ impl<'a> Context<'a> {
                     | BinOp::BitOr
                     | BinOp::BitXor
                     | BinOp::Shr
-                    | BinOp::Shl => expect_ty(Ty::Int, ty)?,
-                    BinOp::Or | BinOp::And => expect_ty(Ty::Bool, ty)?,
+                    | BinOp::Shl => ensure_ty!(Ty::Int, ty1, ty2)?,
+                    BinOp::Or | BinOp::And => ensure_ty!(Ty::Bool, ty1, ty2)?,
                     BinOp::Lt | BinOp::Gt | BinOp::Lte | BinOp::Gte => {
-                        expect_ty(Ty::Int, ty)?;
+                        ensure_ty!(Ty::Int, ty1, ty2)?;
                         Ty::Bool
                     }
-                    BinOp::Eq | BinOp::Neq => Ty::Bool,
+                    BinOp::Eq | BinOp::Neq => {
+                        expect_ty(ty1, ty2)?;
+                        Ty::Bool
+                    }
                 }
             }
             Term::App(t1, t2) => {

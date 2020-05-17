@@ -48,3 +48,59 @@ macro_rules! test_type_with_placeholder {
         }
     };
 }
+
+/// Create a test with `$name` that type checks a file with `$name`.pj
+/// in the same directory against the `$pattern`. It does this once for
+/// each int binary operator that will replace the `$placeholder` in the file.
+#[macro_export]
+macro_rules! test_type_for_all_integer_binops {
+    ($name:ident, $pattern:pat, $placeholder:tt) => {
+        crate::test_type_with_placeholder!(
+            $name,
+            $pattern,
+            $placeholder,
+            /, *, +, -, &, |, ^, <<, >>);
+    };
+}
+
+/// Create a test with `$name` that type checks a file with `$name`.pj
+/// in the same directory against the `$pattern`. It does this once for
+/// each comparision operator that will replace the `$placeholder` in the file.
+#[macro_export]
+macro_rules! test_type_for_all_comparision_binops {
+    ($name:ident, $pattern:pat, $placeholder:tt) => {
+        crate::test_type_with_placeholder!(
+            $name,
+            $pattern,
+            $placeholder,
+            <, >, <=, >=);
+    };
+}
+
+/// Create a test with `$name` that type checks a file with `$name`.pj
+/// in the same directory against the `$pattern`. It does this once for
+/// each equality operator that will replace the `$placeholder` in the file.
+#[macro_export]
+macro_rules! test_type_for_all_equality_binops {
+    ($name:ident, $pattern:pat, $placeholder:tt) => {
+        crate::test_type_with_placeholder!(
+            $name,
+            $pattern,
+            $placeholder,
+            ==, !=);
+    };
+}
+
+/// Create a test with `$name` that type checks a file with `$name`.pj
+/// in the same directory against the `$pattern`. It does this once for
+/// each logical operator that will replace the `$placeholder` in the file.
+#[macro_export]
+macro_rules! test_type_for_all_logical_binops {
+    ($name:ident, $pattern:pat, $placeholder:tt) => {
+        crate::test_type_with_placeholder!(
+            $name,
+            $pattern,
+            $placeholder,
+            &&, ||);
+    };
+}
