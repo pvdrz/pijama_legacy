@@ -112,7 +112,7 @@ fn native_un_op(op: UnOp, lit: Literal) -> Literal {
     use UnOp::*;
 
     match (op, lit) {
-        (Sub, Number(n)) => (-n).into(),
+        (Neg, Number(n)) => (-n).into(),
         (Not, Bool(b)) => (!b).into(),
         (op, lit) => panic!("Unexpected operation `{} {}`", op, lit),
     }

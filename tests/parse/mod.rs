@@ -72,7 +72,7 @@ fn unary_op() -> LangResult<()> {
     let input = include_str!("un_op.pj");
     let result = parse(input)?;
     let expected = vec![
-        UnaryOp(UnOp::Sub, box Name(ast::Name("x"))),
+        UnaryOp(UnOp::Neg, box Name(ast::Name("x"))),
         UnaryOp(UnOp::Not, box Name(ast::Name("x"))),
         UnaryOp(UnOp::Not, box UnaryOp(UnOp::Not, box Name(ast::Name("x")))),
         UnaryOp(UnOp::Not, box Name(ast::Name("x"))),

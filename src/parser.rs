@@ -79,7 +79,7 @@ fn name<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Name<'a>
 fn un_op<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, UnOp, E> {
     alt((
         map(char('!'), |_| UnOp::Not),
-        map(char('-'), |_| UnOp::Sub),
+        map(char('-'), |_| UnOp::Neg),
     ))(input)
 }
 

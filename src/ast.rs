@@ -60,7 +60,7 @@ impl<'a> fmt::Display for BinOp {
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum UnOp {
-    Sub,
+    Neg,
     Not,
 }
 
@@ -69,7 +69,7 @@ impl<'a> fmt::Display for UnOp {
         use UnOp::*;
         match self {
             Not => write!(f, "!"),
-            Sub => write!(f, "-"),
+            Neg => write!(f, "-"),
         }
     }
 }

@@ -59,7 +59,7 @@ impl<'a> Context<'a> {
             Term::UnaryOp(op, term) => {
                 let ty = self.type_of(term)?;
                 match op {
-                    UnOp::Sub => expect_ty(Ty::Int, ty)?,
+                    UnOp::Neg => expect_ty(Ty::Int, ty)?,
                     UnOp::Not => expect_ty(Ty::Bool, ty)?,
                 }
             }
