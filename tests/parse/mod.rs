@@ -48,16 +48,16 @@ fn binary_op() -> LangResult<()> {
     let input = include_str!("bin_op.pj");
     let result = parse(input)?;
     let expected = vec![
-        BinaryOp(Plus, box Name(ast::Name("a")), box Name(ast::Name("b"))),
+        BinaryOp(Add, box Name(ast::Name("a")), box Name(ast::Name("b"))),
         BinaryOp(
-            Plus,
-            box BinaryOp(Plus, box Name(ast::Name("a")), box Name(ast::Name("b"))),
+            Add,
+            box BinaryOp(Add, box Name(ast::Name("a")), box Name(ast::Name("b"))),
             box Name(ast::Name("c")),
         ),
         BinaryOp(
-            Plus,
+            Add,
             box Name(ast::Name("a")),
-            box BinaryOp(Plus, box Name(ast::Name("b")), box Name(ast::Name("c"))),
+            box BinaryOp(Add, box Name(ast::Name("b")), box Name(ast::Name("c"))),
         ),
     ];
 
@@ -72,7 +72,7 @@ fn unary_op() -> LangResult<()> {
     let input = include_str!("un_op.pj");
     let result = parse(input)?;
     let expected = vec![
-        UnaryOp(UnOp::Minus, box Name(ast::Name("x"))),
+        UnaryOp(UnOp::Sub, box Name(ast::Name("x"))),
         UnaryOp(UnOp::Not, box Name(ast::Name("x"))),
         UnaryOp(UnOp::Not, box UnaryOp(UnOp::Not, box Name(ast::Name("x")))),
         UnaryOp(UnOp::Not, box Name(ast::Name("x"))),
@@ -150,7 +150,7 @@ fn let_bind() -> LangResult<()> {
         LetBind(
             ast::Name("x"),
             None,
-            box BinaryOp(Plus, box Name(ast::Name("y")), box Name(ast::Name("z"))),
+            box BinaryOp(Add, box Name(ast::Name("y")), box Name(ast::Name("z"))),
         ),
         LetBind(ast::Name("x"), Some(Ty::Int), box Name(ast::Name("y"))),
     ];
@@ -253,24 +253,24 @@ fn precedence() -> LangResult<()> {
     let result = parse(input)?;
     let expected = vec![
         BinaryOp(
-            Plus,
+            Add,
             box Name(ast::Name("a")),
-            box BinaryOp(Times, box Name(ast::Name("b")), box Name(ast::Name("c"))),
+            box BinaryOp(Mul, box Name(ast::Name("b")), box Name(ast::Name("c"))),
         ),
         BinaryOp(
             BitAnd,
             box Name(ast::Name("a")),
-            box BinaryOp(Plus, box Name(ast::Name("b")), box Name(ast::Name("c"))),
+            box BinaryOp(Add, box Name(ast::Name("b")), box Name(ast::Name("c"))),
         ),
         BinaryOp(
-            Equal,
+            Eq,
             box Name(ast::Name("a")),
             box BinaryOp(BitAnd, box Name(ast::Name("b")), box Name(ast::Name("c"))),
         ),
         BinaryOp(
             And,
             box Name(ast::Name("a")),
-            box BinaryOp(Equal, box Name(ast::Name("b")), box Name(ast::Name("c"))),
+            box BinaryOp(Eq, box Name(ast::Name("b")), box Name(ast::Name("c"))),
         ),
     ];
     assert_eq!(expected[0], result[0], "mul precedes add");
@@ -286,12 +286,12 @@ fn cmp_and_shift() -> LangResult<()> {
     let result = parse(input)?;
     let expected = vec![
         BinaryOp(
-            LessThan,
+            Lt,
             box BinaryOp(Shl, box Name(ast::Name("a")), box Name(ast::Name("b"))),
             box BinaryOp(Shl, box Name(ast::Name("c")), box Name(ast::Name("d"))),
         ),
         BinaryOp(
-            GreaterThan,
+            Gt,
             box BinaryOp(Shr, box Name(ast::Name("a")), box Name(ast::Name("b"))),
             box BinaryOp(Shr, box Name(ast::Name("c")), box Name(ast::Name("d"))),
         ),
@@ -301,7 +301,7 @@ fn cmp_and_shift() -> LangResult<()> {
                 Shr,
                 box Name(ast::Name("a")),
                 box BinaryOp(
-                    GreaterThan,
+                    Gt,
                     box Name(ast::Name("b")),
                     box Name(ast::Name("c")),
                 ),

@@ -79,7 +79,7 @@ fn name<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Name<'a>
 fn un_op<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, UnOp, E> {
     alt((
         map(char('!'), |_| UnOp::Not),
-        map(char('-'), |_| UnOp::Minus),
+        map(char('-'), |_| UnOp::Sub),
     ))(input)
 }
 
@@ -135,12 +135,12 @@ fn node_1<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, 
 fn bin_op_2<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, BinOp, E> {
     use BinOp::*;
     alt((
-        map(tag("<="), |_| LessThanOrEqual),
-        map(tag(">="), |_| GreaterThanOrEqual),
-        map(terminated(char('<'), peek(not(char('<')))), |_| LessThan),
-        map(terminated(char('>'), peek(not(char('>')))), |_| GreaterThan),
-        map(tag("=="), |_| Equal),
-        map(tag("!="), |_| NotEqual),
+        map(tag("<="), |_| Lte),
+        map(tag(">="), |_| Gte),
+        map(terminated(char('<'), peek(not(char('<')))), |_| Lt),
+        map(terminated(char('>'), peek(not(char('>')))), |_| Gt),
+        map(tag("=="), |_| Eq),
+        map(tag("!="), |_| Neq),
     ))(input)
 }
 
@@ -190,7 +190,7 @@ fn node_4<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, 
 
 fn bin_op_4<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, BinOp, E> {
     use BinOp::*;
-    alt((map(char('+'), |_| Plus), map(char('-'), |_| Minus)))(input)
+    alt((map(char('+'), |_| Add), map(char('-'), |_| Sub)))(input)
 }
 
 fn node_5<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {
@@ -211,9 +211,9 @@ fn node_5<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, 
 fn bin_op_5<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, BinOp, E> {
     use BinOp::*;
     alt((
-        map(char('*'), |_| Times),
-        map(char('/'), |_| Divide),
-        map(char('%'), |_| Modulo),
+        map(char('*'), |_| Mul),
+        map(char('/'), |_| Div),
+        map(char('%'), |_| Rem),
     ))(input)
 }
 

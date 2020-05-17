@@ -85,17 +85,17 @@ fn native_bin_op(op: BinOp, l1: Literal, l2: Literal) -> Literal {
     use Literal::*;
 
     match (op, l1, l2) {
-        (Plus, Number(n1), Number(n2)) => (n1 + n2).into(),
-        (Minus, Number(n1), Number(n2)) => (n1 - n2).into(),
-        (Times, Number(n1), Number(n2)) => (n1 * n2).into(),
-        (Divide, Number(n1), Number(n2)) => (n1 / n2).into(),
-        (Modulo, Number(n1), Number(n2)) => (n1 % n2).into(),
-        (LessThan, Number(n1), Number(n2)) => (n1 < n2).into(),
-        (LessThanOrEqual, Number(n1), Number(n2)) => (n1 <= n2).into(),
-        (GreaterThan, Number(n1), Number(n2)) => (n1 > n2).into(),
-        (GreaterThanOrEqual, Number(n1), Number(n2)) => (n1 >= n2).into(),
-        (Equal, l1, l2) => (l1 == l2).into(),
-        (NotEqual, l1, l2) => (l1 != l2).into(),
+        (Add, Number(n1), Number(n2)) => (n1 + n2).into(),
+        (Sub, Number(n1), Number(n2)) => (n1 - n2).into(),
+        (Mul, Number(n1), Number(n2)) => (n1 * n2).into(),
+        (Div, Number(n1), Number(n2)) => (n1 / n2).into(),
+        (Rem, Number(n1), Number(n2)) => (n1 % n2).into(),
+        (Lt, Number(n1), Number(n2)) => (n1 < n2).into(),
+        (Lte, Number(n1), Number(n2)) => (n1 <= n2).into(),
+        (Gt, Number(n1), Number(n2)) => (n1 > n2).into(),
+        (Gte, Number(n1), Number(n2)) => (n1 >= n2).into(),
+        (Eq, l1, l2) => (l1 == l2).into(),
+        (Neq, l1, l2) => (l1 != l2).into(),
         (And, Bool(b1), Bool(b2)) => (b1 && b2).into(),
         (Or, Bool(b1), Bool(b2)) => (b1 || b2).into(),
         (BitAnd, Number(n1), Number(n2)) => (n1 & n2).into(),
@@ -112,7 +112,7 @@ fn native_un_op(op: UnOp, lit: Literal) -> Literal {
     use UnOp::*;
 
     match (op, lit) {
-        (Minus, Number(n)) => (-n).into(),
+        (Sub, Number(n)) => (-n).into(),
         (Not, Bool(b)) => (!b).into(),
         (op, lit) => panic!("Unexpected operation `{} {}`", op, lit),
     }
