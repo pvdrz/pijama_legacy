@@ -3,7 +3,7 @@
 //! The [`un_op`] parser is used inside the [`unary_op`] submodule.
 //!
 //! [`un_op`]: crate::parser::un_op::un_op
-//! [`unary_op`]: module@crate::parser::node::unary_op
+//! [`unary_op`]: crate::parser::node::unary_op
 use nom::{error::ParseError, IResult};
 
 use nom::{

@@ -3,9 +3,7 @@
 //! The entry-point for this module is the [`unary_op`] parser. Currently there are no precedence
 //! levels for these operations. It uses the [`un_op`] parser.
 //!
-//! [`unary_op`]: crate::parser::node::unary_op()
 //! [`un_op`]: crate::parser::un_op
-//! [`Node::UnaryOp`]: crate::ast::Node::UnaryOp
 
 use nom::{error::ParseError, IResult};
 

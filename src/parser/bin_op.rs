@@ -7,7 +7,7 @@
 //! Each one of this parsers is used inside the [`binary_op`] submodule with the same numeric
 //! convention as here.
 //!
-//! [`binary_op`]: module@crate::parser::node::binary_op
+//! [`binary_op`]: crate::parser::node::binary_op
 use nom::{error::ParseError, IResult};
 
 use nom::{
