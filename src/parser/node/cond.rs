@@ -1,6 +1,6 @@
 //! Parsers for conditionals.
 //!
-//! The entry-point for this module is the [`cond`] function. Conditionals are parsed with the
+//! The entry point for this module is the [`cond`] function. Conditionals are parsed following the
 //! following grammar
 //!
 //! ```abnf
@@ -9,10 +9,6 @@
 //!
 //! Thus, `else` blocks are optional and are represented as empty [`Block`]s inside the
 //! [`Node::Cond`] variant.
-//!
-//! [`cond`]: crate::parser::node::cond::cond
-//! [`Block`]: crate::ast::Block
-//! [`Node::Cond`]: crate::ast::Node::Cond
 use nom::{error::ParseError, IResult};
 
 use nom::{
@@ -45,7 +41,7 @@ fn if_block<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Bloc
 
 /// Parses the `do` block of a [`Node::Cond`].
 ///
-/// There must be at least one space or line break between the `if` and the first node in the
+/// There must be at least one space or line break between the `do` and the first node in the
 /// block. There can be spaces or line breaks at the end of the block.
 fn do_block<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Block, E> {
     delimited(pair(tag("do"), multispace1), block1, multispace0)(input)
@@ -53,7 +49,7 @@ fn do_block<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Bloc
 
 /// Parses the `else` block of a [`Node::Cond`].
 ///
-/// There must be at least one space or line break between the `if` and the first node in the
+/// There must be at least one space or line break between the `else` and the first node in the
 /// block. There can be spaces or line breaks at the end of the block.
 fn else_block<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Block, E> {
     delimited(pair(tag("else"), multispace1), block1, multispace0)(input)
