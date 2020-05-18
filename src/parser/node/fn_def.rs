@@ -13,7 +13,7 @@ use crate::parser::{
     block::block0,
     helpers::{in_brackets, surrounded},
     name::name,
-    ty::{binding, type_binding},
+    ty::{binding, colon_ty},
 };
 
 pub fn fn_def<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {
@@ -21,7 +21,7 @@ pub fn fn_def<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, No
         tuple((
             fn_name,
             surrounded(args(binding), space0),
-            terminated(opt(type_binding), multispace0),
+            terminated(opt(colon_ty), multispace0),
             fn_body,
         )),
         |(name, args, opt_ty, body)| Node::FnDef(name, args, body, opt_ty),

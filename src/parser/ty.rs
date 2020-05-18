@@ -1,6 +1,6 @@
 //! Parsers for types and type bindings.
 //!
-//! The entry-points for this module are the [`ty`] and [`binding`] parsers. We need an additional
+//! The entry points for this module are the [`ty`] and [`binding`] parsers. We need an additional
 //! [`base_ty`] parser because the naive grammar for types is a
 //! [left-recursive](https://en.wikipedia.org/wiki/Left_recursion) grammar:
 //!
@@ -44,7 +44,7 @@ use nom::{
     bytes::complete::tag,
     character::complete::{char, space0},
     combinator::{map, opt},
-    sequence::{preceded, pair},
+    sequence::{pair, preceded},
 };
 
 use crate::parser::{
@@ -74,17 +74,17 @@ pub fn ty<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Ty, E>
 /// This parser returns a [`Binding`], there can be any number of spaces surrounding the `:`,
 /// including no spaces at all.
 pub fn binding<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Binding, E> {
-    map(pair(name, type_binding), |(name, ty)| Binding { name, ty })(input)
+    map(pair(name, colon_ty), |(name, ty)| Binding { name, ty })(input)
 }
 
-/// Parser for the second half of type bindings.
+/// Parses types preceded by a colon.
 ///
-/// This only exists because parsing expressions of the form `":" ty` can be reutilized in the
-/// [`binding`], [`let_bind`], [`fn_def`] and [`fn_rec_def`] parsers.
+/// This parser returns a [`Ty`] and there can be any number of spaces surrounding the colon.
 ///
-/// [`fn_def`]: module@crate::parser::node::fn_def
-/// [`fn_def_rec`]: module@crate::parser::node::fn_def_rec
-pub fn type_binding<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Ty, E> {
+/// This parser exists with the sole purpose of being reutilized for type bindings that are not
+/// stored in [`Binding`]s such as the return type of functions or the optional type binding for
+/// let bindings.
+pub fn colon_ty<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Ty, E> {
     preceded(surrounded(char(':'), space0), ty)(input)
 }
 

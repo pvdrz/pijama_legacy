@@ -21,14 +21,14 @@ use nom::{
 };
 
 use crate::ast::Node;
-use crate::parser::{helpers::surrounded, name::name, node::node, ty::type_binding};
+use crate::parser::{helpers::surrounded, name::name, node::node, ty::colon_ty};
 
 /// Parses a [`Node::LetBind`].
 pub fn let_bind<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {
     map(
         tuple((
             name,
-            opt(type_binding),
+            opt(colon_ty),
             preceded(surrounded(char('='), space0), node),
         )),
         |(name, opt_ty, node)| Node::LetBind(name, opt_ty, Box::new(node)),

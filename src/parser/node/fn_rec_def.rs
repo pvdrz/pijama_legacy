@@ -11,7 +11,7 @@ use crate::ast::{Name, Node};
 use crate::parser::{
     helpers::surrounded,
     name::name,
-    ty::{binding, type_binding},
+    ty::{binding, colon_ty},
 };
 
 use super::fn_def::{args, fn_body};
@@ -21,7 +21,7 @@ pub fn fn_rec_def<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str
         tuple((
             fn_rec_name,
             surrounded(args(binding), space0),
-            terminated(type_binding, multispace0),
+            terminated(colon_ty, multispace0),
             fn_body,
         )),
         |(name, args, ty, body)| Node::FnRecDef(name, args, body, ty),
