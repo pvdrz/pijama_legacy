@@ -179,6 +179,22 @@ fn print_simple() -> LangResult<()> {
 }
 
 #[test]
+fn print_simple_fn() -> LangResult<()> {
+    let input = include_str!("print_simple_fn.pj");
+    let mut output = Vec::new();
+    let term = run_with_env(
+        input,
+        &mut LangEnv {
+            stdout: &mut output,
+        },
+    )?;
+    let output = String::from_utf8_lossy(&output);
+    assert_eq!(output, "((λ. _0) 10)\n");
+    assert_eq!(Term::Lit(Literal::Unit), term);
+    Ok(())
+}
+
+#[test]
 fn print_complex() -> LangResult<()> {
     let input = include_str!("print_complex.pj");
     let mut output = Vec::new();
@@ -205,7 +221,23 @@ fn print_print() -> LangResult<()> {
         },
     )?;
     let output = String::from_utf8_lossy(&output);
-    assert_eq!(output, "(print 10)\n");
+    assert_eq!(output, "((builtin print) 10)\n");
+    assert_eq!(Term::Lit(Literal::Unit), term);
+    Ok(())
+}
+
+#[test]
+fn print_redefine() -> LangResult<()> {
+    let input = include_str!("print_redefine.pj");
+    let mut output = Vec::new();
+    let term = run_with_env(
+        input,
+        &mut LangEnv {
+            stdout: &mut output,
+        },
+    )?;
+    let output = String::from_utf8_lossy(&output);
+    assert_eq!(output, "10\n");
     assert_eq!(Term::Lit(Literal::Unit), term);
     Ok(())
 }

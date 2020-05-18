@@ -1,6 +1,6 @@
 use crate::ast::Name;
-use crate::lir;
-use crate::mir;
+use crate::lir::BUILT_IN_FNS;
+use crate::{lir, mir};
 
 pub fn remove_names(term: mir::Term<'_>) -> lir::Term {
     Context::default().remove_names(term)
@@ -15,16 +15,19 @@ impl<'a> Context<'a> {
     fn remove_names(&mut self, term: mir::Term<'a>) -> lir::Term {
         match term {
             mir::Term::Lit(literal) => lir::Term::Lit(literal),
-            mir::Term::Var(name) => {
-                let (index, _) = self
-                    .inner
-                    .iter()
-                    .rev()
-                    .enumerate()
-                    .find(|(_, name2)| name == **name2)
-                    .unwrap();
-                lir::Term::Var(index)
-            }
+            mir::Term::Var(name) => BUILT_IN_FNS.get(name.0).map_or_else(
+                || {
+                    let (index, _) = self
+                        .inner
+                        .iter()
+                        .rev()
+                        .enumerate()
+                        .find(|(_, name2)| name == **name2)
+                        .unwrap();
+                    lir::Term::Var(index)
+                },
+                |built_in| lir::Term::BuiltInFn(*built_in),
+            ),
             mir::Term::Abs(bind, body) => {
                 self.inner.push(bind.name);
                 let body = self.remove_names(*body);
@@ -44,10 +47,6 @@ impl<'a> Context<'a> {
                 let t1 = self.remove_names(*t1);
                 let t2 = self.remove_names(*t2);
                 lir::Term::App(Box::new(t1), Box::new(t2))
-            }
-            mir::Term::Print(t) => {
-                let t = self.remove_names(*t);
-                lir::Term::Print(Box::new(t))
             }
             mir::Term::Let(name, t1, t2) => {
                 let t1 = self.remove_names(*t1);

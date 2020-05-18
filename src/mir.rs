@@ -11,7 +11,6 @@ pub enum Term<'a> {
     UnaryOp(UnOp, Box<Term<'a>>),
     BinaryOp(BinOp, Box<Term<'a>>, Box<Term<'a>>),
     App(Box<Term<'a>>, Box<Term<'a>>),
-    Print(Box<Term<'a>>),
     Lit(Literal),
     Cond(Box<Term<'a>>, Box<Term<'a>>, Box<Term<'a>>),
     Let(Name<'a>, Box<Term<'a>>, Box<Term<'a>>),
@@ -27,7 +26,6 @@ impl<'a> fmt::Display for Term<'a> {
             Term::UnaryOp(op, term) => write!(f, "({}{})", op, term),
             Term::BinaryOp(op, t1, t2) => write!(f, "({} {} {})", t1, op, t2),
             Term::App(t1, t2) => write!(f, "({} {})", t1, t2),
-            Term::Print(t1) => write!(f, "(print {})", t1),
             Term::Lit(literal) => write!(f, "{}", literal),
             Term::Cond(t1, t2, t3) => write!(f, "(if {} then {} else {})", t1, t2, t3),
             Term::Let(name, t1, t2) => write!(f, "(let {} = {} in {})", name.0, t1, t2),
@@ -84,16 +82,11 @@ fn lower_cond<'a>(if_blk: Block<'a>, do_blk: Block<'a>, el_blk: Block<'a>) -> Ty
     ))
 }
 
-fn lower_call<'a>(name: Name<'a>, mut args: Block<'a>) -> TyResult<Term<'a>> {
-    let term = if name.0 != "print" {
-        let mut term = Term::Var(name);
-        for node in args {
-            term = Term::App(Box::new(term), Box::new(lower_node(node)?));
-        }
-        term
-    } else {
-        Term::Print(Box::new(lower_node(args.remove(0))?))
-    };
+fn lower_call<'a>(name: Name<'a>, args: Block<'a>) -> TyResult<Term<'a>> {
+    let mut term = Term::Var(name);
+    for node in args {
+        term = Term::App(Box::new(term), Box::new(lower_node(node)?));
+    }
 
     Ok(term)
 }

@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-use crate::ast::{BinOp, Literal, UnOp};
+use crate::ast::{BinOp, Literal, Name, UnOp};
 use crate::mir::Term;
 use crate::ty::{Binding, Ty};
 
@@ -44,9 +44,19 @@ pub enum TyError {
 
 pub type TyResult<T = Ty> = Result<T, TyError>;
 
-#[derive(Default)]
 struct Context<'a> {
     inner: Vec<Binding<'a>>,
+}
+
+impl<'a> Default for Context<'a> {
+    fn default() -> Self {
+        Context {
+            inner: vec![Binding {
+                name: Name("print"),
+                ty: Ty::BuiltIn(Box::new(Ty::Unit)),
+            }],
+        }
+    }
 }
 
 impl<'a> Context<'a> {
@@ -110,10 +120,10 @@ impl<'a> Context<'a> {
                         expect_ty(*ty11, ty2)?;
                         *ty
                     }
+                    Ty::BuiltIn(ty) => *ty,
                     _ => return Err(TyError::NotFn(ty1)),
                 }
             }
-            Term::Print(_) => Ty::Unit,
             &Term::Let(name, ref t1, ref t2) => {
                 let bind = self.type_of(t1).map(|ty| Binding { name, ty })?;
                 self.inner.push(bind);

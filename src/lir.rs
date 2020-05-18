@@ -1,11 +1,15 @@
 use std::fmt;
 
 use crate::ast::*;
+use crate::LangEnv;
 
 use eval::*;
-
-use crate::LangEnv;
 use Term::*;
+
+use lazy_static::lazy_static;
+
+use std::collections::HashMap;
+use std::fmt::{Display, Formatter};
 
 mod ctx;
 mod eval;
@@ -22,10 +26,31 @@ pub enum Term {
     UnaryOp(UnOp, Box<Term>),
     BinaryOp(BinOp, Box<Term>, Box<Term>),
     App(Box<Term>, Box<Term>),
-    Print(Box<Term>),
+    BuiltInFn(BuiltInFn),
     Cond(Box<Term>, Box<Term>, Box<Term>),
     Fix(Box<Term>),
     Hole,
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum BuiltInFn {
+    Print,
+}
+
+impl Display for BuiltInFn {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            BuiltInFn::Print => write!(f, "print"),
+        }
+    }
+}
+
+lazy_static! {
+    pub static ref BUILT_IN_FNS: HashMap<&'static str, BuiltInFn> = {
+        let mut m = HashMap::new();
+        m.insert("print", BuiltInFn::Print);
+        m
+    };
 }
 
 impl fmt::Display for Term {
@@ -37,7 +62,7 @@ impl fmt::Display for Term {
             UnaryOp(op, term) => write!(f, "({}{})", op, term),
             BinaryOp(op, t1, t2) => write!(f, "({} {} {})", t1, op, t2),
             App(t1, t2) => write!(f, "({} {})", t1, t2),
-            Print(t) => write!(f, "(print {})", t),
+            BuiltInFn(t) => write!(f, "(builtin {})", t),
             Lit(literal) => write!(f, "{}", literal),
             Cond(t1, t2, t3) => write!(f, "(if {} then {} else {})", t1, t2, t3),
             Fix(t1) => write!(f, "(fix {})", t1),
@@ -76,9 +101,7 @@ impl Term {
                 t1.shift(up, cutoff);
                 t2.shift(up, cutoff);
             }
-            Print(t1) => {
-                t1.shift(up, cutoff);
-            }
+            BuiltInFn(_) => {}
             Cond(t1, t2, t3) => {
                 t1.shift(up, cutoff);
                 t2.shift(up, cutoff);
@@ -114,9 +137,7 @@ impl Term {
                 t1.replace(index, subs);
                 t2.replace(index, subs);
             }
-            Print(t1) => {
-                t1.replace(index, subs);
-            }
+            BuiltInFn(_) => {}
             Cond(t1, t2, t3) => {
                 t1.replace(index, subs);
                 t2.replace(index, subs);
@@ -143,6 +164,11 @@ impl Term {
             UnaryOp(op, t1) => step_un_op(op, t1, env),
             // Dispatch step for beta reduction
             App(box Abs(body), arg) => step_beta_reduction(body, arg),
+            // Builtin function special handling necessary
+            App(box BuiltInFn(BuiltInFn::Print), ref t1) => {
+                writeln!(env.stdout, "{}", t1).expect("Print failed");
+                (true, Term::Lit(Literal::Unit))
+            }
             // Application with unevaluated first term (t1 t2)
             // Evaluate t1.
             App(ref mut t1, _) => (t1.step_in_place(env), self),
@@ -150,12 +176,8 @@ impl Term {
             Cond(t1, t2, t3) => step_conditional(t1, t2, t3, env),
             // Dispatch step for fixed point operation
             Fix(t1) => step_fix(t1, env),
-            Print(ref mut t) => {
-                writeln!(env.stdout, "{}", t).expect("Print failed");
-                (true, Term::Lit(Literal::Unit))
-            }
             // Any other term stops the evaluation.
-            Var(_) | Lit(_) | Abs(_) | Hole => (false, self),
+            Var(_) | Lit(_) | Abs(_) | BuiltInFn(_) | Hole => (false, self),
         }
     }
 

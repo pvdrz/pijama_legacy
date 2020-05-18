@@ -12,6 +12,7 @@ pub enum Ty {
     Int,
     Unit,
     Arrow(Box<Ty>, Box<Ty>),
+    BuiltIn(Box<Ty>),
 }
 
 impl fmt::Display for Ty {
@@ -28,6 +29,7 @@ impl fmt::Display for Ty {
                     write!(f, "{} -> {}", t1, t2)
                 }
             }
+            BuiltIn(_) => write!(f, "Builtin"),
         }
     }
 }
