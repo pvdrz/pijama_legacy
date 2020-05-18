@@ -1,7 +1,5 @@
 //! Parsers for binary operators.
 //!
-//! All the binary operators might be surronded by zero or more spaces.
-//!
 //! This module contains a set of functions `bin_op_<n>` where each `n` represents one level of
 //! precedence, i.e., the operators in `bin_op_5` have higher precedence than the operators in
 //! `bin_op_1`.
@@ -23,9 +21,11 @@ use nom::{
 use crate::ast::BinOp::{self, *};
 use crate::parser::helpers::surrounded;
 
-/// Parser for the binary operators with precedence 1.
+/// Parser for the binary operators with precedence level 1.
 ///
 /// These operators are `&&` and `||`.
+///
+/// All the binary operators might be surronded by zero or more spaces.
 pub fn bin_op_1<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, BinOp, E> {
     surrounded(
         alt((map(tag("&&"), |_| And), map(tag("||"), |_| Or))),
@@ -33,12 +33,14 @@ pub fn bin_op_1<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, 
     )(input)
 }
 
-/// Parser for the binary operators with precedence 2.
+/// Parser for the binary operators with precedence level 2.
 ///
 /// These operators are `<=`, `>=`, `<`, `>`, `==` and `!=`.
 ///
 /// An additional check is done for `<` and `>` to be sure they are not the beginning of the `>>`
 /// and `<<` operators.
+///
+/// All the binary operators might be surronded by zero or more spaces.
 pub fn bin_op_2<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, BinOp, E> {
     surrounded(
         alt((
@@ -53,12 +55,14 @@ pub fn bin_op_2<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, 
     )(input)
 }
 
-/// Parser for the binary operators with precedence 3.
+/// Parser for the binary operators with precedence level 3.
 ///
 /// These operators are `&`, `|`, `^`, `>>` and `<<`.
 ///
 /// An additional check is done for `&` and `|` to be sure they are not the beginning of the `&&`
 /// and `||` operators.
+///
+/// All the binary operators might be surronded by zero or more spaces.
 pub fn bin_op_3<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, BinOp, E> {
     surrounded(
         alt((
@@ -72,9 +76,11 @@ pub fn bin_op_3<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, 
     )(input)
 }
 
-/// Parser for the binary operators with precedence 4.
+/// Parser for the binary operators with precedence level 4.
 ///
 /// These operators are `+` and `-`.
+///
+/// All the binary operators might be surronded by zero or more spaces.
 pub fn bin_op_4<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, BinOp, E> {
     surrounded(
         alt((map(char('+'), |_| Add), map(char('-'), |_| Sub))),
@@ -82,9 +88,11 @@ pub fn bin_op_4<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, 
     )(input)
 }
 
-/// Parser for the binary operators with precedence 5.
+/// Parser for the binary operators with precedence level 5.
 ///
 /// These operators are `*`, `/` and `%`.
+///
+/// All the binary operators might be surronded by zero or more spaces.
 pub fn bin_op_5<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, BinOp, E> {
     surrounded(
         alt((
