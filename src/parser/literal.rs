@@ -1,4 +1,7 @@
 //! Parsers for literals.
+//!
+//! The entry point for this module is the [`literal`] parser.
+
 use nom::{error::ParseError, IResult};
 
 use nom::{
@@ -28,6 +31,9 @@ pub fn literal<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, L
 ///
 /// This integer must be in the valid range for the `i128` type. If the number is outside this
 /// range, the parser will return an error.
+///
+/// If the number is negative, there cannot be spaces between the minus sign and the digits of the
+/// number. That kind of expression will be parsed as an unary operation.
 fn number<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, i128, E> {
     map_opt(
         pair(opt(char('-')), digit1),
