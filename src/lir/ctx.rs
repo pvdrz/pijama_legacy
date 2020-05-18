@@ -45,6 +45,10 @@ impl<'a> Context<'a> {
                 let t2 = self.remove_names(*t2);
                 lir::Term::App(Box::new(t1), Box::new(t2))
             }
+            mir::Term::Print(t) => {
+                let t = self.remove_names(*t);
+                lir::Term::Print(Box::new(t))
+            }
             mir::Term::Let(name, t1, t2) => {
                 let t1 = self.remove_names(*t1);
                 self.inner.push(name);

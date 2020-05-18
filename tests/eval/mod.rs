@@ -3,7 +3,7 @@ use std::include_str;
 use crate::panic_after;
 use pijama::ast::Literal;
 use pijama::lir::Term;
-use pijama::{run, LangResult};
+use pijama::{run, run_with_env, LangEnv, LangResult};
 use std::time::Duration;
 
 #[test]
@@ -160,4 +160,52 @@ fn and_short_circuit() -> LangResult<()> {
         assert_eq!(Term::Lit(Literal::Bool(false)), term);
         Ok(())
     })
+}
+
+#[test]
+fn print_simple() -> LangResult<()> {
+    let input = include_str!("print_simple.pj");
+    let mut output = Vec::new();
+    let term = run_with_env(
+        input,
+        &mut LangEnv {
+            stdout: &mut output,
+        },
+    )?;
+    let output = String::from_utf8_lossy(&output);
+    assert_eq!(output, "10\n");
+    assert_eq!(Term::Lit(Literal::Unit), term);
+    Ok(())
+}
+
+#[test]
+fn print_complex() -> LangResult<()> {
+    let input = include_str!("print_complex.pj");
+    let mut output = Vec::new();
+    let term = run_with_env(
+        input,
+        &mut LangEnv {
+            stdout: &mut output,
+        },
+    )?;
+    let output = String::from_utf8_lossy(&output);
+    assert_eq!(output, "((λ. (if (_0 > 0) then 1 else 0)) 10)\n");
+    assert_eq!(Term::Lit(Literal::Unit), term);
+    Ok(())
+}
+
+#[test]
+fn print_print() -> LangResult<()> {
+    let input = include_str!("print_print.pj");
+    let mut output = Vec::new();
+    let term = run_with_env(
+        input,
+        &mut LangEnv {
+            stdout: &mut output,
+        },
+    )?;
+    let output = String::from_utf8_lossy(&output);
+    assert_eq!(output, "(print 10)\n");
+    assert_eq!(Term::Lit(Literal::Unit), term);
+    Ok(())
 }

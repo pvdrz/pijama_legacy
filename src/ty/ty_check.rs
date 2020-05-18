@@ -113,6 +113,7 @@ impl<'a> Context<'a> {
                     _ => return Err(TyError::NotFn(ty1)),
                 }
             }
+            Term::Print(_) => Ty::Unit,
             &Term::Let(name, ref t1, ref t2) => {
                 let bind = self.type_of(t1).map(|ty| Binding { name, ty })?;
                 self.inner.push(bind);

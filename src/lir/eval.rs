@@ -1,9 +1,15 @@
 use super::Term;
 use crate::ast::{BinOp, Literal, UnOp};
+use crate::LangEnv;
 
 /// Evaluation step for conditionals (if t1 then t2 else t3)
 #[inline(always)]
-pub fn step_conditional(mut t1: Box<Term>, t2: Box<Term>, t3: Box<Term>) -> (bool, Term) {
+pub fn step_conditional(
+    mut t1: Box<Term>,
+    t2: Box<Term>,
+    t3: Box<Term>,
+    env: &mut LangEnv,
+) -> (bool, Term) {
     // If t1 is a literal, we should be able to evaluate the conditional
     if let box Term::Lit(lit) = t1 {
         match lit {
@@ -16,7 +22,7 @@ pub fn step_conditional(mut t1: Box<Term>, t2: Box<Term>, t3: Box<Term>) -> (boo
         }
     // If t1 is not a literal, evaluate it in place and return (if t1 then t2 else t3)
     } else {
-        (t1.step_in_place(), Term::Cond(t1, t2, t3))
+        (t1.step_in_place(env), Term::Cond(t1, t2, t3))
     }
 }
 
@@ -36,7 +42,7 @@ pub fn step_beta_reduction(mut body: Box<Term>, mut arg: Box<Term>) -> (bool, Te
 
 /// Evaluation step for binary operations (t1 op t2)
 #[inline(always)]
-pub fn step_bin_op(op: BinOp, t1: Box<Term>, t2: Box<Term>) -> (bool, Term) {
+pub fn step_bin_op(op: BinOp, t1: Box<Term>, t2: Box<Term>, env: &mut LangEnv) -> (bool, Term) {
     use BinOp::*;
     use Literal::*;
     use Term::Lit;
@@ -48,26 +54,26 @@ pub fn step_bin_op(op: BinOp, t1: Box<Term>, t2: Box<Term>) -> (bool, Term) {
         // If op is || and t1 is true evaluate to true
         (Or, box Lit(Bool(true)), _) => (true, Lit(Bool(true))),
         // If t2 is not a literal, evaluate it.
-        (op, t1 @ box Lit(_), mut t2) => (t2.step_in_place(), Term::BinaryOp(op, t1, t2)),
+        (op, t1 @ box Lit(_), mut t2) => (t2.step_in_place(env), Term::BinaryOp(op, t1, t2)),
         // If t1 is not a literal, evaluate it.
-        (op, mut t1, t2) => (t1.step_in_place(), Term::BinaryOp(op, t1, t2)),
+        (op, mut t1, t2) => (t1.step_in_place(env), Term::BinaryOp(op, t1, t2)),
     }
 }
 
 /// Evaluation step for unary operations (op t1)
 #[inline(always)]
-pub fn step_un_op(op: UnOp, mut t1: Box<Term>) -> (bool, Term) {
+pub fn step_un_op(op: UnOp, mut t1: Box<Term>, env: &mut LangEnv) -> (bool, Term) {
     // If t1 is a literal, do the operation.
     if let box Term::Lit(lit) = t1 {
         (true, Term::Lit(native_un_op(op, lit)))
     // If t1 is not a literal, evaluate it.
     } else {
-        (t1.step_in_place(), Term::UnaryOp(op, t1))
+        (t1.step_in_place(env), Term::UnaryOp(op, t1))
     }
 }
 
 /// Evaluation step for the fixed-point operation (fix t1)
-pub fn step_fix(mut t1: Box<Term>) -> (bool, Term) {
+pub fn step_fix(mut t1: Box<Term>, env: &mut LangEnv) -> (bool, Term) {
     // If t1 is an abstraction (\. t2), replace the argument of t1 by (fix t1) inside t2
     // and evaluate to t2.
     if let box Term::Abs(box ref t2) = t1 {
@@ -76,7 +82,7 @@ pub fn step_fix(mut t1: Box<Term>) -> (bool, Term) {
         (true, t2)
     // If t1 is not an abstraction, evaluate it.
     } else {
-        (t1.step_in_place(), Term::Fix(t1))
+        (t1.step_in_place(env), Term::Fix(t1))
     }
 }
 

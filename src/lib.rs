@@ -1,5 +1,7 @@
 #![feature(box_patterns)]
 
+use std::io::{self, Write};
+
 use thiserror::Error;
 
 pub mod ast;
@@ -18,11 +20,24 @@ pub enum LangError {
     Parse(String),
 }
 
+pub struct LangEnv<'a> {
+    pub stdout: &'a mut dyn Write,
+}
+
 pub fn run(input: &str) -> LangResult<lir::Term> {
+    run_with_env(
+        input,
+        &mut LangEnv {
+            stdout: &mut io::stdout(),
+        },
+    )
+}
+
+pub fn run_with_env(input: &str, env: &mut LangEnv) -> LangResult<lir::Term> {
     let ast = parser::parse(input)?;
     let mir = mir::Term::from_ast(ast)?;
     let _ty = ty::ty_check(&mir)?;
     let lir = lir::Term::from_mir(mir);
-    let res = lir::evaluate(lir);
+    let res = lir::evaluate(lir, env);
     Ok(res)
 }
