@@ -7,7 +7,7 @@ use nom::{
     sequence::delimited,
 };
 
-/// Helper combinator to parse expressions surrounded by a delimiter.
+/// Helper parser for expressions surrounded by a delimiter.
 ///
 /// The output only contains the expression without the delimiters.
 pub fn surrounded<I, O, O2, E: ParseError<I>>(
@@ -17,10 +17,10 @@ pub fn surrounded<I, O, O2, E: ParseError<I>>(
     delimited(delimiter, content, delimiter)
 }
 
-/// Helper combinator to parse expressions surrounded by round brackets.
+/// Helper parser for expressions surrounded by round brackets.
 ///
-/// There can be any number of spaces or line breaks between the actual content and the brackets. The output only
-/// contains the expression without the backets.
+/// The output only contains the expression without the brackets and there can be any number of
+/// spaces or line breaks between the actual content and the brackets.
 pub fn in_brackets<'a, O, E: ParseError<&'a str>>(
     content: impl Fn(&'a str) -> IResult<&'a str, O, E>,
 ) -> impl Fn(&'a str) -> IResult<&'a str, O, E> {
