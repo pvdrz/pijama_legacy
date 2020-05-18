@@ -17,8 +17,8 @@
 //! [`ast`]: crate::ast
 //! [`Literal`]: crate::ast::Literal
 //! [`literal`]: crate::parser::literal
-//! [`parse`]: crate::parser::parse
 //! [`Block`]: crate::ast::Block
+//!
 //! [ABNF]: https://en.wikipedia.org/wiki/Augmented_Backus–Naur_form
 //! [nom docs]: https://docs.rs/nom/
 use nom::{
