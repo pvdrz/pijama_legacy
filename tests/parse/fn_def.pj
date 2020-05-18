@@ -5,3 +5,5 @@ fn foo(x: Int, y: Int) do
  x
  y
 end
+fn(x: Int) do x end
+fn (x: Int) do x end
