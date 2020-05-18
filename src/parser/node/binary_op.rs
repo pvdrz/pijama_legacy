@@ -1,6 +1,6 @@
 //! Parsers for binary operations.
 //!
-//! The entry-point for this module is the [`binary_op`] parser. To parse binary operations
+//! The entry point for this module is the [`binary_op`] parser. To parse binary operations
 //! following the precedence levels stated in the [`bin_op`] module, we have a set of parsers
 //! `binary_op_<n>` for each level of precedence `n` matching their `bin_op_<n>` counterparts in
 //! the [`bin_op`] module.
@@ -18,7 +18,7 @@
 //! ```
 //! The first thing to do when parsing a node is parsing a node again. The only difference is that
 //! here the chain is longer. Doing the same procedure as with the [`ty`] module. It is possible to
-//! eliminate the infinite loop
+//! eliminate the infinite loop:
 //!
 //! ```abnf
 //! node = binary_op
@@ -30,24 +30,14 @@
 //! base_node = unary_op / let_bind / cond / fn_def / fn_rec_def / call / ("(" node ")")
 //! ```
 //!
-//! The [`binary_op`] and the `binary_op_<n>` parsers in this module corresponds to each
-//! one of the rules above. The [`node`] and [`base_node`] parsers are in the supermodule.
+//! The [`binary_op`] and the `binary_op_<n>` parsers in this module corresponds to each one of the
+//! rules above. The [`node`] and [`base_node`] parsers are in the supermodule.
 //!
-//! ## Modifying the precedence of operators
-//!
-//! If you need to change the precedence of one operator. First check if it is enough to move the
-//! operator to a different level in the [`bin_op`] module. If that's not the case, a new
-//! precedence level might be needed. For that you need to:
-//!
-//! - Add a new `bin_op_n` parser in [`bin_op`] displacing by 1 all the `bin_op_m` parsers with
-//! `m > n` and add the new operator to the desired level.
-//! - Add a new `binary_op_n` parser in this module displacing the `binary_op_m` parser with the
-//! largest `m` by 1 and adding a new `binary_op_m` similar to the other ones.
+//! Every binary operator here is considered to be left-associative, in contrast with the `->` for
+//! in the [`ty`] module which is right-associative.
 //!
 //! [`ty`]: crate::parser::ty
-//! [`binary_op`]: crate::parser::node::binary_op::binary_op()
 //! [`node`]: crate::parser::node::node
-//! [`base_node`]: crate::parser::node::base_node
 //! [`bin_op`]: crate::parser::bin_op
 use nom::{error::ParseError, IResult};
 
