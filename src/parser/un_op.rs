@@ -13,12 +13,15 @@ use nom::{
     IResult,
 };
 
-use crate::ast::UnOp::{self, *};
+use crate::ast::{
+    Span,
+    UnOp::{self, *},
+};
 
 /// Parser for the unary operators `!` and `-`.
 ///
 /// All the unary operators might be followed by zero or more spaces.
-pub fn un_op<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, UnOp, E> {
+pub fn un_op<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, UnOp, E> {
     terminated(
         alt((map(char('!'), |_| Not), map(char('-'), |_| Neg))),
         space0,

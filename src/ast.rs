@@ -1,8 +1,12 @@
 use std::fmt;
 
+use nom_locate::LocatedSpan;
+
 use crate::ty::{Binding, Ty};
 
 pub type Block<'a> = Vec<Node<'a>>;
+
+pub type Span<'a> = LocatedSpan<&'a str>;
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy)]
 pub struct Name<'a>(pub &'a str);
@@ -107,7 +111,13 @@ impl<'a> fmt::Display for Literal {
 }
 
 #[derive(Debug, Eq, PartialEq)]
-pub enum Node<'a> {
+pub struct Node<'a> {
+    pub span: Span<'a>,
+    pub kind: NodeKind<'a>,
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub enum NodeKind<'a> {
     BinaryOp(BinOp, Box<Node<'a>>, Box<Node<'a>>),
     UnaryOp(UnOp, Box<Node<'a>>),
     LetBind(Name<'a>, Option<Ty>, Box<Node<'a>>),

@@ -10,9 +10,10 @@ use nom::{
     character::complete::space0, combinator::map, error::ParseError, sequence::separated_pair,
     IResult,
 };
+use nom_locate::position;
 
 use crate::{
-    ast::Node,
+    ast::{Node, NodeKind, Span},
     parser::{
         name::name,
         node::{fn_def::args, node},
@@ -24,8 +25,13 @@ use crate::{
 /// This parser admits:
 /// - Spaces after the name of the function.
 /// - Spaces before and spaces or line breaks after each comma.
-pub fn call<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {
-    map(separated_pair(name, space0, args(node)), |(name, args)| {
-        Node::Call(name, args)
-    })(input)
+pub fn call<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, Node, E> {
+    let (input, span) = position(input)?;
+    map(
+        separated_pair(name, space0, args(node)),
+        move |(name, args)| Node {
+            kind: NodeKind::Call(name, args),
+            span,
+        },
+    )(input)
 }

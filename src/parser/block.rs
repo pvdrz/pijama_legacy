@@ -12,18 +12,20 @@ use nom::{
     IResult,
 };
 
-use crate::{ast::Block, parser::node::node};
+use crate::ast::{Block, Span};
+
+use crate::parser::node::node;
 
 /// Parser for [`Block`]s.
 ///
 /// Nodes in the block can be separated by at least one line break and optional spaces.
-pub fn block0<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Block, E> {
+pub fn block0<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, Block<'a>, E> {
     separated_list(line_ending, preceded(multispace0, node))(input)
 }
 
 /// Parser for non-empty [`Block`]s.
 ///
 /// Nodes in the block can be separated by at least one line break and optional spaces.
-pub fn block1<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Block, E> {
+pub fn block1<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, Block<'a>, E> {
     separated_nonempty_list(line_ending, preceded(multispace0, node))(input)
 }

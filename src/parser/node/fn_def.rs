@@ -23,9 +23,10 @@ use nom::{
     sequence::{delimited, pair, preceded, terminated, tuple},
     IResult,
 };
+use nom_locate::position;
 
 use crate::{
-    ast::{Block, Name, Node},
+    ast::{Block, Name, Node, NodeKind, Span},
     parser::{
         block::block0,
         helpers::{in_brackets, surrounded},
@@ -41,7 +42,8 @@ use crate::{
 /// - Spaces or line breaks after the `")"` at the end of the arguments.
 ///
 /// Other spacing details are in the docs for the other parsers of this module.
-pub fn fn_def<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {
+pub fn fn_def<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, Node, E> {
+    let (input, span) = position(input)?;
     map(
         tuple((
             fn_name,
@@ -49,7 +51,10 @@ pub fn fn_def<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, No
             terminated(opt(colon_ty), multispace0),
             fn_body,
         )),
-        |(name, args, opt_ty, body)| Node::FnDef(name, args, body, opt_ty),
+        move |(name, args, opt_ty, body)| Node {
+            kind: NodeKind::FnDef(name, args, body, opt_ty),
+            span,
+        },
     )(input)
 }
 
@@ -57,7 +62,7 @@ pub fn fn_def<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, No
 ///
 /// This parser requires that the name is preceded by `"fn"` and at least one space. If the
 /// function does not have a name, it need to parse the `"fn"` only.
-fn fn_name<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Option<Name>, E> {
+fn fn_name<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, Option<Name>, E> {
     preceded(tag("fn"), opt(preceded(space1, name)))(input)
 }
 
@@ -70,9 +75,9 @@ fn fn_name<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Optio
 ///
 /// The arguments must be surrounded by brackets and seperated by commas. There can be spaces
 /// before the comma and spaces or line breaks after the comma.
-pub fn args<'a, O, E: ParseError<&'a str>>(
-    content: impl Fn(&'a str) -> IResult<&'a str, O, E>,
-) -> impl Fn(&'a str) -> IResult<&'a str, Vec<O>, E> {
+pub fn args<'a, O, E: ParseError<Span<'a>>>(
+    content: impl Fn(Span<'a>) -> IResult<Span<'a>, O, E>,
+) -> impl Fn(Span<'a>) -> IResult<Span<'a>, Vec<O>, E> {
     in_brackets(separated_list(
         delimited(space0, char(','), multispace0),
         content,
@@ -84,7 +89,7 @@ pub fn args<'a, O, E: ParseError<&'a str>>(
 /// The body is parsed as a `Block`. This parser requires that the body is preceded by `"do"` and
 /// at least one space or line break, and followed by zero or more spaces or line breaks and an
 /// `"end"`.
-pub fn fn_body<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Block, E> {
+pub fn fn_body<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, Block, E> {
     delimited(
         pair(tag("do"), multispace1),
         block0,

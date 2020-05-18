@@ -63,16 +63,18 @@ fn lower_blk<'a>(blk: Block<'a>) -> TyResult<Term<'a>> {
 }
 
 fn lower_node(node: Node<'_>) -> TyResult<Term<'_>> {
-    match node {
-        Node::Name(name) => Ok(Term::Var(name)),
-        Node::Cond(if_blk, do_blk, el_blk) => lower_cond(if_blk, do_blk, el_blk),
-        Node::Literal(lit) => Ok(Term::Lit(lit)),
-        Node::Call(name, args) => lower_call(name, args),
-        Node::BinaryOp(bin_op, node1, node2) => lower_binary_op(bin_op, *node1, *node2),
-        Node::UnaryOp(un_op, node) => lower_unary_op(un_op, *node),
-        Node::LetBind(name, opt_ty, node) => lower_let_bind(name, opt_ty, *node),
-        Node::FnDef(opt_name, binds, body, opt_ty) => lower_fn_def(opt_name, binds, body, opt_ty),
-        Node::FnRecDef(name, binds, body, ty) => lower_fn_rec_def(name, binds, body, ty),
+    match node.kind {
+        NodeKind::Name(name) => Ok(Term::Var(name)),
+        NodeKind::Cond(if_blk, do_blk, el_blk) => lower_cond(if_blk, do_blk, el_blk),
+        NodeKind::Literal(lit) => Ok(Term::Lit(lit)),
+        NodeKind::Call(name, args) => lower_call(name, args),
+        NodeKind::BinaryOp(bin_op, node1, node2) => lower_binary_op(bin_op, *node1, *node2),
+        NodeKind::UnaryOp(un_op, node) => lower_unary_op(un_op, *node),
+        NodeKind::LetBind(name, opt_ty, node) => lower_let_bind(name, opt_ty, *node),
+        NodeKind::FnDef(opt_name, binds, body, opt_ty) => {
+            lower_fn_def(opt_name, binds, body, opt_ty)
+        }
+        NodeKind::FnRecDef(name, binds, body, ty) => lower_fn_rec_def(name, binds, body, ty),
     }
 }
 

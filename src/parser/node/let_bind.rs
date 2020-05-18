@@ -16,9 +16,10 @@ use nom::{
     sequence::{preceded, tuple},
     IResult,
 };
+use nom_locate::position;
 
 use crate::{
-    ast::Node,
+    ast::{Node, NodeKind, Span},
     parser::{helpers::surrounded, name::name, node::node, ty::colon_ty},
 };
 
@@ -26,13 +27,17 @@ use crate::{
 ///
 /// There can be any number of spaces surrounding the `=` sign.
 
-pub fn let_bind<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {
+pub fn let_bind<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, Node, E> {
+    let (input, span) = position(input)?;
     map(
         tuple((
             name,
             opt(colon_ty),
             preceded(surrounded(char('='), space0), node),
         )),
-        |(name, opt_ty, node)| Node::LetBind(name, opt_ty, Box::new(node)),
+        move |(name, opt_ty, node)| Node {
+            kind: NodeKind::LetBind(name, opt_ty, Box::new(node)),
+            span,
+        },
     )(input)
 }

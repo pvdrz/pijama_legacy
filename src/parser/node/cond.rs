@@ -17,20 +17,23 @@ use nom::{
     sequence::{delimited, pair, terminated, tuple},
     IResult,
 };
+use nom_locate::position;
 
 use crate::{
-    ast::{Block, Node},
+    ast::{Block, Node, NodeKind, Span},
     parser::block::block1,
 };
 
 /// Parses a [`Node::Cond`].
 ///
 /// The spacing is explained in the other parsers of this module.
-pub fn cond<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {
+pub fn cond<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, Node, E> {
+    let (input, span) = position(input)?;
     map(
         terminated(tuple((if_block, do_block, opt(else_block))), tag("end")),
-        |(if_block, do_block, else_block)| {
-            Node::Cond(if_block, do_block, else_block.unwrap_or_default())
+        move |(if_block, do_block, else_block)| Node {
+            span,
+            kind: NodeKind::Cond(if_block, do_block, else_block.unwrap_or_default()),
         },
     )(input)
 }
@@ -39,7 +42,7 @@ pub fn cond<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node
 ///
 /// There must be at least one space or line break between the `if` and the first node in the
 /// block. There can be spaces or line breaks at the end of the block.
-fn if_block<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Block, E> {
+fn if_block<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, Block, E> {
     delimited(pair(tag("if"), multispace1), block1, multispace0)(input)
 }
 
@@ -47,7 +50,7 @@ fn if_block<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Bloc
 ///
 /// There must be at least one space or line break between the `do` and the first node in the
 /// block. There can be spaces or line breaks at the end of the block.
-fn do_block<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Block, E> {
+fn do_block<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, Block, E> {
     delimited(pair(tag("do"), multispace1), block1, multispace0)(input)
 }
 
@@ -55,6 +58,6 @@ fn do_block<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Bloc
 ///
 /// There must be at least one space or line break between the `else` and the first node in the
 /// block. There can be spaces or line breaks at the end of the block.
-fn else_block<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Block, E> {
+fn else_block<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, Block, E> {
     delimited(pair(tag("else"), multispace1), block1, multispace0)(input)
 }

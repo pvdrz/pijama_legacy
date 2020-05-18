@@ -24,21 +24,21 @@ use nom::{
     sequence::{pair, tuple},
     IResult,
 };
+use nom_locate::position;
 
-use crate::{
-    ast::Node,
-    parser::{
-        helpers::{in_brackets, lookahead},
-        literal::literal,
-        name::name,
-        un_op::un_op,
-    },
+use crate::ast::{Node, NodeKind, Span};
+
+use crate::parser::{
+    helpers::{in_brackets, lookahead},
+    literal::literal,
+    name::name,
+    un_op::un_op,
 };
 
 /// Parser for [`Node`]s.
 ///
 /// To understand its behaviour please refer to the [`binary_op`] docs.
-pub fn node<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {
+pub fn node<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, Node<'a>, E> {
     binary_op::binary_op(input)
 }
 
@@ -59,10 +59,13 @@ pub fn node<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node
 /// - If the input starts with a unary operator, the [`un_op`] parser is applied.
 ///
 /// This function is very order sensitive. Be careful if you swap the parsers order.
-fn base_node<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {
+fn base_node<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, Node, E> {
     alt((
         in_brackets(node),
-        map(literal, Node::Literal),
+        map(pair(position, literal), |(span, lit)| Node {
+            span,
+            kind: NodeKind::Literal(lit),
+        }),
         lookahead(pair(tag("if"), multispace1), cond::cond),
         lookahead(
             tuple((tag("fn"), space1, tag("rec"))),
@@ -71,7 +74,14 @@ fn base_node<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Nod
         lookahead(tag("fn"), fn_def::fn_def),
         lookahead(
             name,
-            alt((let_bind::let_bind, call::call, map(name, Node::Name))),
+            alt((
+                let_bind::let_bind,
+                call::call,
+                map(pair(position, name), |(span, name)| Node {
+                    span,
+                    kind: NodeKind::Name(name),
+                }),
+            )),
         ),
         lookahead(un_op, unary_op::unary_op),
     ))(input)

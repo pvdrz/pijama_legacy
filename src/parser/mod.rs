@@ -22,14 +22,13 @@
 //! [ABNF]: https://en.wikipedia.org/wiki/Augmented_Backus–Naur_form
 //! [nom docs]: https://docs.rs/nom/
 use nom::{
-    character::complete::multispace0,
-    combinator::all_consuming,
-    error::{convert_error, VerboseError},
-    Err::{Error, Failure},
-    IResult,
+    character::complete::multispace0, combinator::all_consuming, error::VerboseError, IResult,
 };
 
-use crate::{ast::Block, LangError, LangResult};
+use crate::{
+    ast::{Block, Span},
+    LangError, LangResult,
+};
 
 use block::block0;
 use helpers::surrounded;
@@ -48,11 +47,12 @@ mod un_op;
 /// This function fails if the whole string is not consumed during parsing or if there is an error
 /// with the inner parsers.
 pub fn parse<'a>(input: &'a str) -> LangResult<Block<'a>> {
-    let result: IResult<&str, Block, VerboseError<&str>> =
-        all_consuming(surrounded(block0, multispace0))(input);
+    let span = Span::new(input);
+    let result: IResult<Span, Block, VerboseError<Span<'a>>> =
+        all_consuming(surrounded(block0, multispace0))(span);
     match result {
         Ok((_, block)) => Ok(block),
-        Err(Error(e)) | Err(Failure(e)) => Err(LangError::Parse(convert_error(input, e))),
+        // Err(Error(e)) | Err(Failure(e)) => Err(LangError::Parse(convert_error(input, e))),
         _ => Err(LangError::Parse(String::new())),
     }
 }

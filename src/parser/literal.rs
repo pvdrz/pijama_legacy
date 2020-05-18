@@ -12,13 +12,13 @@ use nom::{
     IResult,
 };
 
-use crate::ast::Literal;
+use crate::ast::{Literal, Span};
 
 /// Parses a [`Literal`](crate::ast::Literal).
 ///
 /// The only valid inputs for this parser are `"true"`, `"false"`, `"unit"` or a signed integer
 /// (which is parsed by the [`number`](number) parser).
-pub fn literal<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Literal, E> {
+pub fn literal<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, Literal, E> {
     alt((
         map(tag("true"), |_| Literal::Bool(true)),
         map(tag("false"), |_| Literal::Bool(false)),
@@ -34,11 +34,11 @@ pub fn literal<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, L
 ///
 /// If the number is negative, there cannot be spaces between the minus sign and the digits of the
 /// number. That kind of expression will be parsed as an unary operation.
-fn number<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, i128, E> {
+fn number<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, i128, E> {
     map_opt(
         pair(opt(char('-')), digit1),
-        |(sign, digits): (Option<char>, &str)| {
-            let mut number = digits.parse::<i128>().ok()?;
+        |(sign, digits_span): (Option<char>, Span)| {
+            let mut number = digits_span.fragment().parse::<i128>().ok()?;
             if sign.is_some() {
                 number *= -1;
             }
