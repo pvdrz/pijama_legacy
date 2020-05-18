@@ -1,6 +1,6 @@
 //! Parsers for nodes.
 //!
-//! The entry-point for this module is the [`node`] parser. Each variant of the [`Node`] type has a
+//! The entry point for this module is the [`node`] parser. Each variant of the [`Node`] type has a
 //! submodule here, with the exception of `Literal` and `Name` whose parsers are simply wrappers
 //! over the [`literal`] and [`name`] parsers respectively.
 //!

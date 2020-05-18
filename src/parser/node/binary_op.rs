@@ -49,6 +49,7 @@ use nom::{
 use crate::ast::Node;
 use crate::parser::{bin_op::*, node::base_node};
 
+/// Parses a [`Node::BinaryOp`].
 pub fn binary_op<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {
     let (mut input, mut node) = binary_op_1(input)?;
     while let (rem, Some((op, node2))) = opt(pair(bin_op_1, cut(binary_op_1)))(input)? {

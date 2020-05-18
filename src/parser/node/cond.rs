@@ -1,7 +1,7 @@
 //! Parsers for conditionals.
 //!
 //! The entry point for this module is the [`cond`] function. Conditionals are parsed following the
-//! following grammar
+//! rule
 //!
 //! ```abnf
 //! cond = "if" block1 "do" block1 ("else" block1)? "end"
@@ -22,6 +22,8 @@ use crate::ast::{Block, Node};
 use crate::parser::block::block1;
 
 /// Parses a [`Node::Cond`].
+///
+/// The spacing is explained in the other parsers of this module.
 pub fn cond<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {
     map(
         terminated(tuple((if_block, do_block, opt(else_block))), tag("end")),

@@ -1,16 +1,13 @@
 //! Parsers for let bindings.
 //!
-//! The entry-point for this module is the [`let_bind`] function. Conditionals are parsed with the
-//! following grammar
+//! The entry point for this module is the [`let_bind`] function. Let bindings are parsed following
+//! the rule
 //!
 //! ```abnf
 //! let_bind = name (":" ty)? "=" expr
 //! ```
 //!
 //! Meaning that type bindings are optional.
-//!
-//! [`let_bind`]: crate::parser::node::let_bind::let_bind
-//! [`Node::LetBind`]: crate::ast::Node::LetBind
 
 use nom::{error::ParseError, IResult};
 
@@ -24,6 +21,9 @@ use crate::ast::Node;
 use crate::parser::{helpers::surrounded, name::name, node::node, ty::colon_ty};
 
 /// Parses a [`Node::LetBind`].
+///
+/// There can be any number of spaces surrounding the `=` sign.
+
 pub fn let_bind<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {
     map(
         tuple((
