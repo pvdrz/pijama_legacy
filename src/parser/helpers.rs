@@ -4,7 +4,8 @@ use nom::{error::ParseError, IResult};
 
 use nom::{
     character::complete::{char, multispace0},
-    sequence::delimited,
+    combinator::{cut, peek},
+    sequence::{delimited, preceded},
 };
 
 /// Helper parser for expressions surrounded by a delimiter.
@@ -25,4 +26,19 @@ pub fn in_brackets<'a, O, E: ParseError<&'a str>>(
     content: impl Fn(&'a str) -> IResult<&'a str, O, E>,
 ) -> impl Fn(&'a str) -> IResult<&'a str, O, E> {
     delimited(char('('), surrounded(content, multispace0), char(')'))
+}
+
+/// Helper parser to do lookaheads.
+///
+/// This parser uses the [`peek`] combinator to check if the `hint` parser succeeds without
+/// consuming the input. If that is the case, the
+/// `content` parser is executed and it is forced to succeed using the [`cut`] combinator.
+///
+/// This is particularly useful when you are sure that there is only one expression that can be
+/// parsed after a certain hint.
+pub fn lookahead<'a, O, O2, E: ParseError<&'a str>>(
+    hint: impl Fn(&'a str) -> IResult<&'a str, O2, E>,
+    content: impl Fn(&'a str) -> IResult<&'a str, O, E>,
+) -> impl Fn(&'a str) -> IResult<&'a str, O, E> {
+    preceded(peek(hint), cut(content))
 }
