@@ -1,7 +1,5 @@
 //! Parsers for unary operators.
 //!
-//! All the unary operators might be followed by zero or more spaces.
-//!
 //! The [`un_op`] parser is used inside the [`unary_op`] submodule.
 //!
 //! [`un_op`]: crate::parser::un_op::un_op
@@ -18,6 +16,8 @@ use nom::{
 use crate::ast::UnOp::{self, *};
 
 /// Parser for the unary operators `!` and `-`.
+///
+/// All the unary operators might be followed by zero or more spaces.
 pub fn un_op<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, UnOp, E> {
     terminated(
         alt((map(char('!'), |_| Not), map(char('-'), |_| Neg))),
