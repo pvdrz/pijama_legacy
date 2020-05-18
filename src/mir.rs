@@ -69,7 +69,7 @@ fn lower_node(node: Node<'_>) -> TyResult<Term<'_>> {
         Node::BinaryOp(bin_op, node1, node2) => lower_binary_op(bin_op, *node1, *node2),
         Node::UnaryOp(un_op, node) => lower_unary_op(un_op, *node),
         Node::LetBind(name, opt_ty, node) => lower_let_bind(name, opt_ty, *node),
-        Node::FnDef(name, binds, body, opt_ty) => lower_fn_def(name, binds, body, opt_ty),
+        Node::FnDef(opt_name, binds, body, opt_ty) => lower_fn_def(opt_name, binds, body, opt_ty),
         Node::FnRecDef(name, binds, body, ty) => lower_fn_rec_def(name, binds, body, ty),
     }
 }
@@ -118,7 +118,7 @@ fn lower_let_bind<'a>(name: Name<'a>, opt_ty: Option<Ty>, node: Node<'a>) -> TyR
 }
 
 fn lower_fn_def<'a>(
-    name: Name<'a>,
+    opt_name: Option<Name<'a>>,
     binds: Vec<Binding<'a>>,
     body: Block<'a>,
     opt_ty: Option<Ty>,
@@ -141,11 +141,11 @@ fn lower_fn_def<'a>(
         expect_ty(ty, term_ty)?;
     }
 
-    Ok(Term::Let(
-        name,
-        Box::new(term),
-        Box::new(Term::Lit(Literal::Unit)),
-    ))
+    if let Some(name) = opt_name {
+        term = Term::Let(name, Box::new(term), Box::new(Term::Lit(Literal::Unit)));
+    }
+
+    Ok(term)
 }
 
 fn lower_fn_rec_def<'a>(

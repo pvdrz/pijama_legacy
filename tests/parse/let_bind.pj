@@ -1,3 +1,4 @@
 x = y
 x = y + z
 x: Int = y
+foo = fn(x: Int) do x end

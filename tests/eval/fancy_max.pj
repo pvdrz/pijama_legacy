@@ -6,8 +6,9 @@ fn fancy_max(gt: Int -> Int -> Bool, x: Int, y: Int) do
     end
 end
 
-fn regular_gt(x: Int, y: Int) do
-    (x - y) > 0
-end
 
-fancy_max(regular_gt, 10, -10)
+fancy_max(
+    fn(x: Int, y: Int) do (x - y) > 0 end,
+    10,
+    -10
+)

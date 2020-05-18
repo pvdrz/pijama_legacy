@@ -4,10 +4,11 @@
 //! rule
 //!
 //! ```abnf
-//! fn_def = "fn" name "(" (binding ("," binding)*)? ")" (":" ty)? "do" block1 "end"
+//! fn_def = "fn" name? "(" (binding ("," binding)*)? ")" (":" ty)? "do" block1 "end"
 //! ```
 //!
-//! Meaning that the return type binding is optional.
+//! Meaning that the return type binding and name are optional. If the name is not given, the
+//! expression will be interpreted as an anonymous function.
 //!
 //! The [`fn_body`] and [`args`] parsers are reutilized in the [`fn_rec_def`] and [`call`] parsers.
 //!
@@ -50,11 +51,12 @@ pub fn fn_def<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, No
     )(input)
 }
 
-/// Parses the name of a function in a definition.
+/// Parses the name of a function in a definition if it has one.
 ///
-/// This parser requires that the name is preceded by `"fn"` and at least one space.
-fn fn_name<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Name, E> {
-    preceded(pair(tag("fn"), space1), name)(input)
+/// This parser requires that the name is preceded by `"fn"` and at least one space. If the
+/// function does not have a name, it need to parse the `"fn"` only.
+fn fn_name<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Option<Name>, E> {
+    preceded(tag("fn"), opt(preceded(space1, name)))(input)
 }
 
 /// Parser for arguments of a function definition or function call.

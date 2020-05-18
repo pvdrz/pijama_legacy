@@ -1,0 +1,1 @@
+fn (x: Int): Bool do x end

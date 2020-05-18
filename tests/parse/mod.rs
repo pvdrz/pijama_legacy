@@ -153,11 +153,25 @@ fn let_bind() -> LangResult<()> {
             box BinaryOp(Add, box Name(ast::Name("y")), box Name(ast::Name("z"))),
         ),
         LetBind(ast::Name("x"), Some(Ty::Int), box Name(ast::Name("y"))),
+        LetBind(
+            ast::Name("foo"),
+            None,
+            box FnDef(
+                None,
+                vec![Binding {
+                    name: ast::Name("x"),
+                    ty: Ty::Int,
+                }],
+                vec![Name(ast::Name("x"))],
+                None,
+            ),
+        ),
     ];
 
     assert_eq!(expected[0], result[0], "simple");
     assert_eq!(expected[1], result[1], "bind to bin op");
     assert_eq!(expected[2], result[2], "type binding");
+    assert_eq!(expected[3], result[3], "bind to nameless function");
     Ok(())
 }
 
@@ -207,9 +221,9 @@ fn fn_def() -> LangResult<()> {
     let input = include_str!("fn_def.pj");
     let result = parse(input)?;
     let expected = vec![
-        FnDef(ast::Name("foo"), vec![], vec![], None),
+        FnDef(Some(ast::Name("foo")), vec![], vec![], None),
         FnDef(
-            ast::Name("foo"),
+            Some(ast::Name("foo")),
             vec![Binding {
                 name: ast::Name("x"),
                 ty: Ty::Int,
@@ -224,7 +238,7 @@ fn fn_def() -> LangResult<()> {
             Ty::Unit,
         ),
         FnDef(
-            ast::Name("foo"),
+            Some(ast::Name("foo")),
             vec![
                 Binding {
                     name: ast::Name("x"),
@@ -238,12 +252,32 @@ fn fn_def() -> LangResult<()> {
             vec![Name(ast::Name("x")), Name(ast::Name("y"))],
             None,
         ),
+        FnDef(
+            None,
+            vec![Binding {
+                name: ast::Name("x"),
+                ty: Ty::Int,
+            }],
+            vec![Name(ast::Name("x"))],
+            None,
+        ),
+        FnDef(
+            None,
+            vec![Binding {
+                name: ast::Name("x"),
+                ty: Ty::Int,
+            }],
+            vec![Name(ast::Name("x"))],
+            None,
+        ),
     ];
 
     assert_eq!(expected[0], result[0], "nullary def");
     assert_eq!(expected[1], result[1], "unary def");
     assert_eq!(expected[2], result[2], "recursive def");
     assert_eq!(expected[3], result[3], "long body");
+    assert_eq!(expected[4], result[4], "nameless");
+    assert_eq!(expected[5], result[5], "nameless with space");
     Ok(())
 }
 
