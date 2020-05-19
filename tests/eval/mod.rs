@@ -3,7 +3,7 @@ use std::include_str;
 use crate::panic_after;
 use pijama::ast::Literal;
 use pijama::lir::Term;
-use pijama::{run, run_with_env, LangEnv, LangResult};
+use pijama::{run, run_with_env, LangEnv, LangError, LangResult};
 use std::time::Duration;
 
 #[test]
@@ -227,17 +227,8 @@ fn print_print() -> LangResult<()> {
 }
 
 #[test]
-fn print_redefine() -> LangResult<()> {
+fn print_redefine() {
     let input = include_str!("print_redefine.pj");
-    let mut output = Vec::new();
-    let term = run_with_env(
-        input,
-        &mut LangEnv {
-            stdout: &mut output,
-        },
-    )?;
-    let output = String::from_utf8_lossy(&output);
-    assert_eq!(output, "10\n");
-    assert_eq!(Term::Lit(Literal::Unit), term);
-    Ok(())
+    let err = run(input).unwrap_err();
+    assert!(matches!(err, LangError::Parse(_)))
 }

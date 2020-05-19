@@ -10,6 +10,7 @@ pub enum Term<'a> {
     Abs(Binding<'a>, Box<Term<'a>>),
     UnaryOp(UnOp, Box<Term<'a>>),
     BinaryOp(BinOp, Box<Term<'a>>, Box<Term<'a>>),
+    BuiltInFn(BuiltInFn, Box<Term<'a>>),
     App(Box<Term<'a>>, Box<Term<'a>>),
     Lit(Literal),
     Cond(Box<Term<'a>>, Box<Term<'a>>, Box<Term<'a>>),
@@ -26,6 +27,7 @@ impl<'a> fmt::Display for Term<'a> {
             Term::UnaryOp(op, term) => write!(f, "({}{})", op, term),
             Term::BinaryOp(op, t1, t2) => write!(f, "({} {} {})", t1, op, t2),
             Term::App(t1, t2) => write!(f, "({} {})", t1, t2),
+            Term::BuiltInFn(builtin, t1) => write!(f, "({} {})", builtin, t1),
             Term::Lit(literal) => write!(f, "{}", literal),
             Term::Cond(t1, t2, t3) => write!(f, "(if {} then {} else {})", t1, t2, t3),
             Term::Let(name, t1, t2) => write!(f, "(let {} = {} in {})", name.0, t1, t2),
@@ -65,7 +67,11 @@ fn lower_node(node: Node<'_>) -> TyResult<Term<'_>> {
         Node::Name(name) => Ok(Term::Var(name)),
         Node::Cond(if_blk, do_blk, el_blk) => lower_cond(if_blk, do_blk, el_blk),
         Node::Literal(lit) => Ok(Term::Lit(lit)),
-        Node::Call(name, args) => lower_call(name, args),
+        Node::Call(name, args) => name.either_with(
+            args,
+            |args, a| lower_call(a, args),
+            |args, b| lower_builtin_fn_call(b, args),
+        ),
         Node::BinaryOp(bin_op, node1, node2) => lower_binary_op(bin_op, *node1, *node2),
         Node::UnaryOp(un_op, node) => lower_unary_op(un_op, *node),
         Node::LetBind(name, opt_ty, node) => lower_let_bind(name, opt_ty, *node),
@@ -89,6 +95,10 @@ fn lower_call<'a>(name: Name<'a>, args: Block<'a>) -> TyResult<Term<'a>> {
     }
 
     Ok(term)
+}
+
+fn lower_builtin_fn_call<'a>(builtin: BuiltInFn, args: Block<'a>) -> TyResult<Term<'a>> {
+    Ok(Term::BuiltInFn(builtin, Box::new(lower_blk(args)?)))
 }
 
 fn lower_binary_op<'a>(bin_op: BinOp, node1: Node<'a>, node2: Node<'a>) -> TyResult<Term<'a>> {

@@ -27,6 +27,7 @@ use nom::{
 
 use crate::ast::Node;
 
+use crate::parser::built_in_fn::built_in_fn;
 use crate::parser::{
     helpers::{in_brackets, lookahead},
     literal::literal,
@@ -68,6 +69,7 @@ fn base_node<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Nod
             fn_rec_def::fn_rec_def,
         ),
         lookahead(tag("fn"), fn_def::fn_def),
+        lookahead(built_in_fn, call::call),
         lookahead(
             name,
             alt((let_bind::let_bind, call::call, map(name, Node::Name))),

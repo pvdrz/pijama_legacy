@@ -2,6 +2,11 @@ use std::fmt;
 
 use crate::ty::{Binding, Ty};
 
+use either::Either;
+use lazy_static::lazy_static;
+
+use std::collections::HashMap;
+
 pub type Block<'a> = Vec<Node<'a>>;
 
 #[derive(Debug, Eq, PartialEq, Clone, Copy)]
@@ -106,6 +111,27 @@ impl<'a> fmt::Display for Literal {
     }
 }
 
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum BuiltInFn {
+    Print,
+}
+
+lazy_static! {
+    pub static ref BUILT_IN_FNS: HashMap<&'static str, BuiltInFn> = {
+        let mut m = HashMap::new();
+        m.insert("print", BuiltInFn::Print);
+        m
+    };
+}
+
+impl fmt::Display for BuiltInFn {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            BuiltInFn::Print => write!(f, "print"),
+        }
+    }
+}
+
 #[derive(Debug, Eq, PartialEq)]
 pub enum Node<'a> {
     BinaryOp(BinOp, Box<Node<'a>>, Box<Node<'a>>),
@@ -114,7 +140,7 @@ pub enum Node<'a> {
     Cond(Block<'a>, Block<'a>, Block<'a>),
     FnDef(Option<Name<'a>>, Vec<Binding<'a>>, Block<'a>, Option<Ty>),
     FnRecDef(Name<'a>, Vec<Binding<'a>>, Block<'a>, Ty),
-    Call(Name<'a>, Block<'a>),
+    Call(Either<Name<'a>, BuiltInFn>, Block<'a>),
     Literal(Literal),
     Name(Name<'a>),
 }

@@ -1,12 +1,9 @@
 use std::fmt;
 
+use crate::ast;
 use crate::ast::*;
+
 use Term::*;
-
-use lazy_static::lazy_static;
-
-use std::collections::HashMap;
-use std::fmt::{Display, Formatter};
 
 mod ctx;
 
@@ -18,31 +15,10 @@ pub enum Term {
     UnaryOp(UnOp, Box<Term>),
     BinaryOp(BinOp, Box<Term>, Box<Term>),
     App(Box<Term>, Box<Term>),
-    BuiltInFn(BuiltInFn),
+    BuiltInFn(ast::BuiltInFn),
     Cond(Box<Term>, Box<Term>, Box<Term>),
     Fix(Box<Term>),
     Hole,
-}
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum BuiltInFn {
-    Print,
-}
-
-impl Display for BuiltInFn {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        match self {
-            BuiltInFn::Print => write!(f, "print"),
-        }
-    }
-}
-
-lazy_static! {
-    pub static ref BUILT_IN_FNS: HashMap<&'static str, BuiltInFn> = {
-        let mut m = HashMap::new();
-        m.insert("print", BuiltInFn::Print);
-        m
-    };
 }
 
 impl fmt::Display for Term {

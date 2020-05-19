@@ -1,5 +1,4 @@
-use crate::ast::{Literal, UnOp, BinOp};
-use crate::lir::BuiltInFn;
+use crate::ast::{BinOp, BuiltInFn, Literal, UnOp};
 use crate::lir::Term::{self, *};
 use crate::LangEnv;
 use eval::*;
@@ -29,7 +28,7 @@ impl<'a, 'b> Machine<'a, 'b> {
             // Dispatch step for beta reduction
             App(box Abs(body), arg) => step_beta_reduction(body, arg),
             // Builtin function special handling necessary
-            App(box BuiltInFn(BuiltInFn::Print), ref t1) => {
+            App(box Term::BuiltInFn(BuiltInFn::Print), ref t1) => {
                 writeln!(self.env.stdout, "{}", t1).expect("Print failed");
                 (true, Term::Lit(Literal::Unit))
             }
@@ -58,7 +57,7 @@ impl<'a, 'b> Machine<'a, 'b> {
         &mut self,
         mut t1: Box<Term>,
         t2: Box<Term>,
-        t3: Box<Term>
+        t3: Box<Term>,
     ) -> (bool, Term) {
         // If t1 is a literal, we should be able to evaluate the conditional
         if let box Term::Lit(lit) = t1 {
@@ -70,7 +69,7 @@ impl<'a, 'b> Machine<'a, 'b> {
                 // If t1 is any other literal, panic
                 lit => panic!("Found non-boolean literal {} in condition", lit),
             }
-            // If t1 is not a literal, evaluate it in place and return (if t1 then t2 else t3)
+        // If t1 is not a literal, evaluate it in place and return (if t1 then t2 else t3)
         } else {
             (self.step_in_place(t1.as_mut()), Term::Cond(t1, t2, t3))
         }
@@ -89,7 +88,9 @@ impl<'a, 'b> Machine<'a, 'b> {
             // If op is || and t1 is true evaluate to true
             (Or, box Lit(Bool(true)), _) => (true, Lit(Bool(true))),
             // If t2 is not a literal, evaluate it.
-            (op, t1 @ box Lit(_), mut t2) => (self.step_in_place(t2.as_mut()), Term::BinaryOp(op, t1, t2)),
+            (op, t1 @ box Lit(_), mut t2) => {
+                (self.step_in_place(t2.as_mut()), Term::BinaryOp(op, t1, t2))
+            }
             // If t1 is not a literal, evaluate it.
             (op, mut t1, t2) => (self.step_in_place(t1.as_mut()), Term::BinaryOp(op, t1, t2)),
         }
@@ -101,7 +102,7 @@ impl<'a, 'b> Machine<'a, 'b> {
         // If t1 is a literal, do the operation.
         if let box Term::Lit(lit) = t1 {
             (true, Term::Lit(native_un_op(op, lit)))
-            // If t1 is not a literal, evaluate it.
+        // If t1 is not a literal, evaluate it.
         } else {
             (self.step_in_place(t1.as_mut()), Term::UnaryOp(op, t1))
         }
@@ -115,7 +116,7 @@ impl<'a, 'b> Machine<'a, 'b> {
             let mut t2 = t2.clone();
             t2.replace(0, &mut Term::Fix(t1));
             (true, t2)
-            // If t1 is not an abstraction, evaluate it.
+        // If t1 is not an abstraction, evaluate it.
         } else {
             (self.step_in_place(t1.as_mut()), Term::Fix(t1))
         }

@@ -37,6 +37,7 @@ use helpers::surrounded;
 
 mod bin_op;
 mod block;
+mod built_in_fn;
 mod helpers;
 mod literal;
 mod name;

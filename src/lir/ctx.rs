@@ -1,5 +1,4 @@
 use crate::ast::Name;
-use crate::lir::BUILT_IN_FNS;
 use crate::{lir, mir};
 
 pub fn remove_names(term: mir::Term<'_>) -> lir::Term {
@@ -15,19 +14,16 @@ impl<'a> Context<'a> {
     fn remove_names(&mut self, term: mir::Term<'a>) -> lir::Term {
         match term {
             mir::Term::Lit(literal) => lir::Term::Lit(literal),
-            mir::Term::Var(name) => BUILT_IN_FNS.get(name.0).map_or_else(
-                || {
-                    let (index, _) = self
-                        .inner
-                        .iter()
-                        .rev()
-                        .enumerate()
-                        .find(|(_, name2)| name == **name2)
-                        .unwrap();
-                    lir::Term::Var(index)
-                },
-                |built_in| lir::Term::BuiltInFn(*built_in),
-            ),
+            mir::Term::Var(name) => {
+                let (index, _) = self
+                    .inner
+                    .iter()
+                    .rev()
+                    .enumerate()
+                    .find(|(_, name2)| name == **name2)
+                    .unwrap();
+                lir::Term::Var(index)
+            }
             mir::Term::Abs(bind, body) => {
                 self.inner.push(bind.name);
                 let body = self.remove_names(*body);
@@ -42,6 +38,10 @@ impl<'a> Context<'a> {
                 let t1 = self.remove_names(*t1);
                 let t2 = self.remove_names(*t2);
                 lir::Term::BinaryOp(op, Box::new(t1), Box::new(t2))
+            }
+            mir::Term::BuiltInFn(builtin, t1) => {
+                let t1 = self.remove_names(*t1);
+                lir::Term::App(Box::new(lir::Term::BuiltInFn(builtin)), Box::new(t1))
             }
             mir::Term::App(t1, t2) => {
                 let t1 = self.remove_names(*t1);

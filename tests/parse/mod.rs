@@ -1,5 +1,6 @@
 use std::include_str;
 
+use either::Either;
 use pijama::ast::{self, BinOp::*, Node::*, UnOp};
 use pijama::parser::parse;
 use pijama::ty::{Binding, Ty};
@@ -202,10 +203,10 @@ fn call() -> LangResult<()> {
     let input = include_str!("call.pj");
     let result = parse(input)?;
     let expected = vec![
-        Call(ast::Name("x"), vec![]),
-        Call(ast::Name("x"), vec![Name(ast::Name("y"))]),
+        Call(Either::Left(ast::Name("x")), vec![]),
+        Call(Either::Left(ast::Name("x")), vec![Name(ast::Name("y"))]),
         Call(
-            ast::Name("x"),
+            Either::Left(ast::Name("x")),
             vec![Name(ast::Name("y")), Name(ast::Name("z"))],
         ),
     ];
@@ -234,7 +235,7 @@ fn fn_def() -> LangResult<()> {
         FnRecDef(
             ast::Name("foo"),
             vec![],
-            vec![Call(ast::Name("foo"), vec![])],
+            vec![Call(Either::Left(ast::Name("foo")), vec![])],
             Ty::Unit,
         ),
         FnDef(
