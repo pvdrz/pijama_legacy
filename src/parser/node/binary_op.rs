@@ -41,19 +41,17 @@
 //! [`bin_op`]: crate::parser::bin_op
 use nom::{
     combinator::{cut, opt},
-    error::ParseError,
     sequence::tuple,
-    IResult,
 };
 use nom_locate::position;
 
 use crate::{
     ast::{Node, NodeKind, Span},
-    parser::{bin_op::*, node::base_node},
+    parser::{bin_op::*, node::base_node, IResult},
 };
 
 /// Parses a [`Node::BinaryOp`].
-pub fn binary_op<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, Node, E> {
+pub fn binary_op(input: Span) -> IResult<Node> {
     let (mut input, mut node) = binary_op_1(input)?;
     while let (rem, Some((span, op, node2))) =
         opt(tuple((position, bin_op_1, cut(binary_op_1))))(input)?
@@ -67,7 +65,7 @@ pub fn binary_op<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'
     Ok((input, node))
 }
 
-fn binary_op_1<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, Node, E> {
+fn binary_op_1(input: Span) -> IResult<Node> {
     let (mut input, mut node) = binary_op_2(input)?;
     while let (rem, Some((span, op, node2))) =
         opt(tuple((position, bin_op_2, cut(binary_op_2))))(input)?
@@ -81,7 +79,7 @@ fn binary_op_1<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>
     Ok((input, node))
 }
 
-fn binary_op_2<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, Node, E> {
+fn binary_op_2(input: Span) -> IResult<Node> {
     let (mut input, mut node) = binary_op_3(input)?;
     while let (rem, Some((span, op, node2))) =
         opt(tuple((position, bin_op_3, cut(binary_op_3))))(input)?
@@ -95,7 +93,7 @@ fn binary_op_2<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>
     Ok((input, node))
 }
 
-fn binary_op_3<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, Node, E> {
+fn binary_op_3(input: Span) -> IResult<Node> {
     let (mut input, mut node) = binary_op_4(input)?;
     while let (rem, Some((span, op, node2))) =
         opt(tuple((position, bin_op_4, cut(binary_op_4))))(input)?
@@ -109,7 +107,7 @@ fn binary_op_3<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>
     Ok((input, node))
 }
 
-fn binary_op_4<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, Node, E> {
+fn binary_op_4(input: Span) -> IResult<Node> {
     let (mut input, mut node) = base_node(input)?;
     while let (rem, Some((span, op, node2))) =
         opt(tuple((position, bin_op_5, cut(base_node))))(input)?

@@ -1,24 +1,24 @@
 //! Parsers for literals.
 //!
 //! The entry point for this module is the [`literal`] parser.
-
 use nom::{
     branch::alt,
     bytes::complete::tag,
     character::complete::{char, digit1},
     combinator::{map, map_opt, opt},
-    error::ParseError,
     sequence::pair,
-    IResult,
 };
 
-use crate::ast::{Literal, Span};
+use crate::{
+    ast::{Literal, Span},
+    parser::IResult,
+};
 
 /// Parses a [`Literal`](crate::ast::Literal).
 ///
 /// The only valid inputs for this parser are `"true"`, `"false"`, `"unit"` or a signed integer
 /// (which is parsed by the [`number`](number) parser).
-pub fn literal<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, Literal, E> {
+pub fn literal(input: Span) -> IResult<Literal> {
     alt((
         map(tag("true"), |_| Literal::Bool(true)),
         map(tag("false"), |_| Literal::Bool(false)),
@@ -34,7 +34,7 @@ pub fn literal<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>
 ///
 /// If the number is negative, there cannot be spaces between the minus sign and the digits of the
 /// number. That kind of expression will be parsed as an unary operation.
-fn number<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, i128, E> {
+fn number(input: Span) -> IResult<i128> {
     map_opt(
         pair(opt(char('-')), digit1),
         |(sign, digits_span): (Option<char>, Span)| {

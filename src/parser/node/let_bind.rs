@@ -8,26 +8,22 @@
 //! ```
 //!
 //! Meaning that type bindings are optional.
-
 use nom::{
     character::complete::{char, space0},
     combinator::{map, opt},
-    error::ParseError,
     sequence::{preceded, tuple},
-    IResult,
 };
 use nom_locate::position;
 
 use crate::{
     ast::{Node, NodeKind, Span},
-    parser::{helpers::surrounded, name::name, node::node, ty::colon_ty},
+    parser::{helpers::surrounded, name::name, node::node, ty::colon_ty, IResult},
 };
 
 /// Parses a [`Node::LetBind`].
 ///
 /// There can be any number of spaces surrounding the `=` sign.
-
-pub fn let_bind<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, Node, E> {
+pub fn let_bind(input: Span) -> IResult<Node> {
     let (input, span) = position(input)?;
     map(
         tuple((

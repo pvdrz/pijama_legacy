@@ -13,9 +13,7 @@ use nom::{
     bytes::complete::tag,
     character::complete::{char, space0},
     combinator::{map, not, peek},
-    error::ParseError,
     sequence::terminated,
-    IResult,
 };
 
 use crate::{
@@ -23,7 +21,7 @@ use crate::{
         BinOp::{self, *},
         Span,
     },
-    parser::helpers::surrounded,
+    parser::{helpers::surrounded, IResult},
 };
 
 /// Parser for the binary operators with precedence level 1.
@@ -31,7 +29,7 @@ use crate::{
 /// These operators are `&&` and `||`.
 ///
 /// All the binary operators might be surronded by zero or more spaces.
-pub fn bin_op_1<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, BinOp, E> {
+pub fn bin_op_1(input: Span) -> IResult<BinOp> {
     surrounded(
         alt((map(tag("&&"), |_| And), map(tag("||"), |_| Or))),
         space0,
@@ -46,7 +44,7 @@ pub fn bin_op_1<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a
 /// and `<<` operators.
 ///
 /// All the binary operators might be surronded by zero or more spaces.
-pub fn bin_op_2<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, BinOp, E> {
+pub fn bin_op_2(input: Span) -> IResult<BinOp> {
     surrounded(
         alt((
             map(tag("<="), |_| Lte),
@@ -68,7 +66,7 @@ pub fn bin_op_2<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a
 /// and `||` operators.
 ///
 /// All the binary operators might be surronded by zero or more spaces.
-pub fn bin_op_3<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, BinOp, E> {
+pub fn bin_op_3(input: Span) -> IResult<BinOp> {
     surrounded(
         alt((
             map(terminated(char('&'), peek(not(char('&')))), |_| BitAnd),
@@ -86,7 +84,7 @@ pub fn bin_op_3<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a
 /// These operators are `+` and `-`.
 ///
 /// All the binary operators might be surronded by zero or more spaces.
-pub fn bin_op_4<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, BinOp, E> {
+pub fn bin_op_4(input: Span) -> IResult<BinOp> {
     surrounded(
         alt((map(char('+'), |_| Add), map(char('-'), |_| Sub))),
         space0,
@@ -98,7 +96,7 @@ pub fn bin_op_4<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a
 /// These operators are `*`, `/` and `%`.
 ///
 /// All the binary operators might be surronded by zero or more spaces.
-pub fn bin_op_5<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, BinOp, E> {
+pub fn bin_op_5(input: Span) -> IResult<BinOp> {
     surrounded(
         alt((
             map(char('*'), |_| Mul),

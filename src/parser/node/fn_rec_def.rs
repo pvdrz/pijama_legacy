@@ -15,9 +15,7 @@ use nom::{
     bytes::complete::tag,
     character::complete::{multispace0, space0, space1},
     combinator::map,
-    error::ParseError,
     sequence::{preceded, terminated, tuple},
-    IResult,
 };
 use nom_locate::position;
 
@@ -26,7 +24,10 @@ use crate::{
     parser::{
         helpers::surrounded,
         name::name,
-        node::fn_def::{args, fn_body},
+        node::{
+            fn_def::{args, fn_body},
+            IResult,
+        },
         ty::{binding, colon_ty},
     },
 };
@@ -34,7 +35,7 @@ use crate::{
 /// Parses a [`Node::FnDef`].
 ///
 /// The spacing works the same as with function definitions module.
-pub fn fn_rec_def<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, Node, E> {
+pub fn fn_rec_def(input: Span) -> IResult<Node> {
     let (input, span) = position(input)?;
     map(
         tuple((
@@ -54,6 +55,6 @@ pub fn fn_rec_def<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<
 ///
 /// This parser requires that the name is preceded by `"fn"`, at least one space, `"rec"` and at
 /// least another space.
-fn fn_rec_name<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, Name, E> {
+fn fn_rec_name(input: Span) -> IResult<Name> {
     preceded(tuple((tag("fn"), space1, tag("rec"), space1)), name)(input)
 }

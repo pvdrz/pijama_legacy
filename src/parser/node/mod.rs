@@ -6,7 +6,6 @@
 //!
 //! The [`binary_op`] module is particularly important here so it is a good idea to check those
 //! module docs too.
-
 mod binary_op;
 mod call;
 mod cond;
@@ -20,25 +19,25 @@ use nom::{
     bytes::complete::tag,
     character::complete::{multispace1, space1},
     combinator::map,
-    error::ParseError,
     sequence::{pair, tuple},
-    IResult,
 };
 use nom_locate::position;
 
-use crate::ast::{Node, NodeKind, Span};
-
-use crate::parser::{
-    helpers::{in_brackets, lookahead},
-    literal::literal,
-    name::name,
-    un_op::un_op,
+use crate::{
+    ast::{Node, NodeKind, Span},
+    parser::{
+        helpers::{in_brackets, lookahead},
+        literal::literal,
+        name::name,
+        un_op::un_op,
+        IResult,
+    },
 };
 
 /// Parser for [`Node`]s.
 ///
 /// To understand its behaviour please refer to the [`binary_op`] docs.
-pub fn node<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, Node<'a>, E> {
+pub fn node(input: Span) -> IResult<Node> {
     binary_op::binary_op(input)
 }
 
@@ -59,7 +58,7 @@ pub fn node<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, N
 /// - If the input starts with a unary operator, the [`un_op`] parser is applied.
 ///
 /// This function is very order sensitive. Be careful if you swap the parsers order.
-fn base_node<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, Node, E> {
+fn base_node(input: Span) -> IResult<Node> {
     alt((
         in_brackets(node),
         map(pair(position, literal), |(span, lit)| Node {

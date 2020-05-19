@@ -6,10 +6,7 @@
 //! ```abnf
 //! call = "name "(" (node ("," node)*)? ")"
 //! ```
-use nom::{
-    character::complete::space0, combinator::map, error::ParseError, sequence::separated_pair,
-    IResult,
-};
+use nom::{character::complete::space0, combinator::map, sequence::separated_pair};
 use nom_locate::position;
 
 use crate::{
@@ -17,6 +14,7 @@ use crate::{
     parser::{
         name::name,
         node::{fn_def::args, node},
+        IResult,
     },
 };
 
@@ -25,7 +23,7 @@ use crate::{
 /// This parser admits:
 /// - Spaces after the name of the function.
 /// - Spaces before and spaces or line breaks after each comma.
-pub fn call<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, Node, E> {
+pub fn call(input: Span) -> IResult<Node> {
     let (input, span) = position(input)?;
     map(
         separated_pair(name, space0, args(node)),

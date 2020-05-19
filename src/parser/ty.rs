@@ -39,9 +39,7 @@ use nom::{
     bytes::complete::tag,
     character::complete::{char, space0},
     combinator::{map, opt},
-    error::ParseError,
     sequence::{pair, preceded},
-    IResult,
 };
 
 use crate::{
@@ -49,6 +47,7 @@ use crate::{
     parser::{
         helpers::{in_brackets, surrounded},
         name::name,
+        IResult,
     },
     ty::{Binding, Ty},
 };
@@ -61,7 +60,7 @@ use crate::{
 /// `Bool -> (Int -> Unit)`.
 ///
 /// There can be any number of spaces surrounding the `->`, including no spaces at all.
-pub fn ty<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, Ty, E> {
+pub fn ty(input: Span) -> IResult<Ty> {
     let (rem, t1) = base_ty(input)?;
     if let (rem, Some(t2)) = opt(preceded(surrounded(tag("->"), space0), ty))(rem)? {
         Ok((rem, Ty::Arrow(Box::new(t1), Box::new(t2))))
@@ -74,7 +73,7 @@ pub fn ty<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, Ty,
 ///
 /// This parser returns a [`Binding`], there can be any number of spaces surrounding the `:`,
 /// including no spaces at all.
-pub fn binding<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, Binding, E> {
+pub fn binding(input: Span) -> IResult<Binding> {
     map(pair(name, colon_ty), |(name, ty)| Binding { name, ty })(input)
 }
 
@@ -85,7 +84,7 @@ pub fn binding<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>
 /// This parser exists with the sole purpose of being reutilized for type bindings that are not
 /// stored in [`Binding`]s such as the return type of functions or the optional type binding for
 /// let bindings.
-pub fn colon_ty<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, Ty, E> {
+pub fn colon_ty(input: Span) -> IResult<Ty> {
     preceded(surrounded(char(':'), space0), ty)(input)
 }
 
@@ -95,7 +94,7 @@ pub fn colon_ty<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a
 /// round brackets. It returns a [`Ty`].
 ///
 /// There can be any number of spaces between the brackets and its contents.
-fn base_ty<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, Ty, E> {
+fn base_ty(input: Span) -> IResult<Ty> {
     alt((
         map(tag("Bool"), |_| Ty::Bool),
         map(tag("Int"), |_| Ty::Int),

@@ -13,21 +13,19 @@ use nom::{
     bytes::complete::tag,
     character::complete::{multispace0, multispace1},
     combinator::{map, opt},
-    error::ParseError,
     sequence::{delimited, pair, terminated, tuple},
-    IResult,
 };
 use nom_locate::position;
 
 use crate::{
     ast::{Block, Node, NodeKind, Span},
-    parser::block::block1,
+    parser::{block::block1, IResult},
 };
 
 /// Parses a [`Node::Cond`].
 ///
 /// The spacing is explained in the other parsers of this module.
-pub fn cond<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, Node, E> {
+pub fn cond(input: Span) -> IResult<Node> {
     let (input, span) = position(input)?;
     map(
         terminated(tuple((if_block, do_block, opt(else_block))), tag("end")),
@@ -42,7 +40,7 @@ pub fn cond<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, N
 ///
 /// There must be at least one space or line break between the `if` and the first node in the
 /// block. There can be spaces or line breaks at the end of the block.
-fn if_block<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, Block, E> {
+fn if_block(input: Span) -> IResult<Block> {
     delimited(pair(tag("if"), multispace1), block1, multispace0)(input)
 }
 
@@ -50,7 +48,7 @@ fn if_block<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, B
 ///
 /// There must be at least one space or line break between the `do` and the first node in the
 /// block. There can be spaces or line breaks at the end of the block.
-fn do_block<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, Block, E> {
+fn do_block(input: Span) -> IResult<Block> {
     delimited(pair(tag("do"), multispace1), block1, multispace0)(input)
 }
 
@@ -58,6 +56,6 @@ fn do_block<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, B
 ///
 /// There must be at least one space or line break between the `else` and the first node in the
 /// block. There can be spaces or line breaks at the end of the block.
-fn else_block<'a, E: ParseError<Span<'a>>>(input: Span<'a>) -> IResult<Span<'a>, Block, E> {
+fn else_block(input: Span) -> IResult<Block> {
     delimited(pair(tag("else"), multispace1), block1, multispace0)(input)
 }
