@@ -24,13 +24,13 @@ use nom::{
 use nom_locate::position;
 
 use crate::{
-    ast::{Block, Located, Location, Name, Node, NodeKind, Span},
+    ast::{Block, Located, Location, Name, Node, NodeKind},
     parser::{
         block::block0,
         helpers::{in_brackets, surrounded},
         name::name,
         ty::{binding, colon_ty},
-        IResult,
+        IResult, Span,
     },
 };
 
@@ -68,7 +68,7 @@ fn fn_name(input: Span) -> IResult<Located<Option<Located<Name>>>> {
     map(
         separated_pair(position, tag("fn"), opt(preceded(space1, name))),
         |(span, opt_name)| {
-            let mut loc = span.into();
+            let mut loc = Location::from(span);
             if let Some(name) = opt_name.as_ref() {
                 loc = loc + name.loc;
             }

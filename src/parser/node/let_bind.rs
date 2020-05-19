@@ -15,8 +15,8 @@ use nom::{
 };
 
 use crate::{
-    ast::{Node, NodeKind, Span},
-    parser::{helpers::surrounded, name::name, node::node, ty::colon_ty, IResult},
+    ast::{Node, NodeKind},
+    parser::{helpers::surrounded, name::name, node::node, ty::colon_ty, IResult, Span},
 };
 
 /// Parses a [`Node::LetBind`].

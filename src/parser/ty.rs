@@ -43,11 +43,11 @@ use nom::{
 };
 
 use crate::{
-    ast::{Located, Location, Span},
+    ast::{Located, Location},
     parser::{
         helpers::{in_brackets, surrounded},
         name::name,
-        IResult,
+        IResult, Span,
     },
     ty::{Binding, Ty},
 };
@@ -114,13 +114,9 @@ pub fn colon_ty(input: Span) -> IResult<Located<Ty>> {
 /// There can be any number of spaces between the brackets and its contents.
 fn base_ty(input: Span) -> IResult<Located<Ty>> {
     alt((
-        map(tag("Bool"), |span: Span| {
-            Located::new(Ty::Bool, span.into())
-        }),
-        map(tag("Int"), |span: Span| Located::new(Ty::Int, span.into())),
-        map(tag("Unit"), |span: Span| {
-            Located::new(Ty::Unit, span.into())
-        }),
+        map(tag("Bool"), |span: Span| Located::new(Ty::Bool, span)),
+        map(tag("Int"), |span: Span| Located::new(Ty::Int, span)),
+        map(tag("Unit"), |span: Span| Located::new(Ty::Unit, span)),
         map(in_brackets(ty), |Located { mut content, loc }| {
             content.loc = loc;
             content

@@ -9,11 +9,11 @@
 use nom::{character::complete::space0, combinator::map, sequence::separated_pair};
 
 use crate::{
-    ast::{Node, NodeKind, Span},
+    ast::{Node, NodeKind},
     parser::{
         name::name,
         node::{fn_def::args, node},
-        IResult,
+        IResult, Span,
     },
 };
 

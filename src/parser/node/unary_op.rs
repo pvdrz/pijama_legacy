@@ -8,8 +8,8 @@ use nom::{combinator::map, sequence::pair};
 use nom_locate::position;
 
 use crate::{
-    ast::{Location, Node, NodeKind, Span},
-    parser::{node::node, un_op::*, IResult},
+    ast::{Location, Node, NodeKind},
+    parser::{node::node, un_op::un_op, IResult, Span},
 };
 
 /// Parses a [`Node::UnaryOp`].

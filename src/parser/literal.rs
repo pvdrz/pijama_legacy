@@ -10,8 +10,8 @@ use nom::{
 };
 
 use crate::{
-    ast::{Literal, Located, Location, Span},
-    parser::IResult,
+    ast::{Literal, Located, Location},
+    parser::{IResult, Span},
 };
 
 /// Parses a [`Literal`](crate::ast::Literal).
@@ -21,14 +21,12 @@ use crate::{
 pub fn literal(input: Span) -> IResult<Located<Literal>> {
     alt((
         map(tag("true"), |span: Span| {
-            Located::new(Literal::Bool(true), span.into())
+            Located::new(Literal::Bool(true), span)
         }),
         map(tag("false"), |span: Span| {
-            Located::new(Literal::Bool(false), span.into())
+            Located::new(Literal::Bool(false), span)
         }),
-        map(tag("unit"), |span: Span| {
-            Located::new(Literal::Unit, span.into())
-        }),
+        map(tag("unit"), |span: Span| Located::new(Literal::Unit, span)),
         map(number, |Located { content, loc }| {
             Located::new(Literal::Number(content), loc)
         }),
@@ -47,7 +45,7 @@ fn number(input: Span) -> IResult<Located<i128>> {
         pair(opt(char('-')), digit1),
         |(sign, digits_span): (Option<char>, Span)| {
             let mut number = digits_span.fragment().parse::<i128>().ok()?;
-            let mut loc = Location::from(digits_span);
+            let mut loc: Location = digits_span.into();
 
             if sign.is_some() {
                 loc.start -= 1;

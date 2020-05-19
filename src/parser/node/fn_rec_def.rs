@@ -20,15 +20,13 @@ use nom::{
 use nom_locate::position;
 
 use crate::{
-    ast::{Located, Location, Name, Node, NodeKind, Span},
+    ast::{Located, Location, Name, Node, NodeKind},
     parser::{
         helpers::surrounded,
         name::name,
-        node::{
-            fn_def::{args, fn_body},
-            IResult,
-        },
+        node::fn_def::{args, fn_body},
         ty::{binding, colon_ty},
+        IResult, Span,
     },
 };
 

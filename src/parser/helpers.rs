@@ -9,7 +9,10 @@ use nom::{
 };
 use nom_locate::position;
 
-use crate::ast::{Located, Location, Span};
+use crate::{
+    ast::{Located, Location},
+    parser::Span,
+};
 
 /// Helper parser for expressions surrounded by a delimiter.
 ///

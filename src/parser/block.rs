@@ -10,8 +10,8 @@ use nom::{
 };
 
 use crate::{
-    ast::{Block, Span},
-    parser::{node::node, IResult},
+    ast::Block,
+    parser::{node::node, IResult, Span},
 };
 
 /// Parser for [`Block`]s.

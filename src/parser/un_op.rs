@@ -12,11 +12,8 @@ use nom::{
 };
 
 use crate::{
-    ast::{
-        Span,
-        UnOp::{self, *},
-    },
-    parser::IResult,
+    ast::{UnOp, UnOp::*},
+    parser::{IResult, Span},
 };
 
 /// Parser for the unary operators `!` and `-`.

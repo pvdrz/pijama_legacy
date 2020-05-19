@@ -23,13 +23,13 @@ use nom::{
 };
 
 use crate::{
-    ast::{Located, Node, NodeKind, Span},
+    ast::{Located, Node, NodeKind},
     parser::{
         helpers::{in_brackets, lookahead},
         literal::literal,
         name::name,
         un_op::un_op,
-        IResult,
+        IResult, Span,
     },
 };
 

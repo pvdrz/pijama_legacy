@@ -10,8 +10,8 @@ use nom::{
 };
 
 use crate::{
-    ast::{Located, Name, Span},
-    parser::IResult,
+    ast::{Located, Name},
+    parser::{IResult, Span},
 };
 
 /// Words that cannot be names to avoid ambiguities.
@@ -28,7 +28,7 @@ pub fn name(input: Span) -> IResult<Located<Name>> {
     verify(
         map(
             recognize(separated_nonempty_list(char('_'), alpha1)),
-            |span: Span| Located::new(Name(span.fragment()), span.into()),
+            |span: Span| Located::new(Name(span.fragment()), span),
         ),
         |name| !KEYWORDS.contains(&name.content.0),
     )(input)

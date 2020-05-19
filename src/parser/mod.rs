@@ -26,7 +26,7 @@ use thiserror::Error;
 use nom::{character::complete::multispace0, combinator::all_consuming, error::ErrorKind, Err::*};
 
 use crate::{
-    ast::{Block, Span},
+    ast::{Block, Location},
     LangResult,
 };
 
@@ -41,6 +41,16 @@ mod name;
 mod node;
 mod ty;
 mod un_op;
+
+type Span<'a> = nom_locate::LocatedSpan<&'a str>;
+
+impl<'a> From<Span<'a>> for Location {
+    fn from(span: Span<'a>) -> Self {
+        let start = span.location_offset();
+        let end = start + span.fragment().len();
+        Location { start, end }
+    }
+}
 
 type IResult<'a, T> = nom::IResult<Span<'a>, T, (Span<'a>, ErrorKind)>;
 

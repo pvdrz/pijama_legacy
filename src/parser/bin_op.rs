@@ -17,11 +17,8 @@ use nom::{
 };
 
 use crate::{
-    ast::{
-        BinOp::{self, *},
-        Span,
-    },
-    parser::{helpers::surrounded, IResult},
+    ast::{BinOp, BinOp::*},
+    parser::{helpers::surrounded, IResult, Span},
 };
 
 /// Parser for the binary operators with precedence level 1.

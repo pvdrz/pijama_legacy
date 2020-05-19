@@ -18,8 +18,8 @@ use nom::{
 use nom_locate::position;
 
 use crate::{
-    ast::{Block, Location, Node, NodeKind, Span},
-    parser::{block::block1, IResult},
+    ast::{Block, Location, Node, NodeKind},
+    parser::{block::block1, IResult, Span},
 };
 
 /// Parses a [`Node::Cond`].

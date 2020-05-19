@@ -45,8 +45,8 @@ use nom::{
 };
 
 use crate::{
-    ast::{Node, NodeKind, Span},
-    parser::{bin_op::*, node::base_node, IResult},
+    ast::{Node, NodeKind},
+    parser::{bin_op::*, node::base_node, IResult, Span},
 };
 
 /// Parses a [`Node::BinaryOp`].

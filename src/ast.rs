@@ -1,12 +1,8 @@
-use std::fmt;
-
-use nom_locate::LocatedSpan;
+use std::fmt::{self, Debug};
 
 use crate::ty::{Binding, Ty};
 
 pub type Block<'a> = Vec<Node<'a>>;
-
-pub type Span<'a> = LocatedSpan<&'a str>;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Location {
@@ -28,16 +24,6 @@ impl std::ops::Add for Location {
     }
 }
 
-impl<'a> From<Span<'a>> for Location {
-    fn from(span: Span<'a>) -> Self {
-        let start = span.location_offset();
-        let end = start + span.fragment().len();
-        Location { start, end }
-    }
-}
-
-use fmt::Debug;
-
 #[derive(Debug)]
 pub struct Located<T: Debug> {
     pub content: T,
@@ -45,8 +31,11 @@ pub struct Located<T: Debug> {
 }
 
 impl<T: Debug> Located<T> {
-    pub fn new(content: T, loc: Location) -> Self {
-        Located { content, loc }
+    pub fn new(content: T, loc: impl Into<Location>) -> Self {
+        Located {
+            content,
+            loc: loc.into(),
+        }
     }
 }
 
