@@ -2,7 +2,7 @@ use std::fmt::{self, Debug};
 
 use crate::ty::{Binding, Ty};
 
-pub type Block<'a> = Vec<Node<'a>>;
+pub type Block<'a> = Vec<Located<Node<'a>>>;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Location {
@@ -150,13 +150,19 @@ impl<'a> fmt::Display for Literal {
     }
 }
 
-pub type Node<'a> = Located<NodeKind<'a>>;
-
 #[derive(Debug)]
-pub enum NodeKind<'a> {
-    BinaryOp(BinOp, Box<Node<'a>>, Box<Node<'a>>),
-    UnaryOp(UnOp, Box<Node<'a>>),
-    LetBind(Located<Name<'a>>, Option<Located<Ty>>, Box<Node<'a>>),
+pub enum Node<'a> {
+    BinaryOp(
+        BinOp,
+        Box<Located<Node<'a>>>,
+        Box<Located<Node<'a>>>,
+    ),
+    UnaryOp(UnOp, Box<Located<Node<'a>>>),
+    LetBind(
+        Located<Name<'a>>,
+        Option<Located<Ty>>,
+        Box<Located<Node<'a>>>,
+    ),
     Cond(Block<'a>, Block<'a>, Block<'a>),
     FnDef(
         Option<Located<Name<'a>>>,

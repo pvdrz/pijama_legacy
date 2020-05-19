@@ -24,7 +24,7 @@ use nom::{
 use nom_locate::position;
 
 use crate::{
-    ast::{Block, Located, Location, Name, Node, NodeKind},
+    ast::{Block, Located, Location, Name, Node},
     parser::{
         block::block0,
         helpers::{in_brackets, surrounded},
@@ -41,7 +41,7 @@ use crate::{
 /// - Spaces or line breaks after the `")"` at the end of the arguments.
 ///
 /// Other spacing details are in the docs for the other parsers of this module.
-pub fn fn_def(input: Span) -> IResult<Node> {
+pub fn fn_def(input: Span) -> IResult<Located<Node>> {
     map(
         tuple((
             fn_name,
@@ -52,8 +52,8 @@ pub fn fn_def(input: Span) -> IResult<Node> {
         |(name, args, opt_ty, body)| {
             let loc1 = name.loc;
             let loc2 = body.loc;
-            Node::new(
-                NodeKind::FnDef(name.content, args.content, body.content, opt_ty),
+            Located::new(
+                Node::FnDef(name.content, args.content, body.content, opt_ty),
                 loc1 + loc2,
             )
         },

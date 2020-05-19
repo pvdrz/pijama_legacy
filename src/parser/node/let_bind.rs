@@ -15,14 +15,14 @@ use nom::{
 };
 
 use crate::{
-    ast::{Node, NodeKind},
+    ast::{Located, Node},
     parser::{helpers::surrounded, name::name, node::node, ty::colon_ty, IResult, Span},
 };
 
 /// Parses a [`Node::LetBind`].
 ///
 /// There can be any number of spaces surrounding the `=` sign.
-pub fn let_bind(input: Span) -> IResult<Node> {
+pub fn let_bind(input: Span) -> IResult<Located<Node>> {
     map(
         tuple((
             name,
@@ -31,7 +31,7 @@ pub fn let_bind(input: Span) -> IResult<Node> {
         )),
         |(name, opt_ty, node)| {
             let loc = name.loc + node.loc;
-            Node::new(NodeKind::LetBind(name, opt_ty, Box::new(node)), loc)
+            Located::new(Node::LetBind(name, opt_ty, Box::new(node)), loc)
         },
     )(input)
 }

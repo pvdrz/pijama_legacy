@@ -23,7 +23,7 @@ use nom::{
 };
 
 use crate::{
-    ast::{Located, Node, NodeKind},
+    ast::{Located, Node},
     parser::{
         helpers::{in_brackets, lookahead},
         literal::literal,
@@ -36,7 +36,7 @@ use crate::{
 /// Parser for [`Node`]s.
 ///
 /// To understand its behaviour please refer to the [`binary_op`] docs.
-pub fn node(input: Span) -> IResult<Node> {
+pub fn node(input: Span) -> IResult<Located<Node>> {
     binary_op::binary_op(input)
 }
 
@@ -57,14 +57,14 @@ pub fn node(input: Span) -> IResult<Node> {
 /// - If the input starts with a unary operator, the [`un_op`] parser is applied.
 ///
 /// This function is very order sensitive. Be careful if you swap the parsers order.
-fn base_node(input: Span) -> IResult<Node> {
+fn base_node(input: Span) -> IResult<Located<Node>> {
     alt((
         map(in_brackets(node), |Located { mut content, loc }| {
             content.loc = loc;
             content
         }),
         map(literal, |Located { content, loc }| {
-            Node::new(NodeKind::Literal(content), loc)
+            Located::new(Node::Literal(content), loc)
         }),
         lookahead(pair(tag("if"), multispace1), cond::cond),
         lookahead(
@@ -78,7 +78,7 @@ fn base_node(input: Span) -> IResult<Node> {
                 let_bind::let_bind,
                 call::call,
                 map(name, |Located { content, loc }| {
-                    Node::new(NodeKind::Name(content), loc)
+                    Located::new(Node::Name(content), loc)
                 }),
             )),
         ),

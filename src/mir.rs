@@ -62,19 +62,19 @@ fn lower_blk<'a>(blk: Block<'a>) -> TyResult<Term<'a>> {
     }
 }
 
-fn lower_node(node: Node<'_>) -> TyResult<Term<'_>> {
+fn lower_node(node: Located<Node<'_>>) -> TyResult<Term<'_>> {
     match node.content {
-        NodeKind::Name(name) => Ok(Term::Var(name)),
-        NodeKind::Cond(if_blk, do_blk, el_blk) => lower_cond(if_blk, do_blk, el_blk),
-        NodeKind::Literal(lit) => Ok(Term::Lit(lit)),
-        NodeKind::Call(name, args) => lower_call(name, args),
-        NodeKind::BinaryOp(bin_op, node1, node2) => lower_binary_op(bin_op, *node1, *node2),
-        NodeKind::UnaryOp(un_op, node) => lower_unary_op(un_op, *node),
-        NodeKind::LetBind(name, opt_ty, node) => lower_let_bind(name, opt_ty, *node),
-        NodeKind::FnDef(opt_name, binds, body, opt_ty) => {
+        Node::Name(name) => Ok(Term::Var(name)),
+        Node::Cond(if_blk, do_blk, el_blk) => lower_cond(if_blk, do_blk, el_blk),
+        Node::Literal(lit) => Ok(Term::Lit(lit)),
+        Node::Call(name, args) => lower_call(name, args),
+        Node::BinaryOp(bin_op, node1, node2) => lower_binary_op(bin_op, *node1, *node2),
+        Node::UnaryOp(un_op, node) => lower_unary_op(un_op, *node),
+        Node::LetBind(name, opt_ty, node) => lower_let_bind(name, opt_ty, *node),
+        Node::FnDef(opt_name, binds, body, opt_ty) => {
             lower_fn_def(opt_name, binds, body, opt_ty)
         }
-        NodeKind::FnRecDef(name, binds, body, ty) => lower_fn_rec_def(name, binds, body, ty),
+        Node::FnRecDef(name, binds, body, ty) => lower_fn_rec_def(name, binds, body, ty),
     }
 }
 
@@ -94,7 +94,11 @@ fn lower_call<'a>(name: Located<Name<'a>>, args: Block<'a>) -> TyResult<Term<'a>
     Ok(term)
 }
 
-fn lower_binary_op<'a>(bin_op: BinOp, node1: Node<'a>, node2: Node<'a>) -> TyResult<Term<'a>> {
+fn lower_binary_op<'a>(
+    bin_op: BinOp,
+    node1: Located<Node<'a>>,
+    node2: Located<Node<'a>>,
+) -> TyResult<Term<'a>> {
     Ok(Term::BinaryOp(
         bin_op,
         Box::new(lower_node(node1)?),
@@ -102,14 +106,14 @@ fn lower_binary_op<'a>(bin_op: BinOp, node1: Node<'a>, node2: Node<'a>) -> TyRes
     ))
 }
 
-fn lower_unary_op(un_op: UnOp, node: Node<'_>) -> TyResult<Term<'_>> {
+fn lower_unary_op(un_op: UnOp, node: Located<Node<'_>>) -> TyResult<Term<'_>> {
     Ok(Term::UnaryOp(un_op, Box::new(lower_node(node)?)))
 }
 
 fn lower_let_bind<'a>(
     name: Located<Name<'a>>,
     opt_ty: Option<Located<Ty>>,
-    node: Node<'a>,
+    node: Located<Node<'a>>,
 ) -> TyResult<Term<'a>> {
     let name = name.content;
     let opt_ty = opt_ty.map(|l| l.content);

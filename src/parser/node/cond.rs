@@ -8,7 +8,7 @@
 //! ```
 //!
 //! Thus, `else` blocks are optional and are represented as empty [`Block`]s inside the
-//! [`Node::Cond`] variant.
+//! [`Located::Cond`] variant.
 use nom::{
     bytes::complete::tag,
     character::complete::{multispace0, multispace1},
@@ -18,14 +18,14 @@ use nom::{
 use nom_locate::position;
 
 use crate::{
-    ast::{Block, Location, Node, NodeKind},
+    ast::{Block, Located, Location, Node},
     parser::{block::block1, IResult, Span},
 };
 
-/// Parses a [`Node::Cond`].
+/// Parses a [`Located::Cond`].
 ///
 /// The spacing is explained in the other parsers of this module.
-pub fn cond(input: Span) -> IResult<Node> {
+pub fn cond(input: Span) -> IResult<Located<Node>> {
     map(
         tuple((
             position,
@@ -35,15 +35,15 @@ pub fn cond(input: Span) -> IResult<Node> {
             preceded(tag("end"), position),
         )),
         move |(sp1, if_block, do_block, else_block, sp2)| {
-            Node::new(
-                NodeKind::Cond(if_block, do_block, else_block.unwrap_or_default()),
+            Located::new(
+                Node::Cond(if_block, do_block, else_block.unwrap_or_default()),
                 Location::from(sp1) + Location::from(sp2),
             )
         },
     )(input)
 }
 
-/// Parses the `if` block of a [`Node::Cond`].
+/// Parses the `if` block of a [`Located::Cond`].
 ///
 /// There must be at least one space or line break between the `if` and the first node in the
 /// block. There can be spaces or line breaks at the end of the block.
@@ -51,7 +51,7 @@ fn if_block(input: Span) -> IResult<Block> {
     delimited(pair(tag("if"), multispace1), block1, multispace0)(input)
 }
 
-/// Parses the `do` block of a [`Node::Cond`].
+/// Parses the `do` block of a [`Located::Cond`].
 ///
 /// There must be at least one space or line break between the `do` and the first node in the
 /// block. There can be spaces or line breaks at the end of the block.
@@ -59,7 +59,7 @@ fn do_block(input: Span) -> IResult<Block> {
     delimited(pair(tag("do"), multispace1), block1, multispace0)(input)
 }
 
-/// Parses the `else` block of a [`Node::Cond`].
+/// Parses the `else` block of a [`Located::Cond`].
 ///
 /// There must be at least one space or line break between the `else` and the first node in the
 /// block. There can be spaces or line breaks at the end of the block.

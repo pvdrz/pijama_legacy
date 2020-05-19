@@ -9,7 +9,7 @@
 use nom::{character::complete::space0, combinator::map, sequence::separated_pair};
 
 use crate::{
-    ast::{Node, NodeKind},
+    ast::{Located, Node},
     parser::{
         name::name,
         node::{fn_def::args, node},
@@ -22,9 +22,9 @@ use crate::{
 /// This parser admits:
 /// - Spaces after the name of the function.
 /// - Spaces before and spaces or line breaks after each comma.
-pub fn call(input: Span) -> IResult<Node> {
+pub fn call(input: Span) -> IResult<Located<Node>> {
     map(separated_pair(name, space0, args(node)), |(name, args)| {
         let loc = name.loc + args.loc;
-        Node::new(NodeKind::Call(name, args.content), loc)
+        Located::new(Node::Call(name, args.content), loc)
     })(input)
 }

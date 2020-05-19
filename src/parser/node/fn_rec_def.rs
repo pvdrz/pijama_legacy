@@ -20,7 +20,7 @@ use nom::{
 use nom_locate::position;
 
 use crate::{
-    ast::{Located, Location, Name, Node, NodeKind},
+    ast::{Located, Location, Name, Node},
     parser::{
         helpers::surrounded,
         name::name,
@@ -30,10 +30,10 @@ use crate::{
     },
 };
 
-/// Parses a [`Node::FnDef`].
+/// Parses a [`FnDef`].
 ///
 /// The spacing works the same as with function definitions module.
-pub fn fn_rec_def(input: Span) -> IResult<Node> {
+pub fn fn_rec_def(input: Span) -> IResult<Located<Node>> {
     map(
         tuple((
             fn_rec_name,
@@ -44,8 +44,8 @@ pub fn fn_rec_def(input: Span) -> IResult<Node> {
         |(name, args, ty, body)| {
             let loc1 = name.loc;
             let loc2 = body.loc;
-            Node::new(
-                NodeKind::FnRecDef(name.content, args.content, body.content, ty),
+            Located::new(
+                Node::FnRecDef(name.content, args.content, body.content, ty),
                 loc1 + loc2,
             )
         },
