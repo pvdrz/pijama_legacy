@@ -12,7 +12,7 @@
 use nom::{
     bytes::complete::tag,
     character::complete::{multispace0, multispace1},
-    combinator::{map, opt},
+    combinator::map,
     sequence::{delimited, pair, preceded, tuple},
 };
 use nom_locate::position;
@@ -31,12 +31,13 @@ pub fn cond(input: Span) -> IResult<Located<Node>> {
             position,
             if_block,
             do_block,
-            opt(else_block),
+            // FIXME: fix optional else block
+            else_block,
             preceded(tag("end"), position),
         )),
         move |(sp1, if_block, do_block, else_block, sp2)| {
             Located::new(
-                Node::Cond(if_block, do_block, else_block.unwrap_or_default()),
+                Node::Cond(if_block, do_block, else_block),
                 Location::from(sp1) + Location::from(sp2),
             )
         },
@@ -47,7 +48,7 @@ pub fn cond(input: Span) -> IResult<Located<Node>> {
 ///
 /// There must be at least one space or line break between the `if` and the first node in the
 /// block. There can be spaces or line breaks at the end of the block.
-fn if_block(input: Span) -> IResult<Block> {
+fn if_block(input: Span) -> IResult<Located<Block>> {
     delimited(pair(tag("if"), multispace1), block1, multispace0)(input)
 }
 
@@ -55,7 +56,7 @@ fn if_block(input: Span) -> IResult<Block> {
 ///
 /// There must be at least one space or line break between the `do` and the first node in the
 /// block. There can be spaces or line breaks at the end of the block.
-fn do_block(input: Span) -> IResult<Block> {
+fn do_block(input: Span) -> IResult<Located<Block>> {
     delimited(pair(tag("do"), multispace1), block1, multispace0)(input)
 }
 
@@ -63,6 +64,6 @@ fn do_block(input: Span) -> IResult<Block> {
 ///
 /// There must be at least one space or line break between the `else` and the first node in the
 /// block. There can be spaces or line breaks at the end of the block.
-fn else_block(input: Span) -> IResult<Block> {
+fn else_block(input: Span) -> IResult<Located<Block>> {
     delimited(pair(tag("else"), multispace1), block1, multispace0)(input)
 }

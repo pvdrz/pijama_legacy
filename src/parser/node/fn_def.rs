@@ -100,7 +100,7 @@ pub fn args<'a, O: std::fmt::Debug>(
 /// The body is parsed as a `Block`. This parser requires that the body is preceded by `"do"` and
 /// at least one space or line break, and followed by zero or more spaces or line breaks and an
 /// `"end"`.
-pub fn fn_body(input: Span) -> IResult<Located<Block>> {
+pub fn fn_body(input: Span) -> IResult<Located<Located<Block>>> {
     map(
         tuple((
             terminated(position, pair(tag("do"), multispace1)),

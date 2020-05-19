@@ -26,7 +26,7 @@ use thiserror::Error;
 use nom::{character::complete::multispace0, combinator::all_consuming, error::ErrorKind, Err::*};
 
 use crate::{
-    ast::{Block, Location},
+    ast::{Block, Located, Location},
     LangResult,
 };
 
@@ -58,9 +58,9 @@ type IResult<'a, T> = nom::IResult<Span<'a>, T, (Span<'a>, ErrorKind)>;
 ///
 /// This function fails if the whole string is not consumed during parsing or if there is an error
 /// with the inner parsers.
-pub fn parse(input: &str) -> LangResult<Block> {
+pub fn parse(input: &str) -> LangResult<Located<Block>> {
     let span = Span::new(input);
-    let result: IResult<Block> = all_consuming(surrounded(block0, multispace0))(span);
+    let result: IResult<Located<Block>> = all_consuming(surrounded(block0, multispace0))(span);
     println!("{:#?}", result);
     match result {
         Ok((_, block)) => Ok(block),
