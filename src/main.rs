@@ -1,14 +1,14 @@
 use std::{env::args, fs::read_to_string};
 
-use pijama::run;
+use pijama::{run, display_error};
 
 fn main() {
     let mut args = args();
     args.next().unwrap();
     let path = args.next().expect("no path to source code");
-    let input = read_to_string(path).unwrap();
+    let input = read_to_string(&path).unwrap();
     match run(&input) {
         Ok(term) => println!("{}", term),
-        Err(e) => eprintln!("{}", e),
+        Err(e) => display_error(&input, &path, e),
     }
 }

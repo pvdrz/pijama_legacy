@@ -62,8 +62,8 @@ pub fn parse(input: &str) -> LangResult<Block> {
 }
 
 #[derive(Error, Debug)]
-#[error("Parser `{kind:?}` failed at span {span:?}")]
+#[error("Parsing rule `{kind:?}` failed.")]
 pub struct ParseError<'a> {
-    span: Span<'a>,
+    pub span: Span<'a>,
     kind: ErrorKind,
 }
