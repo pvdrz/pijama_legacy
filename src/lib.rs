@@ -2,7 +2,9 @@
 
 use thiserror::Error;
 
-use crate::machine::Machine;
+use machine::Machine;
+use parser::ParseError;
+use ty::TyError;
 
 pub mod ast;
 pub mod lir;
@@ -11,14 +13,20 @@ pub mod mir;
 pub mod parser;
 pub mod ty;
 
-pub type LangResult<T> = Result<T, LangError>;
+pub type LangResult<'a, T> = Result<T, LangError<'a>>;
 
 #[derive(Error, Debug)]
-pub enum LangError {
-    #[error("{0}")]
-    Ty(#[from] ty::TyError),
-    #[error("{0}")]
-    Parse(String),
+pub enum LangError<'a> {
+    #[error("Type error: {0}")]
+    Ty(#[from] TyError),
+    #[error("Parse error: {0}")]
+    Parse(ParseError<'a>),
+}
+
+impl<'a> From<ParseError<'a>> for LangError<'a> {
+    fn from(err: ParseError<'a>) -> Self {
+        LangError::Parse(err)
+    }
 }
 
 pub fn run(input: &str) -> LangResult<lir::Term> {

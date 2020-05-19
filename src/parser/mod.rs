@@ -21,13 +21,15 @@
 //!
 //! [ABNF]: https://en.wikipedia.org/wiki/Augmented_Backus–Naur_form
 //! [nom docs]: https://docs.rs/nom/
+use thiserror::Error;
+
 use nom::{
-    character::complete::multispace0, combinator::all_consuming, error::VerboseError, IResult,
+    character::complete::multispace0, combinator::all_consuming, error::ErrorKind, Err::*, IResult,
 };
 
 use crate::{
     ast::{Block, Span},
-    LangError, LangResult,
+    LangResult,
 };
 
 use block::block0;
@@ -48,11 +50,21 @@ mod un_op;
 /// with the inner parsers.
 pub fn parse<'a>(input: &'a str) -> LangResult<Block<'a>> {
     let span = Span::new(input);
-    let result: IResult<Span, Block, VerboseError<Span<'a>>> =
+    let result: IResult<Span, Block, (Span<'a>, ErrorKind)> =
         all_consuming(surrounded(block0, multispace0))(span);
     match result {
         Ok((_, block)) => Ok(block),
-        // Err(Error(e)) | Err(Failure(e)) => Err(LangError::Parse(convert_error(input, e))),
-        _ => Err(LangError::Parse(String::new())),
+        Err(Error(e)) | Err(Failure(e)) => Err(ParseError {
+            span: e.0,
+            kind: e.1,
+        })?,
+        _ => unreachable!(),
     }
+}
+
+#[derive(Error, Debug)]
+#[error("Parser `{kind:?}` failed at span {span:?}")]
+pub struct ParseError<'a> {
+    span: Span<'a>,
+    kind: ErrorKind,
 }
