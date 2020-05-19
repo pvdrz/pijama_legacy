@@ -8,15 +8,20 @@ use nom::{combinator::map, sequence::pair};
 use nom_locate::position;
 
 use crate::{
-    ast::{Node, NodeKind, Span},
+    ast::{Location, Node, NodeKind, Span},
     parser::{node::node, un_op::*, IResult},
 };
 
 /// Parses a [`Node::UnaryOp`].
 pub fn unary_op(input: Span) -> IResult<Node> {
-    let (input, span) = position(input)?;
-    map(pair(un_op, node), move |(un_op, node)| Node {
-        kind: NodeKind::UnaryOp(un_op, Box::new(node)),
-        span,
+    let (_, span) = position(input)?;
+    let start = span.location_offset();
+
+    map(pair(un_op, node), move |(un_op, node)| {
+        let end = node.loc.end;
+        Node::new(
+            NodeKind::UnaryOp(un_op, Box::new(node)),
+            Location::new(start, end),
+        )
     })(input)
 }

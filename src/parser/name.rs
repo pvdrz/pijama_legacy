@@ -10,7 +10,7 @@ use nom::{
 };
 
 use crate::{
-    ast::{Name, Span},
+    ast::{Located, Name, Span},
     parser::IResult,
 };
 
@@ -24,12 +24,12 @@ const KEYWORDS: &[&str] = &[
 /// This parser is the main reason why most of the types and functions in the language are generic
 /// over the `'a` lifetime. It allows to do zero-copy parsing and keep using the string slices
 /// for the names through all the compilation process.
-pub fn name(input: Span) -> IResult<Name> {
+pub fn name(input: Span) -> IResult<Located<Name>> {
     verify(
         map(
             recognize(separated_nonempty_list(char('_'), alpha1)),
-            |span: Span| Name(span.fragment()),
+            |span: Span| Located::new(Name(span.fragment()), span.into()),
         ),
-        |Name(s)| !KEYWORDS.contains(s),
+        |name| !KEYWORDS.contains(&name.content.0),
     )(input)
 }

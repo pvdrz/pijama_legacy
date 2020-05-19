@@ -2,13 +2,14 @@
 
 use nom::{
     character::complete::{char, multispace0},
-    combinator::{cut, peek},
+    combinator::{cut, map, peek},
     error::ParseError,
-    sequence::{delimited, preceded},
+    sequence::{delimited, preceded, terminated, tuple},
     IResult,
 };
+use nom_locate::position;
 
-use crate::ast::Span;
+use crate::ast::{Located, Location, Span};
 
 /// Helper parser for expressions surrounded by a delimiter.
 ///
@@ -24,10 +25,20 @@ pub fn surrounded<I, O, O2, E: ParseError<I>>(
 ///
 /// The output only contains the expression without the brackets and there can be any number of
 /// spaces or line breaks between the actual content and the brackets.
-pub fn in_brackets<'a, O, E: ParseError<Span<'a>>>(
+pub fn in_brackets<'a, O: std::fmt::Debug, E: ParseError<Span<'a>>>(
     content: impl Fn(Span<'a>) -> IResult<Span<'a>, O, E>,
-) -> impl Fn(Span<'a>) -> IResult<Span<'a>, O, E> {
-    delimited(char('('), surrounded(content, multispace0), char(')'))
+) -> impl Fn(Span<'a>) -> IResult<Span<'a>, Located<O>, E> {
+    map(
+        tuple((
+            terminated(position, char('(')),
+            surrounded(content, multispace0),
+            preceded(char(')'), position),
+        )),
+        |(sp1, content, sp2)| {
+            let loc = Location::new(sp1.location_offset(), sp2.location_offset() + 1);
+            Located::new(content, loc)
+        },
+    )
 }
 
 /// Helper parser to do lookaheads.

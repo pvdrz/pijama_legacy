@@ -28,11 +28,13 @@ impl<'a> From<ParseError<'a>> for LangError<'a> {
         LangError::Parse(err)
     }
 }
-use codespan_reporting::diagnostic::{Diagnostic, Label};
-use codespan_reporting::files::SimpleFiles;
-use codespan_reporting::term::termcolor::{ColorChoice, StandardStream};
+use codespan_reporting::{
+    diagnostic::{Diagnostic, Label},
+    files::SimpleFiles,
+    term::termcolor::{ColorChoice, StandardStream},
+};
 
-pub fn display_error<'a>(input: &str, path:&str, error: LangError<'a>) {
+pub fn display_error<'a>(input: &str, path: &str, error: LangError<'a>) {
     let writer = StandardStream::stderr(ColorChoice::Always);
     let config = codespan_reporting::term::Config::default();
     let mut files = SimpleFiles::new();

@@ -19,12 +19,12 @@ use nom::{
     character::complete::{char, multispace0, multispace1, space0, space1},
     combinator::{map, opt},
     multi::separated_list,
-    sequence::{delimited, pair, preceded, terminated, tuple},
+    sequence::{delimited, pair, preceded, separated_pair, terminated, tuple},
 };
 use nom_locate::position;
 
 use crate::{
-    ast::{Block, Name, Node, NodeKind, Span},
+    ast::{Block, Located, Location, Name, Node, NodeKind, Span},
     parser::{
         block::block0,
         helpers::{in_brackets, surrounded},
@@ -42,7 +42,6 @@ use crate::{
 ///
 /// Other spacing details are in the docs for the other parsers of this module.
 pub fn fn_def(input: Span) -> IResult<Node> {
-    let (input, span) = position(input)?;
     map(
         tuple((
             fn_name,
@@ -50,9 +49,13 @@ pub fn fn_def(input: Span) -> IResult<Node> {
             terminated(opt(colon_ty), multispace0),
             fn_body,
         )),
-        move |(name, args, opt_ty, body)| Node {
-            kind: NodeKind::FnDef(name, args, body, opt_ty),
-            span,
+        |(name, args, opt_ty, body)| {
+            let loc1 = name.loc;
+            let loc2 = body.loc;
+            Node::new(
+                NodeKind::FnDef(name.content, args.content, body.content, opt_ty),
+                loc1 + loc2,
+            )
         },
     )(input)
 }
@@ -61,8 +64,17 @@ pub fn fn_def(input: Span) -> IResult<Node> {
 ///
 /// This parser requires that the name is preceded by `"fn"` and at least one space. If the
 /// function does not have a name, it need to parse the `"fn"` only.
-fn fn_name(input: Span) -> IResult<Option<Name>> {
-    preceded(tag("fn"), opt(preceded(space1, name)))(input)
+fn fn_name(input: Span) -> IResult<Located<Option<Located<Name>>>> {
+    map(
+        separated_pair(position, tag("fn"), opt(preceded(space1, name))),
+        |(span, opt_name)| {
+            let mut loc = span.into();
+            if let Some(name) = opt_name.as_ref() {
+                loc = loc + name.loc;
+            }
+            Located::new(opt_name, loc)
+        },
+    )(input)
 }
 
 /// Parser for arguments of a function definition or function call.
@@ -74,9 +86,9 @@ fn fn_name(input: Span) -> IResult<Option<Name>> {
 ///
 /// The arguments must be surrounded by brackets and seperated by commas. There can be spaces
 /// before the comma and spaces or line breaks after the comma.
-pub fn args<'a, O>(
+pub fn args<'a, O: std::fmt::Debug>(
     content: impl Fn(Span<'a>) -> IResult<'a, O>,
-) -> impl Fn(Span<'a>) -> IResult<'a, Vec<O>> {
+) -> impl Fn(Span<'a>) -> IResult<'a, Located<Vec<O>>> {
     in_brackets(separated_list(
         delimited(space0, char(','), multispace0),
         content,
@@ -88,10 +100,17 @@ pub fn args<'a, O>(
 /// The body is parsed as a `Block`. This parser requires that the body is preceded by `"do"` and
 /// at least one space or line break, and followed by zero or more spaces or line breaks and an
 /// `"end"`.
-pub fn fn_body(input: Span) -> IResult<Block> {
-    delimited(
-        pair(tag("do"), multispace1),
-        block0,
-        pair(multispace0, tag("end")),
+pub fn fn_body(input: Span) -> IResult<Located<Block>> {
+    map(
+        tuple((
+            terminated(position, pair(tag("do"), multispace1)),
+            block0,
+            preceded(pair(multispace0, tag("end")), position),
+        )),
+        |(sp1, content, sp2)| {
+            let loc1 = Location::from(sp1);
+            let loc2 = Location::from(sp2);
+            Located::new(content, loc1 + loc2)
+        },
     )(input)
 }

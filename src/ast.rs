@@ -8,8 +8,59 @@ pub type Block<'a> = Vec<Node<'a>>;
 
 pub type Span<'a> = LocatedSpan<&'a str>;
 
-#[derive(Debug, Eq, PartialEq, Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
+pub struct Location {
+    pub start: usize,
+    pub end: usize,
+}
+
+impl Location {
+    pub fn new(start: usize, end: usize) -> Self {
+        Location { start, end }
+    }
+}
+
+impl std::ops::Add for Location {
+    type Output = Self;
+    fn add(mut self, other: Self) -> Self {
+        self.end = other.end;
+        self
+    }
+}
+
+impl<'a> From<Span<'a>> for Location {
+    fn from(span: Span<'a>) -> Self {
+        let start = span.location_offset();
+        let end = start + span.fragment().len();
+        Location { start, end }
+    }
+}
+
+use fmt::Debug;
+
+#[derive(Debug)]
+pub struct Located<T: Debug> {
+    pub content: T,
+    pub loc: Location,
+}
+
+impl<T: Debug> Located<T> {
+    pub fn new(content: T, loc: Location) -> Self {
+        Located { content, loc }
+    }
+}
+
+impl<T: Eq + Debug> Eq for Located<T> {}
+
+impl<T: PartialEq + Debug> PartialEq for Located<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.content == other.content
+    }
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct Name<'a>(pub &'a str);
+
 impl<'a> fmt::Display for Name<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.0)
@@ -110,21 +161,27 @@ impl<'a> fmt::Display for Literal {
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
-pub struct Node<'a> {
-    pub span: Span<'a>,
-    pub kind: NodeKind<'a>,
-}
+pub type Node<'a> = Located<NodeKind<'a>>;
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug)]
 pub enum NodeKind<'a> {
     BinaryOp(BinOp, Box<Node<'a>>, Box<Node<'a>>),
     UnaryOp(UnOp, Box<Node<'a>>),
-    LetBind(Name<'a>, Option<Ty>, Box<Node<'a>>),
+    LetBind(Located<Name<'a>>, Option<Located<Ty>>, Box<Node<'a>>),
     Cond(Block<'a>, Block<'a>, Block<'a>),
-    FnDef(Option<Name<'a>>, Vec<Binding<'a>>, Block<'a>, Option<Ty>),
-    FnRecDef(Name<'a>, Vec<Binding<'a>>, Block<'a>, Ty),
-    Call(Name<'a>, Block<'a>),
+    FnDef(
+        Option<Located<Name<'a>>>,
+        Vec<Located<Binding<'a>>>,
+        Block<'a>,
+        Option<Located<Ty>>,
+    ),
+    FnRecDef(
+        Located<Name<'a>>,
+        Vec<Located<Binding<'a>>>,
+        Block<'a>,
+        Located<Ty>,
+    ),
+    Call(Located<Name<'a>>, Block<'a>),
     Literal(Literal),
     Name(Name<'a>),
 }

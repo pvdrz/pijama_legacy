@@ -23,14 +23,14 @@ pub enum Term<'a> {
 impl<'a> fmt::Display for Term<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Term::Var(var) => write!(f, "{}", var.0),
-            Term::Abs(Binding { name, ty }, term) => write!(f, "(λ{}:{}. {})", name.0, ty, term),
+            Term::Var(var) => write!(f, "{}", var),
+            Term::Abs(Binding { name, ty }, term) => write!(f, "(λ{}:{}. {})", name, ty, term),
             Term::UnaryOp(op, term) => write!(f, "({}{})", op, term),
             Term::BinaryOp(op, t1, t2) => write!(f, "({} {} {})", t1, op, t2),
             Term::App(t1, t2) => write!(f, "({} {})", t1, t2),
             Term::Lit(literal) => write!(f, "{}", literal),
             Term::Cond(t1, t2, t3) => write!(f, "(if {} then {} else {})", t1, t2, t3),
-            Term::Let(name, t1, t2) => write!(f, "(let {} = {} in {})", name.0, t1, t2),
+            Term::Let(name, t1, t2) => write!(f, "(let {} = {} in {})", name, t1, t2),
             Term::Seq(t1, t2) => write!(f, "{} ; {}", t1, t2),
             Term::Fix(t1) => write!(f, "(fix {})", t1),
         }
@@ -63,7 +63,7 @@ fn lower_blk<'a>(blk: Block<'a>) -> TyResult<Term<'a>> {
 }
 
 fn lower_node(node: Node<'_>) -> TyResult<Term<'_>> {
-    match node.kind {
+    match node.content {
         NodeKind::Name(name) => Ok(Term::Var(name)),
         NodeKind::Cond(if_blk, do_blk, el_blk) => lower_cond(if_blk, do_blk, el_blk),
         NodeKind::Literal(lit) => Ok(Term::Lit(lit)),
@@ -86,8 +86,8 @@ fn lower_cond<'a>(if_blk: Block<'a>, do_blk: Block<'a>, el_blk: Block<'a>) -> Ty
     ))
 }
 
-fn lower_call<'a>(name: Name<'a>, args: Block<'a>) -> TyResult<Term<'a>> {
-    let mut term = Term::Var(name);
+fn lower_call<'a>(name: Located<Name<'a>>, args: Block<'a>) -> TyResult<Term<'a>> {
+    let mut term = Term::Var(name.content);
     for node in args {
         term = Term::App(Box::new(term), Box::new(lower_node(node)?));
     }
@@ -106,7 +106,13 @@ fn lower_unary_op(un_op: UnOp, node: Node<'_>) -> TyResult<Term<'_>> {
     Ok(Term::UnaryOp(un_op, Box::new(lower_node(node)?)))
 }
 
-fn lower_let_bind<'a>(name: Name<'a>, opt_ty: Option<Ty>, node: Node<'a>) -> TyResult<Term<'a>> {
+fn lower_let_bind<'a>(
+    name: Located<Name<'a>>,
+    opt_ty: Option<Located<Ty>>,
+    node: Node<'a>,
+) -> TyResult<Term<'a>> {
+    let name = name.content;
+    let opt_ty = opt_ty.map(|l| l.content);
     let term = lower_node(node)?;
 
     if let Some(ty) = opt_ty {
@@ -122,22 +128,25 @@ fn lower_let_bind<'a>(name: Name<'a>, opt_ty: Option<Ty>, node: Node<'a>) -> TyR
 }
 
 fn lower_fn_def<'a>(
-    opt_name: Option<Name<'a>>,
-    binds: Vec<Binding<'a>>,
+    opt_name: Option<Located<Name<'a>>>,
+    binds: Vec<Located<Binding<'a>>>,
     body: Block<'a>,
-    opt_ty: Option<Ty>,
+    opt_ty: Option<Located<Ty>>,
 ) -> TyResult<Term<'a>> {
+    let opt_name = opt_name.map(|l| l.content);
+    let opt_ty = opt_ty.map(|l| l.content);
+
     let mut term = lower_blk(body)?;
 
     let opt_ty = opt_ty.map(|mut ty| {
         for bind in binds.iter().rev() {
-            ty = Ty::Arrow(Box::new(bind.ty.clone()), Box::new(ty));
+            ty = Ty::Arrow(Box::new(bind.content.ty.clone()), Box::new(ty));
         }
         ty
     });
 
     for bind in binds.into_iter().rev() {
-        term = Term::Abs(bind, Box::new(term));
+        term = Term::Abs(bind.content, Box::new(term));
     }
 
     if let Some(ty) = opt_ty {
@@ -153,14 +162,18 @@ fn lower_fn_def<'a>(
 }
 
 fn lower_fn_rec_def<'a>(
-    name: Name<'a>,
-    binds: Vec<Binding<'a>>,
+    name: Located<Name<'a>>,
+    binds: Vec<Located<Binding<'a>>>,
     body: Block<'a>,
-    mut ty: Ty,
+    ty: Located<Ty>,
 ) -> TyResult<Term<'a>> {
+    let name = name.content;
+    let mut ty = ty.content;
+
     let mut term = lower_blk(body)?;
 
     for bind in binds.into_iter().rev() {
+        let bind = bind.content;
         ty = Ty::Arrow(Box::new(bind.ty.clone()), Box::new(ty));
         term = Term::Abs(bind, Box::new(term));
     }

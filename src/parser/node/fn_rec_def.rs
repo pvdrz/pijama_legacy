@@ -15,12 +15,12 @@ use nom::{
     bytes::complete::tag,
     character::complete::{multispace0, space0, space1},
     combinator::map,
-    sequence::{preceded, terminated, tuple},
+    sequence::{separated_pair, terminated, tuple},
 };
 use nom_locate::position;
 
 use crate::{
-    ast::{Name, Node, NodeKind, Span},
+    ast::{Located, Location, Name, Node, NodeKind, Span},
     parser::{
         helpers::surrounded,
         name::name,
@@ -36,7 +36,6 @@ use crate::{
 ///
 /// The spacing works the same as with function definitions module.
 pub fn fn_rec_def(input: Span) -> IResult<Node> {
-    let (input, span) = position(input)?;
     map(
         tuple((
             fn_rec_name,
@@ -44,9 +43,13 @@ pub fn fn_rec_def(input: Span) -> IResult<Node> {
             terminated(colon_ty, multispace0),
             fn_body,
         )),
-        move |(name, args, ty, body)| Node {
-            span,
-            kind: NodeKind::FnRecDef(name, args, body, ty),
+        |(name, args, ty, body)| {
+            let loc1 = name.loc;
+            let loc2 = body.loc;
+            Node::new(
+                NodeKind::FnRecDef(name.content, args.content, body.content, ty),
+                loc1 + loc2,
+            )
         },
     )(input)
 }
@@ -55,6 +58,17 @@ pub fn fn_rec_def(input: Span) -> IResult<Node> {
 ///
 /// This parser requires that the name is preceded by `"fn"`, at least one space, `"rec"` and at
 /// least another space.
-fn fn_rec_name(input: Span) -> IResult<Name> {
-    preceded(tuple((tag("fn"), space1, tag("rec"), space1)), name)(input)
+fn fn_rec_name(input: Span) -> IResult<Located<Located<Name>>> {
+    map(
+        separated_pair(
+            position,
+            tuple((tag("fn"), space1, tag("rec"), space1)),
+            name,
+        ),
+        |(span, name)| {
+            let loc1 = Location::from(span);
+            let loc2 = name.loc;
+            Located::new(name, loc1 + loc2)
+        },
+    )(input)
 }

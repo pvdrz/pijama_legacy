@@ -13,7 +13,6 @@ use nom::{
     combinator::{map, opt},
     sequence::{preceded, tuple},
 };
-use nom_locate::position;
 
 use crate::{
     ast::{Node, NodeKind, Span},
@@ -24,16 +23,15 @@ use crate::{
 ///
 /// There can be any number of spaces surrounding the `=` sign.
 pub fn let_bind(input: Span) -> IResult<Node> {
-    let (input, span) = position(input)?;
     map(
         tuple((
             name,
             opt(colon_ty),
             preceded(surrounded(char('='), space0), node),
         )),
-        move |(name, opt_ty, node)| Node {
-            kind: NodeKind::LetBind(name, opt_ty, Box::new(node)),
-            span,
+        |(name, opt_ty, node)| {
+            let loc = name.loc + node.loc;
+            Node::new(NodeKind::LetBind(name, opt_ty, Box::new(node)), loc)
         },
     )(input)
 }

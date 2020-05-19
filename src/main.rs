@@ -1,6 +1,6 @@
 use std::{env::args, fs::read_to_string};
 
-use pijama::{run, display_error};
+use pijama::{display_error, run};
 
 fn main() {
     let mut args = args();

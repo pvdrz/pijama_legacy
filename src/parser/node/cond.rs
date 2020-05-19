@@ -13,12 +13,12 @@ use nom::{
     bytes::complete::tag,
     character::complete::{multispace0, multispace1},
     combinator::{map, opt},
-    sequence::{delimited, pair, terminated, tuple},
+    sequence::{delimited, pair, preceded, tuple},
 };
 use nom_locate::position;
 
 use crate::{
-    ast::{Block, Node, NodeKind, Span},
+    ast::{Block, Location, Node, NodeKind, Span},
     parser::{block::block1, IResult},
 };
 
@@ -26,12 +26,19 @@ use crate::{
 ///
 /// The spacing is explained in the other parsers of this module.
 pub fn cond(input: Span) -> IResult<Node> {
-    let (input, span) = position(input)?;
     map(
-        terminated(tuple((if_block, do_block, opt(else_block))), tag("end")),
-        move |(if_block, do_block, else_block)| Node {
-            span,
-            kind: NodeKind::Cond(if_block, do_block, else_block.unwrap_or_default()),
+        tuple((
+            position,
+            if_block,
+            do_block,
+            opt(else_block),
+            preceded(tag("end"), position),
+        )),
+        move |(sp1, if_block, do_block, else_block, sp2)| {
+            Node::new(
+                NodeKind::Cond(if_block, do_block, else_block.unwrap_or_default()),
+                Location::from(sp1) + Location::from(sp2),
+            )
         },
     )(input)
 }

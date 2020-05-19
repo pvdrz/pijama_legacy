@@ -21,10 +21,9 @@ use nom::{
     combinator::map,
     sequence::{pair, tuple},
 };
-use nom_locate::position;
 
 use crate::{
-    ast::{Node, NodeKind, Span},
+    ast::{Located, Node, NodeKind, Span},
     parser::{
         helpers::{in_brackets, lookahead},
         literal::literal,
@@ -60,10 +59,12 @@ pub fn node(input: Span) -> IResult<Node> {
 /// This function is very order sensitive. Be careful if you swap the parsers order.
 fn base_node(input: Span) -> IResult<Node> {
     alt((
-        in_brackets(node),
-        map(pair(position, literal), |(span, lit)| Node {
-            span,
-            kind: NodeKind::Literal(lit),
+        map(in_brackets(node), |Located { mut content, loc }| {
+            content.loc = loc;
+            content
+        }),
+        map(literal, |Located { content, loc }| {
+            Node::new(NodeKind::Literal(content), loc)
         }),
         lookahead(pair(tag("if"), multispace1), cond::cond),
         lookahead(
@@ -76,9 +77,8 @@ fn base_node(input: Span) -> IResult<Node> {
             alt((
                 let_bind::let_bind,
                 call::call,
-                map(pair(position, name), |(span, name)| Node {
-                    span,
-                    kind: NodeKind::Name(name),
+                map(name, |Located { content, loc }| {
+                    Node::new(NodeKind::Name(content), loc)
                 }),
             )),
         ),

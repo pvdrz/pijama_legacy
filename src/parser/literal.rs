@@ -10,7 +10,7 @@ use nom::{
 };
 
 use crate::{
-    ast::{Literal, Span},
+    ast::{Literal, Located, Location, Span},
     parser::IResult,
 };
 
@@ -18,12 +18,20 @@ use crate::{
 ///
 /// The only valid inputs for this parser are `"true"`, `"false"`, `"unit"` or a signed integer
 /// (which is parsed by the [`number`](number) parser).
-pub fn literal(input: Span) -> IResult<Literal> {
+pub fn literal(input: Span) -> IResult<Located<Literal>> {
     alt((
-        map(tag("true"), |_| Literal::Bool(true)),
-        map(tag("false"), |_| Literal::Bool(false)),
-        map(tag("unit"), |_| Literal::Unit),
-        map(number, Literal::Number),
+        map(tag("true"), |span: Span| {
+            Located::new(Literal::Bool(true), span.into())
+        }),
+        map(tag("false"), |span: Span| {
+            Located::new(Literal::Bool(false), span.into())
+        }),
+        map(tag("unit"), |span: Span| {
+            Located::new(Literal::Unit, span.into())
+        }),
+        map(number, |Located { content, loc }| {
+            Located::new(Literal::Number(content), loc)
+        }),
     ))(input)
 }
 
@@ -34,15 +42,19 @@ pub fn literal(input: Span) -> IResult<Literal> {
 ///
 /// If the number is negative, there cannot be spaces between the minus sign and the digits of the
 /// number. That kind of expression will be parsed as an unary operation.
-fn number(input: Span) -> IResult<i128> {
+fn number(input: Span) -> IResult<Located<i128>> {
     map_opt(
         pair(opt(char('-')), digit1),
         |(sign, digits_span): (Option<char>, Span)| {
             let mut number = digits_span.fragment().parse::<i128>().ok()?;
+            let mut loc = Location::from(digits_span);
+
             if sign.is_some() {
+                loc.start -= 1;
                 number *= -1;
             }
-            Some(number)
+
+            Some(Located::new(number, loc))
         },
     )(input)
 }

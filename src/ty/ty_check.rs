@@ -63,7 +63,7 @@ impl<'a> Context<'a> {
                 .inner
                 .iter()
                 .find(|bind| bind.name == *name)
-                .ok_or_else(|| TyError::Unbound(name.0.to_owned()))?
+                .ok_or_else(|| TyError::Unbound(name.0.to_string()))?
                 .ty
                 .clone(),
             Term::Abs(bind, body) => {
