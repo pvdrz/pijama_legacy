@@ -1,17 +1,18 @@
 #![feature(box_patterns)]
 
-use thiserror::Error;
-
-use machine::Machine;
-use parser::ParseError;
-use ty::TyError;
-
 pub mod ast;
 pub mod lir;
 pub mod machine;
 pub mod mir;
 pub mod parser;
 pub mod ty;
+
+use thiserror::Error;
+
+use machine::Machine;
+use ast::Location;
+use parser::ParseError;
+use ty::TyError;
 
 pub type LangResult<'a, T> = Result<T, LangError<'a>>;
 
@@ -31,7 +32,10 @@ impl<'a> From<ParseError<'a>> for LangError<'a> {
 use codespan_reporting::{
     diagnostic::{Diagnostic, Label},
     files::SimpleFiles,
-    term::termcolor::{ColorChoice, StandardStream},
+    term::{
+        emit,
+        termcolor::{ColorChoice, StandardStream},
+    },
 };
 
 pub fn display_error<'a>(input: &str, path: &str, error: LangError<'a>) {
@@ -41,21 +45,22 @@ pub fn display_error<'a>(input: &str, path: &str, error: LangError<'a>) {
 
     let file_id = files.add(path, input);
 
-    match error {
-        LangError::Ty(error) => eprintln!("{}", error),
+    let diagnostic = match error {
+        LangError::Ty(TyError { loc, kind }) => Diagnostic::error()
+            .with_message("Type error")
+            .with_labels(vec![
+                Label::primary(file_id, loc.start..loc.end).with_message(format!("{}", kind))
+            ]),
         LangError::Parse(error) => {
-            let span = error.span;
-            let begin = span.location_offset();
-            let diagnostic = Diagnostic::error()
+            let loc = Location::from(error.span);
+            Diagnostic::error()
                 .with_message("Parsing failed")
                 .with_labels(vec![
-                    Label::primary(file_id, begin..input.len()).with_message(format!("{}", error))
-                ]);
-
-            codespan_reporting::term::emit(&mut writer.lock(), &config, &files, &diagnostic)
-                .unwrap();
+                    Label::primary(file_id, loc.start..loc.end).with_message(format!("{}", error))
+                ])
         }
-    }
+    };
+    emit(&mut writer.lock(), &config, &files, &diagnostic).unwrap();
 }
 
 pub fn run(input: &str) -> LangResult<lir::Term> {
