@@ -1,9 +1,6 @@
 use std::fmt;
 
 use crate::ast::*;
-use crate::LangEnv;
-
-use eval::*;
 use Term::*;
 
 use lazy_static::lazy_static;
@@ -12,11 +9,6 @@ use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 
 mod ctx;
-mod eval;
-
-pub fn evaluate(term: Term, env: &mut LangEnv) -> Term {
-    term.evaluate(env)
-}
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Term {
@@ -75,7 +67,7 @@ impl Term {
         ctx::remove_names(mir)
     }
 
-    fn shift(&mut self, up: bool, cutoff: usize) {
+    pub(crate) fn shift(&mut self, up: bool, cutoff: usize) {
         match self {
             Lit(_) | Hole => (),
             Var(index) => {
@@ -113,7 +105,7 @@ impl Term {
         }
     }
 
-    fn replace(&mut self, index: usize, subs: &mut Term) {
+    pub(crate) fn replace(&mut self, index: usize, subs: &mut Term) {
         match self {
             Lit(_) | Hole => (),
             Var(index2) => {
@@ -147,47 +139,5 @@ impl Term {
                 t1.replace(index, subs);
             }
         }
-    }
-
-    fn step_in_place(&mut self, env: &mut LangEnv) -> bool {
-        let term = std::mem::replace(self, Hole);
-        let (cont, term) = term.step(env);
-        *self = term;
-        cont
-    }
-
-    fn step(mut self, env: &mut LangEnv) -> (bool, Term) {
-        match self {
-            // Dispatch step for binary operations
-            BinaryOp(op, t1, t2) => step_bin_op(op, t1, t2, env),
-            // Dispatch step for unary operations
-            UnaryOp(op, t1) => step_un_op(op, t1, env),
-            // Dispatch step for beta reduction
-            App(box Abs(body), arg) => step_beta_reduction(body, arg),
-            // Builtin function special handling necessary
-            App(box BuiltInFn(BuiltInFn::Print), ref t1) => {
-                writeln!(env.stdout, "{}", t1).expect("Print failed");
-                (true, Term::Lit(Literal::Unit))
-            }
-            // Application with unevaluated first term (t1 t2)
-            // Evaluate t1.
-            App(ref mut t1, _) => (t1.step_in_place(env), self),
-            // Dispatch step for conditionals
-            Cond(t1, t2, t3) => step_conditional(t1, t2, t3, env),
-            // Dispatch step for fixed point operation
-            Fix(t1) => step_fix(t1, env),
-            // Any other term stops the evaluation.
-            Var(_) | Lit(_) | Abs(_) | BuiltInFn(_) | Hole => (false, self),
-        }
-    }
-
-    fn evaluate(self, env: &mut LangEnv) -> Term {
-        let mut term = self;
-        while {
-            let (eval, new_term) = term.step(env);
-            term = new_term;
-            eval
-        } {}
-        term
     }
 }
