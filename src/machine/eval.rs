@@ -4,27 +4,29 @@ use crate::{
     machine::Machine,
 };
 
+use std::borrow::{Borrow, BorrowMut};
+
 impl Machine {
-    pub(super) fn step(&mut self, mut term: Term) -> (bool, Term) {
+    pub(super) fn step(&mut self, term: Term) -> (bool, Term) {
         match term {
             // Dispatch step for binary operations
-            BinaryOp(op, t1, t2) => self.step_bin_op(op, *t1, *t2),
+            BinaryOp(op, t1, t2) => self.step_bin_op(op, t1, t2),
             // Dispatch step for unary operations
-            UnaryOp(op, t1) => self.step_un_op(op, *t1),
+            UnaryOp(op, t1) => self.step_un_op(op, t1),
             // Dispatch step for beta reduction
             // Application with unevaluated first term (t1 t2)
             // Evaluate t1.
-            App(ref mut t1, ref mut arg) => {
-                if let Abs(body) = &**t1 {
-                    self.step_beta_reduction(*body.clone(), *arg.clone())
+            App(mut t1, arg) => {
+                if let Abs(body) = *t1 {
+                    self.step_beta_reduction(*body, arg)
                 } else {
-                    (self.step_in_place(t1.as_mut()), term)
+                    (self.step_in_place(t1.borrow_mut()), App(t1, arg))
                 }
             }
             // Dispatch step for conditionals
-            Cond(t1, t2, t3) => self.step_conditional(*t1, *t2, *t3),
+            Cond(t1, t2, t3) => self.step_conditional(t1, t2, t3),
             // Dispatch step for fixed point operation
-            Fix(t1) => self.step_fix(*t1),
+            Fix(t1) => self.step_fix(t1),
             // Any other term stops the evaluation.
             Var(_) | Lit(_) | Abs(_) | Hole => (false, term),
         }
@@ -38,77 +40,73 @@ impl Machine {
     }
 
     /// Evaluation step for conditionals (if t1 then t2 else t3)
-    fn step_conditional(&mut self, mut t1: Term, t2: Term, t3: Term) -> (bool, Term) {
+    fn step_conditional(
+        &mut self,
+        mut t1: Box<Term>,
+        t2: Box<Term>,
+        t3: Box<Term>,
+    ) -> (bool, Term) {
         // If t1 is a literal, we should be able to evaluate the conditional
-        if let Term::Lit(lit) = t1 {
+        if let Term::Lit(lit) = t1.borrow() {
             match lit {
                 // If t1 is true, evaluate to t2.
-                Literal::Bool(true) => (true, t2),
+                Literal::Bool(true) => (true, *t2),
                 // If t1 is false, evaluate to t3.
-                Literal::Bool(false) => (true, t3),
+                Literal::Bool(false) => (true, *t3),
                 // If t1 is any other literal, panic
                 lit => panic!("Found non-boolean literal {} in condition", lit),
             }
         // If t1 is not a literal, evaluate it in place and return (if t1 then t2 else t3)
         } else {
-            (
-                self.step_in_place(&mut t1),
-                Term::Cond(Box::new(t1), Box::new(t2), Box::new(t3)),
-            )
+            (self.step_in_place(t1.borrow_mut()), Term::Cond(t1, t2, t3))
         }
     }
 
     /// Evaluation step for binary operations (t1 op t2)
-    fn step_bin_op(&mut self, op: BinOp, t1: Term, t2: Term) -> (bool, Term) {
+    fn step_bin_op(&mut self, op: BinOp, mut a: Box<Term>, mut b: Box<Term>) -> (bool, Term) {
         use BinOp::*;
         use Literal::*;
 
-        match (op, t1, t2) {
-            (op, Lit(l1), Lit(l2)) => (true, Lit(native_bin_op(op, l1, l2))),
+        match (op, a.borrow(), b.borrow()) {
+            (_, Lit(l1), Lit(l2)) => (true, Lit(native_bin_op(op, *l1, *l2))),
             // If op is && and t1 is false evaluate to false
             (And, Lit(Bool(false)), _) => (true, Lit(Bool(false))),
             // If op is || and t1 is true evaluate to true
             (Or, Lit(Bool(true)), _) => (true, Lit(Bool(true))),
             // If t2 is not a literal, evaluate it.
-            (op, t1 @ Lit(_), mut t2) => (
-                self.step_in_place(&mut t2),
-                Term::BinaryOp(op, Box::new(t1), Box::new(t2)),
-            ),
+            (_, Lit(_), _) => (self.step_in_place(b.borrow_mut()), Term::BinaryOp(op, a, b)),
             // If t1 is not a literal, evaluate it.
-            (op, mut t1, t2) => (
-                self.step_in_place(&mut t1),
-                Term::BinaryOp(op, Box::new(t1), Box::new(t2)),
-            ),
+            _ => (self.step_in_place(a.borrow_mut()), Term::BinaryOp(op, a, b)),
         }
     }
 
     /// Evaluation step for unary operations (op t1)
-    fn step_un_op(&mut self, op: UnOp, mut t1: Term) -> (bool, Term) {
+    fn step_un_op(&mut self, op: UnOp, mut t1: Box<Term>) -> (bool, Term) {
         // If t1 is a literal, do the operation.
-        if let Term::Lit(lit) = t1 {
-            (true, Term::Lit(native_un_op(op, lit)))
+        if let Term::Lit(lit) = t1.borrow() {
+            (true, Term::Lit(native_un_op(op, *lit)))
         // If t1 is not a literal, evaluate it.
         } else {
-            (self.step_in_place(&mut t1), Term::UnaryOp(op, Box::new(t1)))
+            (self.step_in_place(&mut t1), Term::UnaryOp(op, t1))
         }
     }
 
     /// Evaluation step for the fixed-point operation (fix t1)
-    fn step_fix(&mut self, mut t1: Term) -> (bool, Term) {
+    fn step_fix(&mut self, mut t1: Box<Term>) -> (bool, Term) {
         // If t1 is an abstraction (\. t2), replace the argument of t1 by (fix t1) inside t2
         // and evaluate to t2.
-        if let Term::Abs(t2) = &t1 {
+        if let Term::Abs(t2) = t1.borrow() {
             let mut t2 = t2.clone();
-            t2.replace(0, &mut Term::Fix(Box::new(t1)));
+            t2.replace(0, &mut Term::Fix(t1));
             (true, *t2)
         // If t1 is not an abstraction, evaluate it.
         } else {
-            (self.step_in_place(&mut t1), Term::Fix(Box::new(t1)))
+            (self.step_in_place(&mut t1), Term::Fix(t1))
         }
     }
 
     /// Evaluation step for beta reduction ((λ. body) arg)
-    fn step_beta_reduction(&mut self, mut body: Term, mut arg: Term) -> (bool, Term) {
+    fn step_beta_reduction(&mut self, mut body: Term, mut arg: Box<Term>) -> (bool, Term) {
         // increase the indices of the argument so they can coincide with the indices of the body.
         arg.shift(true, 0);
         // replace the index 0 by the argument inside the body.
