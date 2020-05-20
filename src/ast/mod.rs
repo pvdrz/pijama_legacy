@@ -7,6 +7,8 @@ mod visitor;
 
 pub use location::*;
 
+use visitor::NodeVisitor;
+
 pub type Block<'a> = Vec<Located<Node<'a>>>;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
@@ -137,4 +139,43 @@ pub enum Node<'a> {
     Call(Box<Located<Node<'a>>>, Block<'a>),
     Literal(Literal),
     Name(Name<'a>),
+}
+
+pub struct RecursionChecker<'a> {
+    name: Name<'a>,
+    is_rec: bool,
+}
+
+impl<'a> RecursionChecker<'a> {
+    pub fn run(name: Name<'a>, body: &Block<'a>) -> bool {
+        let mut this = RecursionChecker {
+            name,
+            is_rec: false,
+        };
+        this.visit_block(body);
+        this.is_rec
+    }
+}
+
+impl<'a> NodeVisitor<'a> for RecursionChecker<'a> {
+    fn visit_name(&mut self, name: &Name<'a>) {
+        if *name == self.name {
+            self.is_rec = true;
+        } else {
+            self.super_name(name);
+        }
+    }
+
+    fn visit_let_bind(
+        &mut self,
+        name: &Located<Name<'a>>,
+        opt_ty: &Option<Located<Ty>>,
+        body: &Located<Node<'a>>,
+    ) {
+        // check if function name is no being shadowed
+        if name.content != self.name {
+            // if is not, keep visiting.
+            self.super_let_bind(name, opt_ty, body);
+        }
+    }
 }
