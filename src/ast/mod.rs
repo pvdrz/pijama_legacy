@@ -3,6 +3,7 @@ use std::fmt::{Debug, Display, Formatter, Result};
 use crate::ty::{Binding, Ty};
 
 mod location;
+mod visitor;
 
 pub use location::*;
 
