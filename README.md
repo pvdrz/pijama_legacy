@@ -5,9 +5,8 @@ Pijama is a general purpose programming language with the following features:
 - Completely functional: no mutation, no variables, no side effects, no state
   at all.
 - Statically typed: Every term must have a defined type before execution.
-- Type inference: Types are inferred when possible, this includes local
-  bindings and the return type of non-recursive functions (arguments aren't
-  inferred... yet).
+- Type inference: Types are inferred when possible. But you can type your terms
+  to be sure your code does what you want.
 
 ## Why?
 
@@ -23,17 +22,18 @@ and implementation.
 
 Clone the repository and use cargo to run your programs
 
-```
+```bash
 cargo run path_to_your_code.pj
 ```
 
 ## Syntax
 
-Pijama's syntax is heavily inspired by Elixir and Rust. Blocks of code are
-written using `do/end` and the types of terms are written using `:`. As an
-example, here you have the most important function in all the CS field:
+Pijama's syntax is heavily inspired by Elixir, Python, Ruby, and Rust. Blocks
+of code are written using `do/end` and the types of terms are written using
+`:`. As an example, here you have the most important function in all the CS
+field:
 
-```
+```elixir
 fn rec fact(n: Int): Int do
     if n <= 0 do
         1
@@ -48,12 +48,12 @@ fact(20)
 Functions are first-class citizens in Pijama. You can write higher order
 functions or define new functions by partially evaluating other functions
 
-```
+```elixir
 fn min(cmp: Int -> Int -> Bool, x: Int, y: Int) do
     if cmp(x, y) do x else y end
 end
 
-fn less_than(x: Int, y: Int) do x < y end
+less_than = fn(x: Int, y: Int) do x < y end
 
 is_negative = less_than(0)
 
@@ -70,14 +70,12 @@ evaluated. Source code is compiled to an untyped lambda calculus with some
 extensions (fix-point operator, conditionals, bit-based integer arithmetic,
 etc) and this representation is executed in an stateless manner.  Right now
 there is no garbage collection and evaluation is far from efficient, there is a
-lot of duplicated values. If you happen to find a memory leak, let me know.
+lot of duplicated values as we are doing call-by-name evaluation. If you happen
+to find a memory leak, let me know.
 
 ## Next steps
 
 These are some of the features I'd like to implement in the future:
-
-- Decent error messages: Errors right now are completely useless. They tell you
-  something is wrong but not where or why.
 
 - Algebraic data types: Having something like records and enumerations would
   allow to write a lot of data structures and make the language easier to use.
@@ -116,5 +114,7 @@ These are some of the features I'd like to implement in the future:
 
 ## Contributing
 
-If you want to get a ticket for this roller coaster, feel free to open an
-issue, do a pull request or drop me an email. I'll be happy to hear from you.
+If you want to get a ticket for this roller-coaster check
+[CONTRIBUTING.md](https://github.com/christianpoveda/pijama/blob/master/CONTRIBUTING.md)
+for ways to contribute to Pijama and feel free to open an issue, do a pull
+request or drop an email. We'll be happy to hear from you.
