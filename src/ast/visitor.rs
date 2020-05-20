@@ -21,8 +21,7 @@ pub trait NodeVisitor<'a> {
             Node::FnDef(opt_name, args, body, opt_ty) => {
                 self.visit_fn_def(&opt_name, &args, &body, &opt_ty)
             }
-            Node::FnRecDef(name, args, body, ty) => self.visit_fn_rec_def(&name, &args, &body, &ty),
-            Node::Call(func, args) => self.visit_call(&func, &args),
+            Node::Call(func, args) => self.visit_call(func.as_ref(), &args),
             Node::Literal(literal) => self.visit_literal(&literal),
             Node::Name(name) => self.visit_name(&name),
         }
@@ -77,19 +76,8 @@ pub trait NodeVisitor<'a> {
         self.visit_block(&body.content);
     }
 
-    fn super_fn_rec_def(
-        &mut self,
-        name: &Located<Name<'a>>,
-        _args: &Vec<Located<Binding<'a>>>,
-        body: &Located<Block<'a>>,
-        _ty: &Located<Ty>,
-    ) {
-        self.visit_name(&name.content);
-        self.visit_block(&body.content);
-    }
-
-    fn super_call(&mut self, func: &Located<Name<'a>>, args: &Block<'a>) {
-        self.visit_name(&func.content);
+    fn super_call(&mut self, func: &Located<Node<'a>>, args: &Block<'a>) {
+        self.visit_node(func);
         self.visit_block(args);
     }
 
@@ -146,17 +134,7 @@ pub trait NodeVisitor<'a> {
         self.super_fn_def(opt_name, args, body, opt_ty);
     }
 
-    fn visit_fn_rec_def(
-        &mut self,
-        name: &Located<Name<'a>>,
-        args: &Vec<Located<Binding<'a>>>,
-        body: &Located<Block<'a>>,
-        ty: &Located<Ty>,
-    ) {
-        self.super_fn_rec_def(name, args, body, ty);
-    }
-
-    fn visit_call(&mut self, func: &Located<Name<'a>>, args: &Block<'a>) {
+    fn visit_call(&mut self, func: &Located<Node<'a>>, args: &Block<'a>) {
         self.super_call(func, args)
     }
 

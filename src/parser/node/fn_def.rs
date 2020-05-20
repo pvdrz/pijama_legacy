@@ -10,9 +10,8 @@
 //! Meaning that the return type binding and name are optional. If the name is not given, the
 //! expression will be interpreted as an anonymous function.
 //!
-//! The [`fn_body`] and [`args`] parsers are reutilized in the [`fn_rec_def`] and [`call`] parsers.
+//! The [`args`] parser is reutilized in the [`call`] parser.
 //!
-//! [`fn_rec_def`]: super::fn_rec_def
 //! [`call`]: super::call
 use nom::{
     character::complete::{char, multispace0, space0, space1},
@@ -107,7 +106,7 @@ pub fn args<'a, O: std::fmt::Debug>(
 /// `"end"`.
 ///
 /// The location of the returned vector starts in `do` and ends in `end`.
-pub fn fn_body(input: Span) -> IResult<Located<Located<Block>>> {
+fn fn_body(input: Span) -> IResult<Located<Located<Block>>> {
     map(
         tuple((
             terminated(position, keyword_space("do")),

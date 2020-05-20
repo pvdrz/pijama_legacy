@@ -130,12 +130,6 @@ pub enum Node<'a> {
         Located<Block<'a>>,
         Option<Located<Ty>>,
     ),
-    FnRecDef(
-        Located<Name<'a>>,
-        Vec<Located<Binding<'a>>>,
-        Located<Block<'a>>,
-        Located<Ty>,
-    ),
     Call(Box<Located<Node<'a>>>, Block<'a>),
     Literal(Literal),
     Name(Name<'a>),
