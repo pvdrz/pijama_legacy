@@ -6,7 +6,9 @@ edition = "2018"
 
 [dependencies]
 nom = "5.1.1"
+nom_locate = "2.0.0"
 thiserror = "1.0"
+codespan-reporting = "0.9.4"
 
 [dev-dependencies]
 criterion = "0.3"

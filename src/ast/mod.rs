@@ -1,13 +1,18 @@
-use std::fmt;
+use std::fmt::{Debug, Display, Formatter, Result};
 
 use crate::ty::{Binding, Ty};
 
-pub type Block<'a> = Vec<Node<'a>>;
+mod location;
 
-#[derive(Debug, Eq, PartialEq, Clone, Copy)]
+pub use location::*;
+
+pub type Block<'a> = Vec<Located<Node<'a>>>;
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct Name<'a>(pub &'a str);
-impl<'a> fmt::Display for Name<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+
+impl<'a> Display for Name<'a> {
+    fn fmt(&self, f: &mut Formatter) -> Result {
         write!(f, "{}", self.0)
     }
 }
@@ -34,8 +39,8 @@ pub enum BinOp {
     Gte,
 }
 
-impl<'a> fmt::Display for BinOp {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl<'a> Display for BinOp {
+    fn fmt(&self, f: &mut Formatter) -> Result {
         use BinOp::*;
         match self {
             Add => write!(f, "+"),
@@ -66,8 +71,8 @@ pub enum UnOp {
     Not,
 }
 
-impl<'a> fmt::Display for UnOp {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl<'a> Display for UnOp {
+    fn fmt(&self, f: &mut Formatter) -> Result {
         use UnOp::*;
         match self {
             Not => write!(f, "!"),
@@ -95,8 +100,8 @@ impl Into<Literal> for bool {
     }
 }
 
-impl<'a> fmt::Display for Literal {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl<'a> Display for Literal {
+    fn fmt(&self, f: &mut Formatter) -> Result {
         use Literal::*;
         match self {
             Bool(b) => write!(f, "{}", b),
@@ -108,13 +113,27 @@ impl<'a> fmt::Display for Literal {
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum Node<'a> {
-    BinaryOp(BinOp, Box<Node<'a>>, Box<Node<'a>>),
-    UnaryOp(UnOp, Box<Node<'a>>),
-    LetBind(Name<'a>, Option<Ty>, Box<Node<'a>>),
-    Cond(Block<'a>, Block<'a>, Block<'a>),
-    FnDef(Option<Name<'a>>, Vec<Binding<'a>>, Block<'a>, Option<Ty>),
-    FnRecDef(Name<'a>, Vec<Binding<'a>>, Block<'a>, Ty),
-    Call(Name<'a>, Block<'a>),
+    BinaryOp(BinOp, Box<Located<Node<'a>>>, Box<Located<Node<'a>>>),
+    UnaryOp(UnOp, Box<Located<Node<'a>>>),
+    LetBind(
+        Located<Name<'a>>,
+        Option<Located<Ty>>,
+        Box<Located<Node<'a>>>,
+    ),
+    Cond(Located<Block<'a>>, Located<Block<'a>>, Located<Block<'a>>),
+    FnDef(
+        Option<Located<Name<'a>>>,
+        Vec<Located<Binding<'a>>>,
+        Located<Block<'a>>,
+        Option<Located<Ty>>,
+    ),
+    FnRecDef(
+        Located<Name<'a>>,
+        Vec<Located<Binding<'a>>>,
+        Located<Block<'a>>,
+        Located<Ty>,
+    ),
+    Call(Located<Name<'a>>, Block<'a>),
     Literal(Literal),
     Name(Name<'a>),
 }

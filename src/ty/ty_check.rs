@@ -1,47 +1,53 @@
 use thiserror::Error;
 
 use crate::{
-    ast::{BinOp, Literal, UnOp},
+    ast::{BinOp, Literal, Located, Location, UnOp},
     mir::Term,
     ty::{Binding, Ty},
 };
 
-pub fn ty_check(term: &Term<'_>) -> TyResult<Ty> {
-    Context::default().type_of(term)
+pub fn ty_check(term: &Located<Term<'_>>) -> TyResult<Located<Ty>> {
+    Context::default().type_of(&term)
 }
 
-pub fn expect_ty(expected: Ty, found: Ty) -> TyResult<Ty> {
-    if expected == found {
+pub fn expect_ty(expected: Ty, found: Located<Ty>) -> TyResult {
+    if expected == found.content {
         Ok(expected)
     } else {
-        Err(TyError::Mismatch { expected, found })
+        Err(TyError::Unexpected { expected, found })
     }
 }
 
 /// Macro version of `expect_ty` that accepts a comma separated list of types to check.
 macro_rules! ensure_ty {
-    ($expected:path, $found:ident, $( $other:ident ),*) => {
-        // Using a closure to benefit from early exit via ? without interfering with the caller
-        move || -> TyResult<Ty> {
-            let ty = expect_ty($expected, $found)?;
-            $(
-                let ty = expect_ty(ty, $other)?;
-            )*
-            Ok(ty)
-        }()
-    }
+    ($expected:expr, $found:expr) => {
+        crate::ty::expect_ty($expected, $found)
+    };
+    ($expected:expr, $found:expr, $( $other:expr ),*) => {
+        crate::ty::expect_ty($expected, $found)$(.and_then(|_| crate::ty::expect_ty($expected, $other)))*
+    };
 }
 
 #[derive(Error, Debug)]
 pub enum TyError {
-    #[error("Type mismatch: expected {expected}, found {found}")]
-    Mismatch { expected: Ty, found: Ty },
-    #[error("Name {0} is unbounded")]
-    Unbound(String),
-    #[error("Type mismatch: expected function, found {0}")]
-    NotFn(Ty),
-    #[error("Type mismatch: expected a basic type, found {0}")]
-    NotBasicTy(Ty),
+    #[error("Unexpected type: expected {expected}, found {found}")]
+    Unexpected { expected: Ty, found: Located<Ty> },
+    #[error("Name {0} is not bounded")]
+    Unbound(Located<String>),
+    #[error("Unexpected type: expected function, found {0}")]
+    ExpectedFn(Located<Ty>),
+    #[error("Unexpected type: expected a basic type, found {0}")]
+    ExpectedBasic(Located<Ty>),
+}
+
+impl TyError {
+    pub fn loc(&self) -> Location {
+        match self {
+            TyError::Unexpected { found, .. } => found.loc,
+            TyError::Unbound(name) => name.loc,
+            TyError::ExpectedBasic(ty) | TyError::ExpectedFn(ty) => ty.loc,
+        }
+    }
 }
 
 pub type TyResult<T = Ty> = Result<T, TyError>;
@@ -52,8 +58,9 @@ struct Context<'a> {
 }
 
 impl<'a> Context<'a> {
-    fn type_of(&mut self, term: &Term<'a>) -> TyResult {
-        let ty = match term {
+    fn type_of(&mut self, term: &Located<Term<'a>>) -> TyResult<Located<Ty>> {
+        let loc = term.loc;
+        let ty = match &term.content {
             Term::Lit(lit) => match lit {
                 Literal::Unit => Ty::Unit,
                 Literal::Bool(_) => Ty::Bool,
@@ -63,25 +70,25 @@ impl<'a> Context<'a> {
                 .inner
                 .iter()
                 .find(|bind| bind.name == *name)
-                .ok_or_else(|| TyError::Unbound(name.0.to_owned()))?
+                .ok_or_else(|| TyError::Unbound(Located::new(name.0.to_string(), loc)))?
                 .ty
                 .clone(),
             Term::Abs(bind, body) => {
                 self.inner.push(bind.clone());
-                let ty = self.type_of(body)?;
+                let ty = self.type_of(body.as_ref())?.content;
                 self.inner.pop().unwrap();
                 Ty::Arrow(Box::new(bind.ty.clone()), Box::new(ty))
             }
             Term::UnaryOp(op, term) => {
-                let ty = self.type_of(term)?;
+                let ty = self.type_of(term.as_ref())?;
                 match op {
-                    UnOp::Neg => expect_ty(Ty::Int, ty)?,
-                    UnOp::Not => expect_ty(Ty::Bool, ty)?,
+                    UnOp::Neg => ensure_ty!(Ty::Int, ty)?,
+                    UnOp::Not => ensure_ty!(Ty::Bool, ty)?,
                 }
             }
             Term::BinaryOp(op, t1, t2) => {
-                let ty1 = self.type_of(t1)?;
-                let ty2 = self.type_of(t2)?;
+                let ty1 = self.type_of(t1.as_ref())?;
+                let ty2 = self.type_of(t2.as_ref())?;
                 match op {
                     BinOp::Add
                     | BinOp::Sub
@@ -99,48 +106,54 @@ impl<'a> Context<'a> {
                         Ty::Bool
                     }
                     BinOp::Eq | BinOp::Neq => {
-                        expect_ty(ty1, ty2)?;
+                        ensure_ty!(ty1.content, ty2)?;
                         Ty::Bool
                     }
                 }
             }
             Term::App(t1, t2) => {
-                let ty1 = self.type_of(t1)?;
-                let ty2 = self.type_of(t2)?;
-                match ty1 {
+                let ty1 = self.type_of(t1.as_ref())?;
+                let ty2 = self.type_of(t2.as_ref())?;
+                match ty1.content {
                     Ty::Arrow(ty11, ty) => {
-                        expect_ty(*ty11, ty2)?;
+                        ensure_ty!(*ty11, ty2)?;
                         *ty
                     }
-                    _ => return Err(TyError::NotFn(ty1)),
+                    _ => return Err(TyError::ExpectedFn(ty1)),
                 }
             }
-            &Term::Let(name, ref t1, ref t2) => {
-                let bind = self.type_of(t1).map(|ty| Binding { name, ty })?;
+            Term::Let(name, t1, t2) => {
+                let bind = self.type_of(t1.as_ref()).map(|ty| Binding {
+                    name: name.content,
+                    ty: ty.content,
+                })?;
                 self.inner.push(bind);
-                let ty2 = self.type_of(t2)?;
+                let ty2 = self.type_of(t2.as_ref())?;
                 self.inner.pop().unwrap();
-                ty2
+                ty2.content
             }
             Term::Cond(t1, t2, t3) => {
-                let ty1 = self.type_of(t1)?;
-                let ty2 = self.type_of(t2)?;
-                let ty3 = self.type_of(t3)?;
-                expect_ty(Ty::Bool, ty1)?;
-                expect_ty(ty2, ty3)?
+                let ty1 = self.type_of(t1.as_ref())?;
+                let ty2 = self.type_of(t2.as_ref())?;
+                let ty3 = self.type_of(t3.as_ref())?;
+                ensure_ty!(Ty::Bool, ty1)?;
+                ensure_ty!(ty2.content, ty3)?
             }
             Term::Seq(t1, t2) => {
-                let ty1 = self.type_of(t1)?;
-                expect_ty(Ty::Unit, ty1)?;
-                self.type_of(t2)?
+                let ty1 = self.type_of(t1.as_ref())?;
+                ensure_ty!(Ty::Unit, ty1)?;
+                return self.type_of(t2.as_ref());
             }
-            Term::Fix(t1) => match self.type_of(t1)? {
-                Ty::Arrow(box ty1, box ty2) => expect_ty(ty1, ty2)?,
-                ty => {
-                    return Err(TyError::NotFn(ty));
+            Term::Fix(t1) => {
+                let ty = self.type_of(t1.as_ref())?;
+                match ty.content {
+                    Ty::Arrow(box ty1, box ty2) => ensure_ty!(ty1, Located::new(ty2, ty.loc))?,
+                    _ => {
+                        return Err(TyError::ExpectedFn(ty));
+                    }
                 }
-            },
+            }
         };
-        Ok(ty)
+        Ok(Located::new(ty, loc))
     }
 }

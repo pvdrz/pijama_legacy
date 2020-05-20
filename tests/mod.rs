@@ -8,6 +8,7 @@ use std::{panic, sync::mpsc, thread, time::Duration};
 mod eval;
 mod parse;
 mod type_check;
+mod util;
 
 fn panic_after<T, F>(d: Duration, f: F) -> T
 where

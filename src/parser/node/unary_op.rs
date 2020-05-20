@@ -4,17 +4,20 @@
 //! levels for these operations. It uses the [`un_op`] parser.
 //!
 //! [`un_op`]: crate::parser::un_op
-
-use nom::{combinator::map, error::ParseError, sequence::pair, IResult};
+use nom::{combinator::map, sequence::tuple};
+use nom_locate::position;
 
 use crate::{
-    ast::Node,
-    parser::{node::node, un_op::*},
+    ast::{Located, Location, Node},
+    parser::{node::node, un_op::un_op, IResult, Span},
 };
 
 /// Parses a [`Node::UnaryOp`].
-pub fn unary_op<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {
-    map(pair(un_op, node), |(un_op, node)| {
-        Node::UnaryOp(un_op, Box::new(node))
+///
+/// The location of the returned node matches the start of the unary operation and the end of the inner node.
+pub fn unary_op(input: Span) -> IResult<Located<Node>> {
+    map(tuple((position, un_op, node)), move |(sp, un_op, node)| {
+        let loc = Location::from(sp) + node.loc;
+        Located::new(Node::UnaryOp(un_op, Box::new(node)), loc)
     })(input)
 }

@@ -18,19 +18,19 @@ use nom::{
     bytes::complete::tag,
     character::complete::{char, multispace0, multispace1, space0, space1},
     combinator::{map, opt},
-    error::ParseError,
     multi::separated_list,
-    sequence::{delimited, pair, preceded, terminated, tuple},
-    IResult,
+    sequence::{delimited, pair, preceded, separated_pair, terminated, tuple},
 };
+use nom_locate::position;
 
 use crate::{
-    ast::{Block, Name, Node},
+    ast::{Block, Located, Location, Name, Node},
     parser::{
         block::block0,
         helpers::{in_brackets, surrounded},
         name::name,
         ty::{binding, colon_ty},
+        IResult, Span,
     },
 };
 
@@ -41,7 +41,9 @@ use crate::{
 /// - Spaces or line breaks after the `")"` at the end of the arguments.
 ///
 /// Other spacing details are in the docs for the other parsers of this module.
-pub fn fn_def<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {
+///
+/// The location of the returned node matches the start of the `fn` and the end of the `end`.
+pub fn fn_def(input: Span) -> IResult<Located<Node>> {
     map(
         tuple((
             fn_name,
@@ -49,7 +51,14 @@ pub fn fn_def<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, No
             terminated(opt(colon_ty), multispace0),
             fn_body,
         )),
-        |(name, args, opt_ty, body)| Node::FnDef(name, args, body, opt_ty),
+        |(name, args, opt_ty, body)| {
+            let loc1 = name.loc;
+            let loc2 = body.loc;
+            Located::new(
+                Node::FnDef(name.content, args.content, body.content, opt_ty),
+                loc1 + loc2,
+            )
+        },
     )(input)
 }
 
@@ -57,8 +66,19 @@ pub fn fn_def<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, No
 ///
 /// This parser requires that the name is preceded by `"fn"` and at least one space. If the
 /// function does not have a name, it need to parse the `"fn"` only.
-fn fn_name<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Option<Name>, E> {
-    preceded(tag("fn"), opt(preceded(space1, name)))(input)
+///
+/// The location of the returned node matches the start of the `fn` and the end of the name.
+fn fn_name(input: Span) -> IResult<Located<Option<Located<Name>>>> {
+    map(
+        separated_pair(position, tag("fn"), opt(preceded(space1, name))),
+        |(span, opt_name)| {
+            let mut loc = Location::from(span);
+            if let Some(name) = opt_name.as_ref() {
+                loc = loc + name.loc;
+            }
+            Located::new(opt_name, loc)
+        },
+    )(input)
 }
 
 /// Parser for arguments of a function definition or function call.
@@ -70,9 +90,11 @@ fn fn_name<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Optio
 ///
 /// The arguments must be surrounded by brackets and seperated by commas. There can be spaces
 /// before the comma and spaces or line breaks after the comma.
-pub fn args<'a, O, E: ParseError<&'a str>>(
-    content: impl Fn(&'a str) -> IResult<&'a str, O, E>,
-) -> impl Fn(&'a str) -> IResult<&'a str, Vec<O>, E> {
+///
+/// The location of the returned vector starts in `(` and ends in `)`.
+pub fn args<'a, O: std::fmt::Debug>(
+    content: impl Fn(Span<'a>) -> IResult<'a, O>,
+) -> impl Fn(Span<'a>) -> IResult<'a, Located<Vec<O>>> {
     in_brackets(separated_list(
         delimited(space0, char(','), multispace0),
         content,
@@ -84,10 +106,19 @@ pub fn args<'a, O, E: ParseError<&'a str>>(
 /// The body is parsed as a `Block`. This parser requires that the body is preceded by `"do"` and
 /// at least one space or line break, and followed by zero or more spaces or line breaks and an
 /// `"end"`.
-pub fn fn_body<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Block, E> {
-    delimited(
-        pair(tag("do"), multispace1),
-        block0,
-        pair(multispace0, tag("end")),
+///
+/// The location of the returned vector starts in `do` and ends in `end`.
+pub fn fn_body(input: Span) -> IResult<Located<Located<Block>>> {
+    map(
+        tuple((
+            terminated(position, pair(tag("do"), multispace1)),
+            block0,
+            preceded(pair(multispace0, tag("end")), position),
+        )),
+        |(sp1, content, sp2)| {
+            let loc1 = Location::from(sp1);
+            let loc2 = Location::from(sp2);
+            Located::new(content, loc1 + loc2)
+        },
     )(input)
 }

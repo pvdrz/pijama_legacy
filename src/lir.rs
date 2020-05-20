@@ -36,7 +36,7 @@ impl fmt::Display for Term {
 }
 
 impl Term {
-    pub fn from_mir(mir: crate::mir::Term) -> Self {
+    pub fn from_mir(mir: Located<crate::mir::Term>) -> Self {
         ctx::remove_names(mir)
     }
 

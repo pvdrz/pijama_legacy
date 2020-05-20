@@ -36,63 +36,69 @@
 //! Every binary operator here is considered to be left-associative, in contrast with the `->` for
 //! in the [`ty`] module which is right-associative.
 //!
+//! The location of the returned binary operations matches the start of the first operand and the
+//! end of the second.
+//!
 //! [`ty`]: crate::parser::ty
 //! [`node`]: crate::parser::node::node
 //! [`bin_op`]: crate::parser::bin_op
 use nom::{
     combinator::{cut, opt},
-    error::ParseError,
     sequence::pair,
-    IResult,
 };
 
 use crate::{
-    ast::Node,
-    parser::{bin_op::*, node::base_node},
+    ast::{Located, Node},
+    parser::{bin_op::*, node::base_node, IResult, Span},
 };
 
 /// Parses a [`Node::BinaryOp`].
-pub fn binary_op<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {
+pub fn binary_op(input: Span) -> IResult<Located<Node>> {
     let (mut input, mut node) = binary_op_1(input)?;
     while let (rem, Some((op, node2))) = opt(pair(bin_op_1, cut(binary_op_1)))(input)? {
         input = rem;
-        node = Node::BinaryOp(op, Box::new(node), Box::new(node2));
+        let loc = node.loc + node2.loc;
+        node = Located::new(Node::BinaryOp(op, Box::new(node), Box::new(node2)), loc);
     }
     Ok((input, node))
 }
 
-fn binary_op_1<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {
+fn binary_op_1(input: Span) -> IResult<Located<Node>> {
     let (mut input, mut node) = binary_op_2(input)?;
     while let (rem, Some((op, node2))) = opt(pair(bin_op_2, cut(binary_op_2)))(input)? {
         input = rem;
-        node = Node::BinaryOp(op, Box::new(node), Box::new(node2));
+        let loc = node.loc + node2.loc;
+        node = Located::new(Node::BinaryOp(op, Box::new(node), Box::new(node2)), loc);
     }
     Ok((input, node))
 }
 
-fn binary_op_2<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {
+fn binary_op_2(input: Span) -> IResult<Located<Node>> {
     let (mut input, mut node) = binary_op_3(input)?;
     while let (rem, Some((op, node2))) = opt(pair(bin_op_3, cut(binary_op_3)))(input)? {
         input = rem;
-        node = Node::BinaryOp(op, Box::new(node), Box::new(node2));
+        let loc = node.loc + node2.loc;
+        node = Located::new(Node::BinaryOp(op, Box::new(node), Box::new(node2)), loc);
     }
     Ok((input, node))
 }
 
-fn binary_op_3<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {
+fn binary_op_3(input: Span) -> IResult<Located<Node>> {
     let (mut input, mut node) = binary_op_4(input)?;
     while let (rem, Some((op, node2))) = opt(pair(bin_op_4, cut(binary_op_4)))(input)? {
         input = rem;
-        node = Node::BinaryOp(op, Box::new(node), Box::new(node2));
+        let loc = node.loc + node2.loc;
+        node = Located::new(Node::BinaryOp(op, Box::new(node), Box::new(node2)), loc);
     }
     Ok((input, node))
 }
 
-fn binary_op_4<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {
+fn binary_op_4(input: Span) -> IResult<Located<Node>> {
     let (mut input, mut node) = base_node(input)?;
     while let (rem, Some((op, node2))) = opt(pair(bin_op_5, cut(base_node)))(input)? {
         input = rem;
-        node = Node::BinaryOp(op, Box::new(node), Box::new(node2));
+        let loc = node.loc + node2.loc;
+        node = Located::new(Node::BinaryOp(op, Box::new(node), Box::new(node2)), loc);
     }
     Ok((input, node))
 }

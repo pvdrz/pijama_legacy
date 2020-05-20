@@ -15,25 +15,27 @@ use nom::{
     bytes::complete::tag,
     character::complete::{multispace0, space0, space1},
     combinator::map,
-    error::ParseError,
-    sequence::{preceded, terminated, tuple},
-    IResult,
+    sequence::{separated_pair, terminated, tuple},
 };
+use nom_locate::position;
 
 use crate::{
-    ast::{Name, Node},
+    ast::{Located, Location, Name, Node},
     parser::{
         helpers::surrounded,
         name::name,
         node::fn_def::{args, fn_body},
         ty::{binding, colon_ty},
+        IResult, Span,
     },
 };
 
 /// Parses a [`Node::FnDef`].
 ///
 /// The spacing works the same as with function definitions module.
-pub fn fn_rec_def<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {
+///
+/// The location of the returned node matches the start of the `fn` and the end of the `end`.
+pub fn fn_rec_def(input: Span) -> IResult<Located<Node>> {
     map(
         tuple((
             fn_rec_name,
@@ -41,7 +43,14 @@ pub fn fn_rec_def<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str
             terminated(colon_ty, multispace0),
             fn_body,
         )),
-        |(name, args, ty, body)| Node::FnRecDef(name, args, body, ty),
+        |(name, args, ty, body)| {
+            let loc1 = name.loc;
+            let loc2 = body.loc;
+            Located::new(
+                Node::FnRecDef(name.content, args.content, body.content, ty),
+                loc1 + loc2,
+            )
+        },
     )(input)
 }
 
@@ -49,6 +58,19 @@ pub fn fn_rec_def<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str
 ///
 /// This parser requires that the name is preceded by `"fn"`, at least one space, `"rec"` and at
 /// least another space.
-fn fn_rec_name<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Name, E> {
-    preceded(tuple((tag("fn"), space1, tag("rec"), space1)), name)(input)
+///
+/// The location of the returned node matches the start of the `fn` and the end of the name.
+fn fn_rec_name(input: Span) -> IResult<Located<Located<Name>>> {
+    map(
+        separated_pair(
+            position,
+            tuple((tag("fn"), space1, tag("rec"), space1)),
+            name,
+        ),
+        |(span, name)| {
+            let loc1 = Location::from(span);
+            let loc2 = name.loc;
+            Located::new(name, loc1 + loc2)
+        },
+    )(input)
 }

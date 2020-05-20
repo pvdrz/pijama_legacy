@@ -34,21 +34,20 @@
 //! [`Ty`]: crate::ty::Ty
 //! [`Binding`]: crate::ty::Binding
 //! [`name`]: crate::parser::name
-
 use nom::{
     branch::alt,
     bytes::complete::tag,
     character::complete::{char, space0},
     combinator::{map, opt},
-    error::ParseError,
     sequence::{pair, preceded},
-    IResult,
 };
 
 use crate::{
+    ast::{Located, Location},
     parser::{
         helpers::{in_brackets, surrounded},
         name::name,
+        IResult, Span,
     },
     ty::{Binding, Ty},
 };
@@ -61,10 +60,19 @@ use crate::{
 /// `Bool -> (Int -> Unit)`.
 ///
 /// There can be any number of spaces surrounding the `->`, including no spaces at all.
-pub fn ty<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Ty, E> {
+///
+/// If the returned type is an `Arrow`, the location matches the start of the first type
+/// and the end of the second. For any other case refer to the [`base_ty`] docs.
+pub fn ty(input: Span) -> IResult<Located<Ty>> {
     let (rem, t1) = base_ty(input)?;
     if let (rem, Some(t2)) = opt(preceded(surrounded(tag("->"), space0), ty))(rem)? {
-        Ok((rem, Ty::Arrow(Box::new(t1), Box::new(t2))))
+        Ok((
+            rem,
+            Located::new(
+                Ty::Arrow(Box::new(t1.content), Box::new(t2.content)),
+                Location::new(t1.loc.start, t2.loc.end),
+            ),
+        ))
     } else {
         Ok((rem, t1))
     }
@@ -74,8 +82,20 @@ pub fn ty<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Ty, E>
 ///
 /// This parser returns a [`Binding`], there can be any number of spaces surrounding the `:`,
 /// including no spaces at all.
-pub fn binding<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Binding, E> {
-    map(pair(name, colon_ty), |(name, ty)| Binding { name, ty })(input)
+pub fn binding(input: Span) -> IResult<Located<Binding>> {
+    map(
+        pair(name, colon_ty),
+        |(
+            Located {
+                content: name,
+                loc: loc1,
+            },
+            Located {
+                content: ty,
+                loc: loc2,
+            },
+        )| { Located::new(Binding { name, ty }, loc1 + loc2) },
+    )(input)
 }
 
 /// Parses types preceded by a colon.
@@ -85,7 +105,7 @@ pub fn binding<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, B
 /// This parser exists with the sole purpose of being reutilized for type bindings that are not
 /// stored in [`Binding`]s such as the return type of functions or the optional type binding for
 /// let bindings.
-pub fn colon_ty<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Ty, E> {
+pub fn colon_ty(input: Span) -> IResult<Located<Ty>> {
     preceded(surrounded(char(':'), space0), ty)(input)
 }
 
@@ -95,11 +115,18 @@ pub fn colon_ty<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, 
 /// round brackets. It returns a [`Ty`].
 ///
 /// There can be any number of spaces between the brackets and its contents.
-fn base_ty<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Ty, E> {
+///
+/// If the returned type is one of the string slices mentioned above, the location matches the one
+/// of the slice. If the returned type is surrounded by brackets, the location matches the span of
+/// the brackets.
+fn base_ty(input: Span) -> IResult<Located<Ty>> {
     alt((
-        map(tag("Bool"), |_| Ty::Bool),
-        map(tag("Int"), |_| Ty::Int),
-        map(tag("Unit"), |_| Ty::Unit),
-        in_brackets(ty),
+        map(tag("Bool"), |span: Span| Located::new(Ty::Bool, span)),
+        map(tag("Int"), |span: Span| Located::new(Ty::Int, span)),
+        map(tag("Unit"), |span: Span| Located::new(Ty::Unit, span)),
+        map(in_brackets(ty), |Located { mut content, loc }| {
+            content.loc = loc;
+            content
+        }),
     ))(input)
 }

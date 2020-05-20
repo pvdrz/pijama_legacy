@@ -8,17 +8,18 @@ use nom::{
     branch::alt,
     character::complete::{char, space0},
     combinator::map,
-    error::ParseError,
     sequence::terminated,
-    IResult,
 };
 
-use crate::ast::UnOp::{self, *};
+use crate::{
+    ast::{UnOp, UnOp::*},
+    parser::{IResult, Span},
+};
 
 /// Parser for the unary operators `!` and `-`.
 ///
 /// All the unary operators might be followed by zero or more spaces.
-pub fn un_op<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, UnOp, E> {
+pub fn un_op(input: Span) -> IResult<UnOp> {
     terminated(
         alt((map(char('!'), |_| Not), map(char('-'), |_| Neg))),
         space0,

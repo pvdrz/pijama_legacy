@@ -21,15 +21,14 @@
 //!
 //! [ABNF]: https://en.wikipedia.org/wiki/Augmented_Backus–Naur_form
 //! [nom docs]: https://docs.rs/nom/
-use nom::{
-    character::complete::multispace0,
-    combinator::all_consuming,
-    error::{convert_error, VerboseError},
-    Err::{Error, Failure},
-    IResult,
-};
+use thiserror::Error;
 
-use crate::{ast::Block, LangError, LangResult};
+use nom::{character::complete::multispace0, combinator::all_consuming, error::ErrorKind, Err::*};
+
+use crate::{
+    ast::{Block, Located, Location},
+    LangResult,
+};
 
 use block::block0;
 use helpers::surrounded;
@@ -43,16 +42,38 @@ mod node;
 mod ty;
 mod un_op;
 
+type Span<'a> = nom_locate::LocatedSpan<&'a str>;
+
+impl<'a> From<Span<'a>> for Location {
+    fn from(span: Span<'a>) -> Self {
+        let start = span.location_offset();
+        let end = start + span.fragment().len();
+        Location { start, end }
+    }
+}
+
+type IResult<'a, T> = nom::IResult<Span<'a>, T, (Span<'a>, ErrorKind)>;
+
 /// Produces a [`Block`] from a string slice.
 ///
 /// This function fails if the whole string is not consumed during parsing or if there is an error
 /// with the inner parsers.
-pub fn parse<'a>(input: &'a str) -> LangResult<Block<'a>> {
-    let result: IResult<&str, Block, VerboseError<&str>> =
-        all_consuming(surrounded(block0, multispace0))(input);
+pub fn parse(input: &str) -> LangResult<Located<Block>> {
+    let span = Span::new(input);
+    let result: IResult<Located<Block>> = all_consuming(surrounded(block0, multispace0))(span);
     match result {
         Ok((_, block)) => Ok(block),
-        Err(Error(e)) | Err(Failure(e)) => Err(LangError::Parse(convert_error(input, e))),
-        _ => Err(LangError::Parse(String::new())),
+        Err(Error(e)) | Err(Failure(e)) => Err(ParseError {
+            span: e.0,
+            kind: e.1,
+        })?,
+        _ => unreachable!(),
     }
+}
+
+#[derive(Error, Debug)]
+#[error("Parsing rule `{kind:?}` failed.")]
+pub struct ParseError<'a> {
+    pub span: Span<'a>,
+    kind: ErrorKind,
 }

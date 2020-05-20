@@ -6,7 +6,6 @@
 //!
 //! The [`binary_op`] module is particularly important here so it is a good idea to check those
 //! module docs too.
-
 mod binary_op;
 mod call;
 mod cond;
@@ -20,25 +19,24 @@ use nom::{
     bytes::complete::tag,
     character::complete::{multispace1, space1},
     combinator::map,
-    error::ParseError,
     sequence::{pair, tuple},
-    IResult,
 };
 
 use crate::{
-    ast::Node,
+    ast::{Located, Node},
     parser::{
         helpers::{in_brackets, lookahead},
         literal::literal,
         name::name,
         un_op::un_op,
+        IResult, Span,
     },
 };
 
 /// Parser for [`Node`]s.
 ///
 /// To understand its behaviour please refer to the [`binary_op`] docs.
-pub fn node<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {
+pub fn node(input: Span) -> IResult<Located<Node>> {
     binary_op::binary_op(input)
 }
 
@@ -59,10 +57,15 @@ pub fn node<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node
 /// - If the input starts with a unary operator, the [`un_op`] parser is applied.
 ///
 /// This function is very order sensitive. Be careful if you swap the parsers order.
-fn base_node<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {
+fn base_node(input: Span) -> IResult<Located<Node>> {
     alt((
-        in_brackets(node),
-        map(literal, Node::Literal),
+        map(in_brackets(node), |Located { mut content, loc }| {
+            content.loc = loc;
+            content
+        }),
+        map(literal, |Located { content, loc }| {
+            Located::new(Node::Literal(content), loc)
+        }),
         lookahead(pair(tag("if"), multispace1), cond::cond),
         lookahead(
             tuple((tag("fn"), space1, tag("rec"))),
@@ -71,7 +74,13 @@ fn base_node<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Nod
         lookahead(tag("fn"), fn_def::fn_def),
         lookahead(
             name,
-            alt((let_bind::let_bind, call::call, map(name, Node::Name))),
+            alt((
+                let_bind::let_bind,
+                call::call,
+                map(name, |Located { content, loc }| {
+                    Located::new(Node::Name(content), loc)
+                }),
+            )),
         ),
         lookahead(un_op, unary_op::unary_op),
     ))(input)

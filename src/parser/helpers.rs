@@ -2,10 +2,16 @@
 
 use nom::{
     character::complete::{char, multispace0},
-    combinator::{cut, peek},
+    combinator::{cut, map, peek},
     error::ParseError,
-    sequence::{delimited, preceded},
+    sequence::{delimited, preceded, terminated, tuple},
     IResult,
+};
+use nom_locate::position;
+
+use crate::{
+    ast::{Located, Location},
+    parser::Span,
 };
 
 /// Helper parser for expressions surrounded by a delimiter.
@@ -22,10 +28,22 @@ pub fn surrounded<I, O, O2, E: ParseError<I>>(
 ///
 /// The output only contains the expression without the brackets and there can be any number of
 /// spaces or line breaks between the actual content and the brackets.
-pub fn in_brackets<'a, O, E: ParseError<&'a str>>(
-    content: impl Fn(&'a str) -> IResult<&'a str, O, E>,
-) -> impl Fn(&'a str) -> IResult<&'a str, O, E> {
-    delimited(char('('), surrounded(content, multispace0), char(')'))
+///
+/// The location of this element starts in the `(` and ends in the `)`.
+pub fn in_brackets<'a, O: std::fmt::Debug, E: ParseError<Span<'a>>>(
+    content: impl Fn(Span<'a>) -> IResult<Span<'a>, O, E>,
+) -> impl Fn(Span<'a>) -> IResult<Span<'a>, Located<O>, E> {
+    map(
+        tuple((
+            terminated(position, char('(')),
+            surrounded(content, multispace0),
+            preceded(char(')'), position),
+        )),
+        |(sp1, content, sp2)| {
+            let loc = Location::new(sp1.location_offset(), sp2.location_offset() + 1);
+            Located::new(content, loc)
+        },
+    )
 }
 
 /// Helper parser to do lookaheads.
@@ -36,9 +54,9 @@ pub fn in_brackets<'a, O, E: ParseError<&'a str>>(
 ///
 /// This is particularly useful when you are sure that there is only one expression that can be
 /// parsed after a certain hint.
-pub fn lookahead<'a, O, O2, E: ParseError<&'a str>>(
-    hint: impl Fn(&'a str) -> IResult<&'a str, O2, E>,
-    content: impl Fn(&'a str) -> IResult<&'a str, O, E>,
-) -> impl Fn(&'a str) -> IResult<&'a str, O, E> {
+pub fn lookahead<'a, O, O2, E: ParseError<Span<'a>>>(
+    hint: impl Fn(Span<'a>) -> IResult<Span<'a>, O2, E>,
+    content: impl Fn(Span<'a>) -> IResult<Span<'a>, O, E>,
+) -> impl Fn(Span<'a>) -> IResult<Span<'a>, O, E> {
     preceded(peek(hint), cut(content))
 }
