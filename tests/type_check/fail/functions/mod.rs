@@ -1,6 +1,8 @@
 use crate::test_type;
-use pijama::ty::{Ty, TyError};
-use pijama::LangError;
+use pijama::{
+    ty::{Ty, TyError},
+    LangError,
+};
 
 test_type!(
     wrong_type_fn_call_arg,

@@ -18,8 +18,10 @@ use nom::{
     sequence::terminated,
 };
 
-use crate::ast::BinOp::{self, *};
-use crate::parser::helpers::surrounded;
+use crate::{
+    ast::BinOp::{self, *},
+    parser::helpers::surrounded,
+};
 
 /// Parser for the binary operators with precedence level 1.
 ///

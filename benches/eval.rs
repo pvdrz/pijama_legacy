@@ -2,11 +2,13 @@ use criterion::{criterion_group, criterion_main, Criterion};
 
 use std::include_str;
 
-use pijama::lir::{evaluate, Term};
-use pijama::mir::Term as MirTerm;
-use pijama::parser::parse;
-use pijama::ty::ty_check;
-use pijama::LangResult;
+use pijama::{
+    lir::{evaluate, Term},
+    mir::Term as MirTerm,
+    parser::parse,
+    ty::ty_check,
+    LangResult,
+};
 
 fn compile(input: &str) -> LangResult<Term> {
     let ast = parse(input)?;

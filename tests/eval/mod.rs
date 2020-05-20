@@ -1,9 +1,7 @@
 use std::include_str;
 
 use crate::panic_after;
-use pijama::ast::Literal;
-use pijama::lir::Term;
-use pijama::{run, LangResult};
+use pijama::{ast::Literal, lir::Term, run, LangResult};
 use std::time::Duration;
 
 #[test]

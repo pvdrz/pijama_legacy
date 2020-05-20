@@ -17,8 +17,10 @@ use nom::{
     sequence::{preceded, tuple},
 };
 
-use crate::ast::Node;
-use crate::parser::{helpers::surrounded, name::name, node::node, ty::colon_ty};
+use crate::{
+    ast::Node,
+    parser::{helpers::surrounded, name::name, node::node, ty::colon_ty},
+};
 
 /// Parses a [`Node::LetBind`].
 ///

@@ -3,9 +3,7 @@
 
 extern crate pijama;
 
-use std::sync::mpsc;
-use std::time::Duration;
-use std::{panic, thread};
+use std::{panic, sync::mpsc, thread, time::Duration};
 
 mod eval;
 mod parse;

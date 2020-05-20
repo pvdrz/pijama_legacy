@@ -1,8 +1,10 @@
 use std::fmt;
 
-use crate::ast::*;
-use crate::ty::{expect_ty, ty_check, Binding, Ty, TyResult};
-use crate::{LangError, LangResult};
+use crate::{
+    ast::*,
+    ty::{expect_ty, ty_check, Binding, Ty, TyResult},
+    LangError, LangResult,
+};
 
 #[derive(Debug, Clone)]
 pub enum Term<'a> {

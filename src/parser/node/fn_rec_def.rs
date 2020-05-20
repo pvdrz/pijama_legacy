@@ -20,11 +20,13 @@ use nom::{
     sequence::{preceded, terminated, tuple},
 };
 
-use crate::ast::{Name, Node};
-use crate::parser::{
-    helpers::surrounded,
-    name::name,
-    ty::{binding, colon_ty},
+use crate::{
+    ast::{Name, Node},
+    parser::{
+        helpers::surrounded,
+        name::name,
+        ty::{binding, colon_ty},
+    },
 };
 
 use super::fn_def::{args, fn_body};

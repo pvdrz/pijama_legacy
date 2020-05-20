@@ -1,9 +1,11 @@
 use std::include_str;
 
-use pijama::ast::{self, BinOp::*, Node::*, UnOp};
-use pijama::parser::parse;
-use pijama::ty::{Binding, Ty};
-use pijama::LangResult;
+use pijama::{
+    ast::{self, BinOp::*, Node::*, UnOp},
+    parser::parse,
+    ty::{Binding, Ty},
+    LangResult,
+};
 
 #[test]
 fn name() -> LangResult<()> {

@@ -1,6 +1,4 @@
-use crate::ast::Name;
-use crate::lir;
-use crate::mir;
+use crate::{ast::Name, lir, mir};
 
 pub fn remove_names(term: mir::Term<'_>) -> lir::Term {
     Context::default().remove_names(term)

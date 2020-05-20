@@ -9,8 +9,10 @@ use nom::{error::ParseError, IResult};
 
 use nom::{combinator::map, sequence::pair};
 
-use crate::ast::Node;
-use crate::parser::{node::node, un_op::*};
+use crate::{
+    ast::Node,
+    parser::{node::node, un_op::*},
+};
 
 /// Parses a [`Node::UnaryOp`].
 pub fn unary_op<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {

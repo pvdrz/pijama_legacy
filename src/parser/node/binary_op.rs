@@ -46,8 +46,10 @@ use nom::{
     sequence::pair,
 };
 
-use crate::ast::Node;
-use crate::parser::{bin_op::*, node::base_node};
+use crate::{
+    ast::Node,
+    parser::{bin_op::*, node::base_node},
+};
 
 /// Parses a [`Node::BinaryOp`].
 pub fn binary_op<'a, E: ParseError<&'a str>>(input: &'a str) -> IResult<&'a str, Node, E> {

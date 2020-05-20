@@ -29,8 +29,7 @@ use nom::{
 
 use nom::{character::complete::multispace0, combinator::all_consuming};
 
-use crate::ast::Block;
-use crate::{LangError, LangResult};
+use crate::{ast::Block, LangError, LangResult};
 
 use block::block0;
 use helpers::surrounded;

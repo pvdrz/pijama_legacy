@@ -1,6 +1,8 @@
 use crate::{test_type, test_type_for_all_logical_binops};
-use pijama::ty::{Ty, TyError};
-use pijama::LangError;
+use pijama::{
+    ty::{Ty, TyError},
+    LangError,
+};
 
 // Test all logical operators with int arguments
 test_type_for_all_logical_binops!(
