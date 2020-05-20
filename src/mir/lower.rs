@@ -143,7 +143,6 @@ fn lower_fn_def<'a>(
     });
 
     for bind in binds.into_iter().rev() {
-        let loc = term.loc;
         term = Located::new(Term::Abs(bind.content, Box::new(term)), loc);
     }
 
