@@ -1,7 +1,7 @@
 use thiserror::Error;
 
 use crate::{
-    ast::{BinOp, Literal, Located, UnOp, Location},
+    ast::{BinOp, Literal, Located, Location, UnOp},
     mir::Term,
     ty::{Binding, Ty},
 };

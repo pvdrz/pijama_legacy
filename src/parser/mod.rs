@@ -61,7 +61,6 @@ type IResult<'a, T> = nom::IResult<Span<'a>, T, (Span<'a>, ErrorKind)>;
 pub fn parse(input: &str) -> LangResult<Located<Block>> {
     let span = Span::new(input);
     let result: IResult<Located<Block>> = all_consuming(surrounded(block0, multispace0))(span);
-    println!("{:#?}", result);
     match result {
         Ok((_, block)) => Ok(block),
         Err(Error(e)) | Err(Failure(e)) => Err(ParseError {

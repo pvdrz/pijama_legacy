@@ -9,8 +9,8 @@ pub mod ty;
 
 use thiserror::Error;
 
-use machine::Machine;
 use ast::Location;
+use machine::Machine;
 use parser::ParseError;
 use ty::TyError;
 

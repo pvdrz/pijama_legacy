@@ -156,7 +156,7 @@ impl<'a> Display for Literal {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub enum Node<'a> {
     BinaryOp(BinOp, Box<Located<Node<'a>>>, Box<Located<Node<'a>>>),
     UnaryOp(UnOp, Box<Located<Node<'a>>>),

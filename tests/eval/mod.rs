@@ -5,7 +5,7 @@ use pijama::{ast::Literal, lir::Term, run, LangResult};
 use crate::panic_after;
 
 #[test]
-fn arithmetic() -> LangResult<()> {
+fn arithmetic() -> LangResult<'static, ()> {
     let input = include_str!("arithmetic.pj");
     let term = run(input)?;
     assert_eq!(Term::Lit(Literal::Number(121)), term);
@@ -13,7 +13,7 @@ fn arithmetic() -> LangResult<()> {
 }
 
 #[test]
-fn logic() -> LangResult<()> {
+fn logic() -> LangResult<'static, ()> {
     let input = include_str!("logic.pj");
     let term = run(input)?;
     assert_eq!(Term::Lit(Literal::Bool(false)), term);
@@ -21,7 +21,7 @@ fn logic() -> LangResult<()> {
 }
 
 #[test]
-fn factorial() -> LangResult<()> {
+fn factorial() -> LangResult<'static, ()> {
     let input = include_str!("factorial.pj");
     let term = run(input)?;
     assert_eq!(Term::Lit(Literal::Number(3628800)), term);
@@ -29,7 +29,7 @@ fn factorial() -> LangResult<()> {
 }
 
 #[test]
-fn factorial_tail() -> LangResult<()> {
+fn factorial_tail() -> LangResult<'static, ()> {
     let input = include_str!("factorial_tail.pj");
     let term = run(input)?;
     assert_eq!(Term::Lit(Literal::Number(3628800)), term);
@@ -37,7 +37,7 @@ fn factorial_tail() -> LangResult<()> {
 }
 
 #[test]
-fn fancy_max() -> LangResult<()> {
+fn fancy_max() -> LangResult<'static, ()> {
     let input = include_str!("fancy_max.pj");
     let term = run(input)?;
     assert_eq!(Term::Lit(Literal::Number(10)), term);
@@ -45,7 +45,7 @@ fn fancy_max() -> LangResult<()> {
 }
 
 #[test]
-fn fibonacci() -> LangResult<()> {
+fn fibonacci() -> LangResult<'static, ()> {
     let input = include_str!("fibonacci.pj");
     let term = run(input)?;
     assert_eq!(Term::Lit(Literal::Number(21)), term);
@@ -53,7 +53,7 @@ fn fibonacci() -> LangResult<()> {
 }
 
 #[test]
-fn fibonacci_tail() -> LangResult<()> {
+fn fibonacci_tail() -> LangResult<'static, ()> {
     let input = include_str!("fibonacci_tail.pj");
     let term = run(input)?;
     assert_eq!(Term::Lit(Literal::Number(21)), term);
@@ -61,7 +61,7 @@ fn fibonacci_tail() -> LangResult<()> {
 }
 
 #[test]
-fn gcd() -> LangResult<()> {
+fn gcd() -> LangResult<'static, ()> {
     let input = include_str!("gcd.pj");
     let term = run(input)?;
     assert_eq!(Term::Lit(Literal::Number(1)), term);
@@ -69,7 +69,7 @@ fn gcd() -> LangResult<()> {
 }
 
 #[test]
-fn ackermann() -> LangResult<()> {
+fn ackermann() -> LangResult<'static, ()> {
     let input = include_str!("ackermann.pj");
     let term = run(input)?;
     assert_eq!(Term::Lit(Literal::Number(5)), term);
@@ -77,7 +77,7 @@ fn ackermann() -> LangResult<()> {
 }
 
 #[test]
-fn calling() -> LangResult<()> {
+fn calling() -> LangResult<'static, ()> {
     let input = include_str!("calling.pj");
     let term = run(input)?;
     assert_eq!(Term::Lit(Literal::Number(1)), term);
@@ -85,7 +85,7 @@ fn calling() -> LangResult<()> {
 }
 
 #[test]
-fn complex_calling() -> LangResult<()> {
+fn complex_calling() -> LangResult<'static, ()> {
     let input = include_str!("complex_calling.pj");
     let term = run(input)?;
     assert_eq!(Term::Lit(Literal::Number(1)), term);
@@ -93,7 +93,7 @@ fn complex_calling() -> LangResult<()> {
 }
 
 #[test]
-fn step() -> LangResult<()> {
+fn step() -> LangResult<'static, ()> {
     let input = include_str!("step.pj");
     let term = run(input)?;
     assert_eq!(Term::Lit(Literal::Number(1)), term);
@@ -101,7 +101,7 @@ fn step() -> LangResult<()> {
 }
 
 #[test]
-fn bit_and() -> LangResult<()> {
+fn bit_and() -> LangResult<'static, ()> {
     let input = include_str!("bit_and.pj");
     let term = run(input)?;
     assert_eq!(Term::Lit(Literal::Number(64)), term);
@@ -109,7 +109,7 @@ fn bit_and() -> LangResult<()> {
 }
 
 #[test]
-fn bit_or() -> LangResult<()> {
+fn bit_or() -> LangResult<'static, ()> {
     let input = include_str!("bit_or.pj");
     let term = run(input)?;
     assert_eq!(Term::Lit(Literal::Number(192)), term);
@@ -117,7 +117,7 @@ fn bit_or() -> LangResult<()> {
 }
 
 #[test]
-fn bit_xor() -> LangResult<()> {
+fn bit_xor() -> LangResult<'static, ()> {
     let input = include_str!("bit_xor.pj");
     let term = run(input)?;
     assert_eq!(Term::Lit(Literal::Number(128)), term);
@@ -125,7 +125,7 @@ fn bit_xor() -> LangResult<()> {
 }
 
 #[test]
-fn bit_shift_l() -> LangResult<()> {
+fn bit_shift_l() -> LangResult<'static, ()> {
     let input = include_str!("bit_shift_l.pj");
     let term = run(input)?;
     assert_eq!(Term::Lit(Literal::Number(128)), term);
@@ -133,7 +133,7 @@ fn bit_shift_l() -> LangResult<()> {
 }
 
 #[test]
-fn bit_shift_r() -> LangResult<()> {
+fn bit_shift_r() -> LangResult<'static, ()> {
     let input = include_str!("bit_shift_r.pj");
     let term = run(input)?;
     assert_eq!(Term::Lit(Literal::Number(32)), term);
@@ -141,7 +141,7 @@ fn bit_shift_r() -> LangResult<()> {
 }
 
 #[test]
-fn or_short_circuit() -> LangResult<()> {
+fn or_short_circuit() -> LangResult<'static, ()> {
     panic_after(Duration::from_secs(1), || {
         let input = include_str!("or_short_circuit.pj");
         let term = run(input)?;
@@ -151,7 +151,7 @@ fn or_short_circuit() -> LangResult<()> {
 }
 
 #[test]
-fn and_short_circuit() -> LangResult<()> {
+fn and_short_circuit() -> LangResult<'static, ()> {
     panic_after(Duration::from_secs(1), || {
         let input = include_str!("and_short_circuit.pj");
         let term = run(input)?;
