@@ -2,15 +2,9 @@ use std::fmt;
 
 use crate::ast::*;
 
-use eval::*;
 use Term::*;
 
 mod ctx;
-mod eval;
-
-pub fn evaluate(term: Term) -> Term {
-    term.evaluate()
-}
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Term {
@@ -46,7 +40,7 @@ impl Term {
         ctx::remove_names(mir)
     }
 
-    fn shift(&mut self, up: bool, cutoff: usize) {
+    pub(crate) fn shift(&mut self, up: bool, cutoff: usize) {
         match self {
             Lit(_) | Hole => (),
             Var(index) => {
@@ -83,7 +77,7 @@ impl Term {
         }
     }
 
-    fn replace(&mut self, index: usize, subs: &mut Term) {
+    pub(crate) fn replace(&mut self, index: usize, subs: &mut Term) {
         match self {
             Lit(_) | Hole => (),
             Var(index2) => {
@@ -116,42 +110,5 @@ impl Term {
                 t1.replace(index, subs);
             }
         }
-    }
-
-    fn step_in_place(&mut self) -> bool {
-        let term = std::mem::replace(self, Hole);
-        let (cont, term) = term.step();
-        *self = term;
-        cont
-    }
-
-    fn step(mut self) -> (bool, Term) {
-        match self {
-            // Dispatch step for binary operations
-            BinaryOp(op, t1, t2) => step_bin_op(op, t1, t2),
-            // Dispatch step for unary operations
-            UnaryOp(op, t1) => step_un_op(op, t1),
-            // Dispatch step for beta reduction
-            App(box Abs(body), arg) => step_beta_reduction(body, arg),
-            // Application with unevaluated first term (t1 t2)
-            // Evaluate t1.
-            App(ref mut t1, _) => (t1.step_in_place(), self),
-            // Dispatch step for conditionals
-            Cond(t1, t2, t3) => step_conditional(t1, t2, t3),
-            // Dispatch step for fixed point operation
-            Fix(t1) => step_fix(t1),
-            // Any other term stops the evaluation.
-            Var(_) | Lit(_) | Abs(_) | Hole => (false, self),
-        }
-    }
-
-    fn evaluate(self) -> Term {
-        let mut term = self;
-        while {
-            let (eval, new_term) = term.step();
-            term = new_term;
-            eval
-        } {}
-        term
     }
 }
