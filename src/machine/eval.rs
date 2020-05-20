@@ -12,7 +12,7 @@ impl Machine {
             // Dispatch step for unary operations
             UnaryOp(op, t1) => self.step_un_op(op, t1),
             // Dispatch step for beta reduction
-            App(box Abs(body), arg) => step_beta_reduction(body, arg),
+            App(box Abs(body), arg) => self.step_beta_reduction(body, arg),
             // Application with unevaluated first term (t1 t2)
             // Evaluate t1.
             App(ref mut t1, _) => (self.step_in_place(t1), term),
@@ -102,20 +102,20 @@ impl Machine {
             (self.step_in_place(t1.as_mut()), Term::Fix(t1))
         }
     }
-}
 
-/// Evaluation step for beta reduction ((λ. body) arg)
-#[inline(always)]
-fn step_beta_reduction(mut body: Box<Term>, mut arg: Box<Term>) -> (bool, Term) {
-    // increase the indices of the argument so they can coincide with the indices of the body.
-    arg.shift(true, 0);
-    // replace the index 0 by the argument inside the body.
-    body.replace(0, &mut arg);
-    // decrease the indices of the body to take into account the fact that the abstraction no
-    // longer exists.
-    body.shift(false, 0);
-    // return the body
-    (true, *body)
+    /// Evaluation step for beta reduction ((λ. body) arg)
+    #[inline(always)]
+    fn step_beta_reduction(&mut self, mut body: Box<Term>, mut arg: Box<Term>) -> (bool, Term) {
+        // increase the indices of the argument so they can coincide with the indices of the body.
+        arg.shift(true, 0);
+        // replace the index 0 by the argument inside the body.
+        body.replace(0, &mut arg);
+        // decrease the indices of the body to take into account the fact that the abstraction no
+        // longer exists.
+        body.shift(false, 0);
+        // return the body
+        (true, *body)
+    }
 }
 
 fn native_bin_op(op: BinOp, l1: Literal, l2: Literal) -> Literal {
