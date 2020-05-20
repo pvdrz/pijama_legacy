@@ -1,5 +1,15 @@
+sudo: false
+
 language: rust
 rust:
   - nightly
+
+cache: cargo
+
 jobs:
   fast_finish: true
+
+script:
+  - cargo build --verbose
+  - cargo test --verbose
+  - cargo bench --verbose --no-run
