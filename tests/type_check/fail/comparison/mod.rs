@@ -1,7 +1,8 @@
-use crate::{test_type_for_all_comparision_binops, test_type_for_all_equality_binops};
+use crate::{
+    test_type_for_all_comparision_binops, test_type_for_all_equality_binops, util::DummyLoc,
+};
 
 use pijama::{
-    ast::{Located, Location},
     ty::{Ty, TyError},
     LangError,
 };
@@ -11,10 +12,7 @@ test_type_for_all_comparision_binops!(
     wrong_type_placeholder,
     Err(LangError::Ty(TyError::Unexpected {
         expected: Ty::Int,
-        found: Located {
-            content: Ty::Bool,
-            loc: Location { start: 0, end: 0 }
-        }
+        found: Ty::Bool.loc()
     })),
     OPERATOR
 );
@@ -24,10 +22,7 @@ test_type_for_all_equality_binops!(
     mixed_type_int_placeholder,
     Err(LangError::Ty(TyError::Unexpected {
         expected: Ty::Int,
-        found: Located {
-            content: Ty::Bool,
-            loc: Location { start: 0, end: 0 }
-        }
+        found: Ty::Bool.loc()
     })),
     OPERATOR
 );
@@ -37,10 +32,7 @@ test_type_for_all_equality_binops!(
     mixed_type_bool_placeholder,
     Err(LangError::Ty(TyError::Unexpected {
         expected: Ty::Bool,
-        found: Located {
-            content: Ty::Int,
-            loc: Location { start: 0, end: 0 }
-        }
+        found: Ty::Int.loc()
     })),
     OPERATOR
 );

@@ -1,16 +1,11 @@
-use pijama::{
-    ast::{Block, Located, Location, Name, Node},
-    ty::{Binding, Ty},
-};
+use pijama::ast::{Located, Location};
 
-pub trait DummyLoc: std::fmt::Debug + Sized {
+use std::fmt::Debug;
+
+pub trait DummyLoc: Debug + Sized {
     fn loc(self) -> Located<Self> {
         Located::new(self, Location::new(0, 0))
     }
 }
 
-impl<'a> DummyLoc for Node<'a> {}
-impl DummyLoc for Ty {}
-impl<'a> DummyLoc for Binding<'a> {}
-impl<'a> DummyLoc for Block<'a> {}
-impl<'a> DummyLoc for Name<'a> {}
+impl<T: Debug + Sized> DummyLoc for T {}
