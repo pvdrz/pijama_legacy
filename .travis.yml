@@ -1,5 +1,12 @@
 language: rust
 rust:
   - nightly
+
+cache: cargo
+
 jobs:
   fast_finish: true
+
+script:
+  - cargo build --verbose --all-targets
+  - cargo test --verbose
