@@ -18,9 +18,9 @@ pub type LangResult<'a, T> = Result<T, LangError<'a>>;
 
 #[derive(Error, Debug)]
 pub enum LangError<'a> {
-    #[error("Type error: {0}")]
+    #[error("{0}")]
     Ty(#[from] TyError),
-    #[error("Parse error: {0}")]
+    #[error("{0}")]
     Parse(ParseError<'a>),
 }
 
@@ -45,21 +45,17 @@ pub fn display_error<'a>(input: &str, path: &str, error: LangError<'a>) {
 
     let file_id = files.add(path, input);
 
-    let diagnostic = match error {
-        LangError::Ty(TyError { loc, kind }) => Diagnostic::error()
-            .with_message("Type error")
-            .with_labels(vec![
-                Label::primary(file_id, loc.start..loc.end).with_message(format!("{}", kind))
-            ]),
-        LangError::Parse(error) => {
-            let loc = Location::from(error.span);
-            Diagnostic::error()
-                .with_message("Parsing failed")
-                .with_labels(vec![
-                    Label::primary(file_id, loc.start..loc.end).with_message(format!("{}", error))
-                ])
-        }
+    let (msg, loc) = match &error {
+        LangError::Ty(error) => ("Type error", error.loc()),
+        LangError::Parse(error) => ("Parsing error", Location::from(error.span)),
     };
+
+    let diagnostic = Diagnostic::error()
+        .with_message(msg)
+        .with_labels(vec![
+            Label::primary(file_id, loc.start..loc.end).with_message(error.to_string())
+        ]);
+
     emit(&mut writer.lock(), &config, &files, &diagnostic).unwrap();
 }
 
