@@ -22,12 +22,12 @@
 //! [ABNF]: https://en.wikipedia.org/wiki/Augmented_Backus–Naur_form
 //! [nom docs]: https://docs.rs/nom/
 use nom::{
+    character::complete::multispace0,
+    combinator::all_consuming,
     error::{convert_error, VerboseError},
     Err::{Error, Failure},
     IResult,
 };
-
-use nom::{character::complete::multispace0, combinator::all_consuming};
 
 use crate::{ast::Block, LangError, LangResult};
 

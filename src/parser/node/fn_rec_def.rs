@@ -11,13 +11,13 @@
 //! code in this module has the same logic as the one in the [`fn_def`] module.
 //!
 //! [`fn_def`]: super::fn_def
-use nom::{error::ParseError, IResult};
-
 use nom::{
     bytes::complete::tag,
     character::complete::{multispace0, space0, space1},
     combinator::map,
+    error::ParseError,
     sequence::{preceded, terminated, tuple},
+    IResult,
 };
 
 use crate::{
@@ -25,11 +25,10 @@ use crate::{
     parser::{
         helpers::surrounded,
         name::name,
+        node::fn_def::{args, fn_body},
         ty::{binding, colon_ty},
     },
 };
-
-use super::fn_def::{args, fn_body};
 
 /// Parses a [`Node::FnDef`].
 ///

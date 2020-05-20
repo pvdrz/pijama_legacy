@@ -14,14 +14,14 @@
 //!
 //! [`fn_rec_def`]: super::fn_rec_def
 //! [`call`]: super::call
-use nom::{error::ParseError, IResult};
-
 use nom::{
     bytes::complete::tag,
     character::complete::{char, multispace0, multispace1, space0, space1},
     combinator::{map, opt},
+    error::ParseError,
     multi::separated_list,
     sequence::{delimited, pair, preceded, terminated, tuple},
+    IResult,
 };
 
 use crate::{

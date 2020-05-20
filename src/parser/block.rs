@@ -4,17 +4,15 @@
 //!
 //! [`parser`]: crate::parser
 
-use nom::{error::ParseError, IResult};
-
 use nom::{
     character::complete::{line_ending, multispace0},
+    error::ParseError,
     multi::{separated_list, separated_nonempty_list},
     sequence::preceded,
+    IResult,
 };
 
-use crate::ast::Block;
-
-use crate::parser::node::node;
+use crate::{ast::Block, parser::node::node};
 
 /// Parser for [`Block`]s.
 ///

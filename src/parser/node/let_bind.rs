@@ -9,12 +9,12 @@
 //!
 //! Meaning that type bindings are optional.
 
-use nom::{error::ParseError, IResult};
-
 use nom::{
     character::complete::{char, space0},
     combinator::{map, opt},
+    error::ParseError,
     sequence::{preceded, tuple},
+    IResult,
 };
 
 use crate::{

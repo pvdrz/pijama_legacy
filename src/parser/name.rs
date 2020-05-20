@@ -3,12 +3,12 @@
 //! The entry point for this module is the [`name`] function. Names of variables in Pijama must be
 //! alphabetic `snake-case` strings. Certain keywords such as `fn`, `do` and `end` cannot be names,
 //! such keywords are in the [`KEYWORDS`] constant.
-use nom::{error::ParseError, IResult};
-
 use nom::{
     character::complete::{alpha1, char},
     combinator::{map, recognize, verify},
+    error::ParseError,
     multi::separated_nonempty_list,
+    IResult,
 };
 
 use crate::ast::Name;

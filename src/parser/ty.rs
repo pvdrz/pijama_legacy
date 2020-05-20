@@ -35,21 +35,22 @@
 //! [`Binding`]: crate::ty::Binding
 //! [`name`]: crate::parser::name
 
-use crate::ty::{Binding, Ty};
-
-use nom::{error::ParseError, IResult};
-
 use nom::{
     branch::alt,
     bytes::complete::tag,
     character::complete::{char, space0},
     combinator::{map, opt},
+    error::ParseError,
     sequence::{pair, preceded},
+    IResult,
 };
 
-use crate::parser::{
-    helpers::{in_brackets, surrounded},
-    name::name,
+use crate::{
+    parser::{
+        helpers::{in_brackets, surrounded},
+        name::name,
+    },
+    ty::{Binding, Ty},
 };
 
 /// Parser for all types.

@@ -39,11 +39,11 @@
 //! [`ty`]: crate::parser::ty
 //! [`node`]: crate::parser::node::node
 //! [`bin_op`]: crate::parser::bin_op
-use nom::{error::ParseError, IResult};
-
 use nom::{
     combinator::{cut, opt},
+    error::ParseError,
     sequence::pair,
+    IResult,
 };
 
 use crate::{

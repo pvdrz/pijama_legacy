@@ -5,9 +5,7 @@
 //!
 //! [`un_op`]: crate::parser::un_op
 
-use nom::{error::ParseError, IResult};
-
-use nom::{combinator::map, sequence::pair};
+use nom::{combinator::map, error::ParseError, sequence::pair, IResult};
 
 use crate::{
     ast::Node,

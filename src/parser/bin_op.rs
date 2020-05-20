@@ -8,14 +8,14 @@
 //! convention as here.
 //!
 //! [`binary_op`]: crate::parser::node::binary_op
-use nom::{error::ParseError, IResult};
-
 use nom::{
     branch::alt,
     bytes::complete::tag,
     character::complete::{char, space0},
     combinator::{map, not, peek},
+    error::ParseError,
     sequence::terminated,
+    IResult,
 };
 
 use crate::{

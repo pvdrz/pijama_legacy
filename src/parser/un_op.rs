@@ -4,13 +4,13 @@
 //!
 //! [`un_op`]: crate::parser::un_op::un_op
 //! [`unary_op`]: crate::parser::node::unary_op
-use nom::{error::ParseError, IResult};
-
 use nom::{
     branch::alt,
     character::complete::{char, space0},
     combinator::map,
+    error::ParseError,
     sequence::terminated,
+    IResult,
 };
 
 use crate::ast::UnOp::{self, *};

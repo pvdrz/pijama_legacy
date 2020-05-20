@@ -1,5 +1,7 @@
-use super::Term;
-use crate::ast::{BinOp, Literal, UnOp};
+use crate::{
+    ast::{BinOp, Literal, UnOp},
+    lir::Term,
+};
 
 /// Evaluation step for conditionals (if t1 then t2 else t3)
 #[inline(always)]

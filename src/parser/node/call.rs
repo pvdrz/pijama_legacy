@@ -6,13 +6,18 @@
 //! ```abnf
 //! call = "name "(" (node ("," node)*)? ")"
 //! ```
-use nom::{error::ParseError, IResult};
+use nom::{
+    character::complete::space0, combinator::map, error::ParseError, sequence::separated_pair,
+    IResult,
+};
 
-use nom::{character::complete::space0, combinator::map, sequence::separated_pair};
-
-use crate::{ast::Node, parser::name::name};
-
-use super::{fn_def::args, node};
+use crate::{
+    ast::Node,
+    parser::{
+        name::name,
+        node::{fn_def::args, node},
+    },
+};
 
 /// Parses a [`Node::Call`].
 ///
