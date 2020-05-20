@@ -19,17 +19,14 @@ pub fn expect_ty(expected: Ty, found: Located<Ty>) -> TyResult {
 }
 
 /// Macro version of `expect_ty` that accepts a comma separated list of types to check.
+#[macro_export]
 macro_rules! ensure_ty {
-    ($expected:path, $found:ident, $( $other:ident ),*) => {
-        // Using a closure to benefit from early exit via ? without interfering with the caller
-        move || -> TyResult<Ty> {
-            let ty = expect_ty($expected, $found)?;
-            $(
-                let ty = expect_ty($expected, $other)?;
-            )*
-            Ok(ty)
-        }()
-    }
+    ($expected:expr, $found:expr) => {
+        crate::ty::expect_ty($expected, $found)
+    };
+    ($expected:expr, $found:expr, $( $other:expr ),*) => {
+        crate::ty::expect_ty($expected, $found)$(.and_then(|_| crate::ty::expect_ty($expected, $other)))*
+    };
 }
 
 #[derive(Error, Debug)]
@@ -86,8 +83,8 @@ impl<'a> Context<'a> {
             Term::UnaryOp(op, term) => {
                 let ty = self.type_of(term.as_ref())?;
                 match op {
-                    UnOp::Neg => expect_ty(Ty::Int, ty)?,
-                    UnOp::Not => expect_ty(Ty::Bool, ty)?,
+                    UnOp::Neg => ensure_ty!(Ty::Int, ty)?,
+                    UnOp::Not => ensure_ty!(Ty::Bool, ty)?,
                 }
             }
             Term::BinaryOp(op, t1, t2) => {
@@ -110,7 +107,7 @@ impl<'a> Context<'a> {
                         Ty::Bool
                     }
                     BinOp::Eq | BinOp::Neq => {
-                        expect_ty(ty1.content, ty2)?;
+                        ensure_ty!(ty1.content, ty2)?;
                         Ty::Bool
                     }
                 }
@@ -120,7 +117,7 @@ impl<'a> Context<'a> {
                 let ty2 = self.type_of(t2.as_ref())?;
                 match ty1.content {
                     Ty::Arrow(ty11, ty) => {
-                        expect_ty(*ty11, ty2)?;
+                        ensure_ty!(*ty11, ty2)?;
                         *ty
                     }
                     _ => return Err(TyError::ExpectedFn(ty1)),
@@ -140,18 +137,18 @@ impl<'a> Context<'a> {
                 let ty1 = self.type_of(t1.as_ref())?;
                 let ty2 = self.type_of(t2.as_ref())?;
                 let ty3 = self.type_of(t3.as_ref())?;
-                expect_ty(Ty::Bool, ty1)?;
-                expect_ty(ty2.content, ty3)?
+                ensure_ty!(Ty::Bool, ty1)?;
+                ensure_ty!(ty2.content, ty3)?
             }
             Term::Seq(t1, t2) => {
                 let ty1 = self.type_of(t1.as_ref())?;
-                expect_ty(Ty::Unit, ty1)?;
+                ensure_ty!(Ty::Unit, ty1)?;
                 return self.type_of(t2.as_ref());
             }
             Term::Fix(t1) => {
                 let ty = self.type_of(t1.as_ref())?;
                 match ty.content {
-                    Ty::Arrow(box ty1, box ty2) => expect_ty(ty1, Located::new(ty2, ty.loc))?,
+                    Ty::Arrow(box ty1, box ty2) => ensure_ty!(ty1, Located::new(ty2, ty.loc))?,
                     _ => {
                         return Err(TyError::ExpectedFn(ty));
                     }
