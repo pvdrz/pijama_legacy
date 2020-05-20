@@ -10,6 +10,5 @@ jobs:
   fast_finish: true
 
 script:
-  - cargo build --verbose
+  - cargo build --verbose --all-targets
   - cargo test --verbose
-  - cargo bench --verbose --no-run
