@@ -9,13 +9,13 @@
 //!
 //! Thus, `else` blocks are optional and are represented as empty [`Block`]s inside the
 //! [`Node::Cond`] variant.
-use nom::{error::ParseError, IResult};
-
 use nom::{
     bytes::complete::tag,
     character::complete::{multispace0, multispace1},
     combinator::{map, opt},
+    error::ParseError,
     sequence::{delimited, pair, terminated, tuple},
+    IResult,
 };
 
 use crate::{

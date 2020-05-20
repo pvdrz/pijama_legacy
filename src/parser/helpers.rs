@@ -1,11 +1,11 @@
 //! Miscellaneous helper parsers.
 
-use nom::{error::ParseError, IResult};
-
 use nom::{
     character::complete::{char, multispace0},
     combinator::{cut, peek},
+    error::ParseError,
     sequence::{delimited, preceded},
+    IResult,
 };
 
 /// Helper parser for expressions surrounded by a delimiter.

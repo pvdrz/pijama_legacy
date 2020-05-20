@@ -3,7 +3,6 @@ use std::fmt;
 use crate::ast::*;
 
 use eval::*;
-
 use Term::*;
 
 mod ctx;

@@ -15,23 +15,24 @@ mod fn_rec_def;
 mod let_bind;
 mod unary_op;
 
-use nom::{error::ParseError, IResult};
-
 use nom::{
     branch::alt,
     bytes::complete::tag,
     character::complete::{multispace1, space1},
     combinator::map,
+    error::ParseError,
     sequence::{pair, tuple},
+    IResult,
 };
 
-use crate::ast::Node;
-
-use crate::parser::{
-    helpers::{in_brackets, lookahead},
-    literal::literal,
-    name::name,
-    un_op::un_op,
+use crate::{
+    ast::Node,
+    parser::{
+        helpers::{in_brackets, lookahead},
+        literal::literal,
+        name::name,
+        un_op::un_op,
+    },
 };
 
 /// Parser for [`Node`]s.

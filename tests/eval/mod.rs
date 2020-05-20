@@ -1,8 +1,8 @@
-use std::include_str;
+use std::{include_str, time::Duration};
+
+use pijama::{ast::Literal, lir::Term, run, LangResult};
 
 use crate::panic_after;
-use pijama::{ast::Literal, lir::Term, run, LangResult};
-use std::time::Duration;
 
 #[test]
 fn arithmetic() -> LangResult<()> {

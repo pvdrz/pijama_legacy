@@ -2,14 +2,14 @@
 //!
 //! The entry point for this module is the [`literal`] parser.
 
-use nom::{error::ParseError, IResult};
-
 use nom::{
     branch::alt,
     bytes::complete::tag,
     character::complete::{char, digit1},
     combinator::{map, map_opt, opt},
+    error::ParseError,
     sequence::pair,
+    IResult,
 };
 
 use crate::ast::Literal;
