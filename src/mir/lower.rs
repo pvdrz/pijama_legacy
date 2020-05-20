@@ -1,7 +1,7 @@
 use crate::{
     ast::{BinOp, Block, Literal, Located, Location, Name, Node, RecursionChecker, UnOp},
     mir::Term,
-    ty::{expect_ty, ty_check, Binding, Ty, TyResult},
+    ty::{expect_ty, ty_check, Binding, Ty, TyResult, TyError},
 };
 
 pub fn lower_blk<'a>(blk: Located<Block<'a>>) -> TyResult<Located<Term<'a>>> {
@@ -172,8 +172,8 @@ fn lower_fn_def<'a>(
             }
             // The function is recursive and does not have a return type
             (true, None) => {
-                // Error asking for the type
-                panic!("expected type")
+                // Return type is required, throw an error
+                return Err(TyError::Missing(loc));
             }
             // The function is not recursive and has a return type
             (false, Some(ty)) => {

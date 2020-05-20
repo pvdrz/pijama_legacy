@@ -38,6 +38,8 @@ pub enum TyError {
     ExpectedFn(Located<Ty>),
     #[error("Unexpected type: expected a basic type, found {0}")]
     ExpectedBasic(Located<Ty>),
+    #[error("Missing type: type cannot be inferred")]
+    Missing(Location),
 }
 
 impl TyError {
@@ -46,6 +48,7 @@ impl TyError {
             TyError::Unexpected { found, .. } => found.loc,
             TyError::Unbound(name) => name.loc,
             TyError::ExpectedBasic(ty) | TyError::ExpectedFn(ty) => ty.loc,
+            TyError::Missing(loc) => *loc,
         }
     }
 }
