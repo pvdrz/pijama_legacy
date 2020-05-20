@@ -12,7 +12,7 @@ impl Machine {
             // Dispatch step for unary operations
             UnaryOp(op, t1) => self.step_un_op(op, t1),
             // Dispatch step for beta reduction
-            App(box Abs(body), arg) => self.step_beta_reduction(body, arg),
+            App(box Abs(box body), box arg) => self.step_beta_reduction(body, arg),
             // Application with unevaluated first term (t1 t2)
             // Evaluate t1.
             App(ref mut t1, _) => (self.step_in_place(t1), term),
@@ -33,7 +33,6 @@ impl Machine {
     }
 
     /// Evaluation step for conditionals (if t1 then t2 else t3)
-    #[inline(always)]
     fn step_conditional(
         &mut self,
         mut t1: Box<Term>,
@@ -57,7 +56,6 @@ impl Machine {
     }
 
     /// Evaluation step for binary operations (t1 op t2)
-    #[inline(always)]
     fn step_bin_op(&mut self, op: BinOp, t1: Box<Term>, t2: Box<Term>) -> (bool, Term) {
         use BinOp::*;
         use Literal::*;
@@ -78,7 +76,6 @@ impl Machine {
     }
 
     /// Evaluation step for unary operations (op t1)
-    #[inline(always)]
     fn step_un_op(&mut self, op: UnOp, mut t1: Box<Term>) -> (bool, Term) {
         // If t1 is a literal, do the operation.
         if let box Term::Lit(lit) = t1 {
@@ -104,8 +101,7 @@ impl Machine {
     }
 
     /// Evaluation step for beta reduction ((λ. body) arg)
-    #[inline(always)]
-    fn step_beta_reduction(&mut self, mut body: Box<Term>, mut arg: Box<Term>) -> (bool, Term) {
+    fn step_beta_reduction(&mut self, mut body: Term, mut arg: Term) -> (bool, Term) {
         // increase the indices of the argument so they can coincide with the indices of the body.
         arg.shift(true, 0);
         // replace the index 0 by the argument inside the body.
@@ -114,7 +110,7 @@ impl Machine {
         // longer exists.
         body.shift(false, 0);
         // return the body
-        (true, *body)
+        (true, body)
     }
 }
 
