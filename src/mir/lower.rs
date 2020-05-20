@@ -1,7 +1,7 @@
 use crate::{
-    ast::{BinOp, Block, Literal, Located, Location, Name, Node, RecursionChecker, UnOp},
+    ast::{analysis::RecursionChecker, BinOp, Block, Literal, Located, Location, Name, Node, UnOp},
     mir::Term,
-    ty::{expect_ty, ty_check, Binding, Ty, TyResult, TyError},
+    ty::{expect_ty, ty_check, Binding, Ty, TyError, TyResult},
 };
 
 pub fn lower_blk<'a>(blk: Located<Block<'a>>) -> TyResult<Located<Term<'a>>> {
