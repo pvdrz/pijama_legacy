@@ -30,7 +30,7 @@ use crate::{
     },
 };
 
-/// Parses a [`FnDef`].
+/// Parses a [`Node::FnDef`].
 ///
 /// The spacing works the same as with function definitions module.
 pub fn fn_rec_def(input: Span) -> IResult<Located<Node>> {

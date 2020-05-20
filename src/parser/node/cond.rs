@@ -8,7 +8,7 @@
 //! ```
 //!
 //! Thus, `else` blocks are optional and are represented as empty [`Block`]s inside the
-//! [`Located::Cond`] variant.
+//! [`Node::Cond`] variant.
 use nom::{
     bytes::complete::tag,
     character::complete::{multispace0, multispace1},
@@ -22,7 +22,7 @@ use crate::{
     parser::{block::block1, IResult, Span},
 };
 
-/// Parses a [`Located::Cond`].
+/// Parses a [`Node::Cond`].
 ///
 /// The spacing is explained in the other parsers of this module.
 pub fn cond(input: Span) -> IResult<Located<Node>> {
@@ -44,7 +44,7 @@ pub fn cond(input: Span) -> IResult<Located<Node>> {
     )(input)
 }
 
-/// Parses the `if` block of a [`Located::Cond`].
+/// Parses the `if` block of a [`Node::Cond`].
 ///
 /// There must be at least one space or line break between the `if` and the first node in the
 /// block. There can be spaces or line breaks at the end of the block.
@@ -52,7 +52,7 @@ fn if_block(input: Span) -> IResult<Located<Block>> {
     delimited(pair(tag("if"), multispace1), block1, multispace0)(input)
 }
 
-/// Parses the `do` block of a [`Located::Cond`].
+/// Parses the `do` block of a [`Node::Cond`].
 ///
 /// There must be at least one space or line break between the `do` and the first node in the
 /// block. There can be spaces or line breaks at the end of the block.
@@ -60,7 +60,7 @@ fn do_block(input: Span) -> IResult<Located<Block>> {
     delimited(pair(tag("do"), multispace1), block1, multispace0)(input)
 }
 
-/// Parses the `else` block of a [`Located::Cond`].
+/// Parses the `else` block of a [`Node::Cond`].
 ///
 /// There must be at least one space or line break between the `else` and the first node in the
 /// block. There can be spaces or line breaks at the end of the block.
