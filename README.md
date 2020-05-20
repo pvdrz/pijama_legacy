@@ -34,7 +34,7 @@ of code are written using `do/end` and the types of terms are written using
 field:
 
 ```elixir
-fn rec fact(n: Int): Int do
+fn fact(n: Int): Int do
     if n <= 0 do
         1
     else

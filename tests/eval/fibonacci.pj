@@ -1,4 +1,4 @@
-fn rec fib(x: Int): Int do
+fn fib(x: Int): Int do
     if x == 0 do
         0
     else

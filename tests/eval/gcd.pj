@@ -1,4 +1,4 @@
-fn rec gcd(x: Int, y: Int): Int do
+fn gcd(x: Int, y: Int): Int do
     if y == 0 do
         x
     else

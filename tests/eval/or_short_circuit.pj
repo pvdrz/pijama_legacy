@@ -1,4 +1,4 @@
-fn rec loop(): Bool do
+fn loop(): Bool do
     if false do
         true
     else
