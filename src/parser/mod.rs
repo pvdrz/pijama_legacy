@@ -74,7 +74,7 @@ pub fn parse(input: &str) -> LangResult<Located<Block>> {
     }
 }
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Eq, PartialEq)]
 #[error("Parsing rule `{kind:?}` failed.")]
 pub struct ParseError<'a> {
     pub span: Span<'a>,

@@ -9,6 +9,6 @@ fn main() {
     let input = read_to_string(&path).unwrap();
     match run(&input) {
         Ok(term) => println!("{}", term),
-        Err(e) => display_error(&input, &path, e),
+        Err(e) => display_error(&input, &path, &e),
     }
 }

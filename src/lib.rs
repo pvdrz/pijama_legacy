@@ -1,5 +1,3 @@
-#![feature(box_patterns)]
-
 pub mod ast;
 pub mod lir;
 pub mod machine;
@@ -16,7 +14,7 @@ use ty::TyError;
 
 pub type LangResult<'a, T> = Result<T, LangError<'a>>;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Eq, PartialEq)]
 pub enum LangError<'a> {
     #[error("{0}")]
     Ty(#[from] TyError),
@@ -29,16 +27,17 @@ impl<'a> From<ParseError<'a>> for LangError<'a> {
         LangError::Parse(err)
     }
 }
-use codespan_reporting::{
-    diagnostic::{Diagnostic, Label},
-    files::SimpleFiles,
-    term::{
-        emit,
-        termcolor::{ColorChoice, StandardStream},
-    },
-};
 
-pub fn display_error<'a>(input: &str, path: &str, error: LangError<'a>) {
+pub fn display_error<'a>(input: &str, path: &str, error: &LangError<'a>) {
+    use codespan_reporting::{
+        diagnostic::{Diagnostic, Label},
+        files::SimpleFiles,
+        term::{
+            emit,
+            termcolor::{ColorChoice, StandardStream},
+        },
+    };
+
     let writer = StandardStream::stderr(ColorChoice::Always);
     let config = codespan_reporting::term::Config::default();
     let mut files = SimpleFiles::new();

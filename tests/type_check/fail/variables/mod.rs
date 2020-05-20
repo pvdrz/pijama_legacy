@@ -1,4 +1,14 @@
 use crate::test_type;
-use pijama::{ty::TyError, LangError};
+use pijama::{
+    ast::{Located, Location},
+    ty::TyError,
+    LangError,
+};
 
-test_type!(unbounded, Err(LangError::Ty(TyError::Unbound(_))));
+test_type!(
+    unbounded,
+    Err(LangError::Ty(TyError::Unbound(Located {
+        content: "x".to_owned(),
+        loc: Location { start: 0, end: 0 }
+    })))
+);

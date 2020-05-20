@@ -28,7 +28,7 @@ macro_rules! ensure_ty {
     };
 }
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Eq, PartialEq)]
 pub enum TyError {
     #[error("Unexpected type: expected {expected}, found {found}")]
     Unexpected { expected: Ty, found: Located<Ty> },
@@ -146,11 +146,10 @@ impl<'a> Context<'a> {
             }
             Term::Fix(t1) => {
                 let ty = self.type_of(t1.as_ref())?;
-                match ty.content {
-                    Ty::Arrow(box ty1, box ty2) => ensure_ty!(ty1, Located::new(ty2, ty.loc))?,
-                    _ => {
-                        return Err(TyError::ExpectedFn(ty));
-                    }
+                if let Ty::Arrow(ty1, ty2) = ty.content {
+                    ensure_ty!(*ty1, Located::new(*ty2, ty.loc))?
+                } else {
+                    return Err(TyError::ExpectedFn(ty));
                 }
             }
         };

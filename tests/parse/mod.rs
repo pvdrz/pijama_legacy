@@ -54,30 +54,34 @@ fn binary_op() -> LangResult<'static, ()> {
     let expected = vec![
         BinaryOp(
             Add,
-            box Name(ast::Name("a")).loc(),
-            box Name(ast::Name("b")).loc(),
+            Box::new(Name(ast::Name("a")).loc()),
+            Box::new(Name(ast::Name("b")).loc()),
         )
         .loc(),
         BinaryOp(
             Add,
-            box BinaryOp(
-                Add,
-                box Name(ast::Name("a")).loc(),
-                box Name(ast::Name("b")).loc(),
-            )
-            .loc(),
-            box Name(ast::Name("c")).loc(),
+            Box::new(
+                BinaryOp(
+                    Add,
+                    Box::new(Name(ast::Name("a")).loc()),
+                    Box::new(Name(ast::Name("b")).loc()),
+                )
+                .loc(),
+            ),
+            Box::new(Name(ast::Name("c")).loc()),
         )
         .loc(),
         BinaryOp(
             Add,
-            box Name(ast::Name("a")).loc(),
-            box BinaryOp(
-                Add,
-                box Name(ast::Name("b")).loc(),
-                box Name(ast::Name("c")).loc(),
-            )
-            .loc(),
+            Box::new(Name(ast::Name("a")).loc()),
+            Box::new(
+                BinaryOp(
+                    Add,
+                    Box::new(Name(ast::Name("b")).loc()),
+                    Box::new(Name(ast::Name("c")).loc()),
+                )
+                .loc(),
+            ),
         )
         .loc(),
     ];
@@ -93,14 +97,14 @@ fn unary_op() -> LangResult<'static, ()> {
     let input = include_str!("un_op.pj");
     let result = parse(input)?.content;
     let expected = vec![
-        UnaryOp(UnOp::Neg, box Name(ast::Name("x")).loc()).loc(),
-        UnaryOp(UnOp::Not, box Name(ast::Name("x")).loc()).loc(),
+        UnaryOp(UnOp::Neg, Box::new(Name(ast::Name("x")).loc())).loc(),
+        UnaryOp(UnOp::Not, Box::new(Name(ast::Name("x")).loc())).loc(),
         UnaryOp(
             UnOp::Not,
-            box UnaryOp(UnOp::Not, box Name(ast::Name("x")).loc()).loc(),
+            Box::new(UnaryOp(UnOp::Not, Box::new(Name(ast::Name("x")).loc())).loc()),
         )
         .loc(),
-        UnaryOp(UnOp::Not, box Name(ast::Name("x")).loc()).loc(),
+        UnaryOp(UnOp::Not, Box::new(Name(ast::Name("x")).loc())).loc(),
     ];
 
     assert_eq!(expected[0], result[0], "minus");
@@ -117,30 +121,34 @@ fn logic_op() -> LangResult<'static, ()> {
     let expected = vec![
         BinaryOp(
             And,
-            box Name(ast::Name("a")).loc(),
-            box Name(ast::Name("b")).loc(),
+            Box::new(Name(ast::Name("a")).loc()),
+            Box::new(Name(ast::Name("b")).loc()),
         )
         .loc(),
         BinaryOp(
             Or,
-            box BinaryOp(
-                And,
-                box Name(ast::Name("a")).loc(),
-                box Name(ast::Name("b")).loc(),
-            )
-            .loc(),
-            box Name(ast::Name("c")).loc(),
+            Box::new(
+                BinaryOp(
+                    And,
+                    Box::new(Name(ast::Name("a")).loc()),
+                    Box::new(Name(ast::Name("b")).loc()),
+                )
+                .loc(),
+            ),
+            Box::new(Name(ast::Name("c")).loc()),
         )
         .loc(),
         BinaryOp(
             And,
-            box Name(ast::Name("a")).loc(),
-            box BinaryOp(
-                Or,
-                box Name(ast::Name("b")).loc(),
-                box Name(ast::Name("c")).loc(),
-            )
-            .loc(),
+            Box::new(Name(ast::Name("a")).loc()),
+            Box::new(
+                BinaryOp(
+                    Or,
+                    Box::new(Name(ast::Name("b")).loc()),
+                    Box::new(Name(ast::Name("c")).loc()),
+                )
+                .loc(),
+            ),
         )
         .loc(),
     ];
@@ -158,40 +166,48 @@ fn bit_op() -> LangResult<'static, ()> {
     let expected = vec![
         BinaryOp(
             BitAnd,
-            box Name(ast::Name("a")).loc(),
-            box Name(ast::Name("b")).loc(),
+            Box::new(Name(ast::Name("a")).loc()),
+            Box::new(Name(ast::Name("b")).loc()),
         )
         .loc(),
         BinaryOp(
             BitXor,
-            box BinaryOp(
-                BitOr,
-                box BinaryOp(
-                    BitAnd,
-                    box Name(ast::Name("a")).loc(),
-                    box Name(ast::Name("b")).loc(),
-                )
-                .loc(),
-                box Name(ast::Name("c")).loc(),
-            )
-            .loc(),
-            box Name(ast::Name("d")).loc(),
-        )
-        .loc(),
-        BinaryOp(
-            BitXor,
-            box BinaryOp(
-                BitAnd,
-                box Name(ast::Name("a")).loc(),
-                box BinaryOp(
+            Box::new(
+                BinaryOp(
                     BitOr,
-                    box Name(ast::Name("b")).loc(),
-                    box Name(ast::Name("c")).loc(),
+                    Box::new(
+                        BinaryOp(
+                            BitAnd,
+                            Box::new(Name(ast::Name("a")).loc()),
+                            Box::new(Name(ast::Name("b")).loc()),
+                        )
+                        .loc(),
+                    ),
+                    Box::new(Name(ast::Name("c")).loc()),
                 )
                 .loc(),
-            )
-            .loc(),
-            box Name(ast::Name("d")).loc(),
+            ),
+            Box::new(Name(ast::Name("d")).loc()),
+        )
+        .loc(),
+        BinaryOp(
+            BitXor,
+            Box::new(
+                BinaryOp(
+                    BitAnd,
+                    Box::new(Name(ast::Name("a")).loc()),
+                    Box::new(
+                        BinaryOp(
+                            BitOr,
+                            Box::new(Name(ast::Name("b")).loc()),
+                            Box::new(Name(ast::Name("c")).loc()),
+                        )
+                        .loc(),
+                    ),
+                )
+                .loc(),
+            ),
+            Box::new(Name(ast::Name("d")).loc()),
         )
         .loc(),
     ];
@@ -207,38 +223,47 @@ fn let_bind() -> LangResult<'static, ()> {
     let input = include_str!("let_bind.pj");
     let result = parse(input)?.content;
     let expected = vec![
-        LetBind(ast::Name("x").loc(), None, box Name(ast::Name("y")).loc()).loc(),
         LetBind(
             ast::Name("x").loc(),
             None,
-            box BinaryOp(
-                Add,
-                box Name(ast::Name("y")).loc(),
-                box Name(ast::Name("z")).loc(),
-            )
-            .loc(),
+            Box::new(Name(ast::Name("y")).loc()),
+        )
+        .loc(),
+        LetBind(
+            ast::Name("x").loc(),
+            None,
+            Box::new(
+                BinaryOp(
+                    Add,
+                    Box::new(Name(ast::Name("y")).loc()),
+                    Box::new(Name(ast::Name("z")).loc()),
+                )
+                .loc(),
+            ),
         )
         .loc(),
         LetBind(
             ast::Name("x").loc(),
             Some(Ty::Int.loc()),
-            box Name(ast::Name("y")).loc(),
+            Box::new(Name(ast::Name("y")).loc()),
         )
         .loc(),
         LetBind(
             ast::Name("foo").loc(),
             None,
-            box FnDef(
-                None,
-                vec![Binding {
-                    name: ast::Name("x"),
-                    ty: Ty::Int,
-                }
-                .loc()],
-                vec![Name(ast::Name("x")).loc()].loc(),
-                None,
-            )
-            .loc(),
+            Box::new(
+                FnDef(
+                    None,
+                    vec![Binding {
+                        name: ast::Name("x"),
+                        ty: Ty::Int,
+                    }
+                    .loc()],
+                    vec![Name(ast::Name("x")).loc()].loc(),
+                    None,
+                )
+                .loc(),
+            ),
         )
         .loc(),
     ];
@@ -376,46 +401,54 @@ fn precedence() -> LangResult<'static, ()> {
     let expected = vec![
         BinaryOp(
             Add,
-            box Name(ast::Name("a")).loc(),
-            box BinaryOp(
-                Mul,
-                box Name(ast::Name("b")).loc(),
-                box Name(ast::Name("c")).loc(),
-            )
-            .loc(),
+            Box::new(Name(ast::Name("a")).loc()),
+            Box::new(
+                BinaryOp(
+                    Mul,
+                    Box::new(Name(ast::Name("b")).loc()),
+                    Box::new(Name(ast::Name("c")).loc()),
+                )
+                .loc(),
+            ),
         )
         .loc(),
         BinaryOp(
             BitAnd,
-            box Name(ast::Name("a")).loc(),
-            box BinaryOp(
-                Add,
-                box Name(ast::Name("b")).loc(),
-                box Name(ast::Name("c")).loc(),
-            )
-            .loc(),
+            Box::new(Name(ast::Name("a")).loc()),
+            Box::new(
+                BinaryOp(
+                    Add,
+                    Box::new(Name(ast::Name("b")).loc()),
+                    Box::new(Name(ast::Name("c")).loc()),
+                )
+                .loc(),
+            ),
         )
         .loc(),
         BinaryOp(
             Eq,
-            box Name(ast::Name("a")).loc(),
-            box BinaryOp(
-                BitAnd,
-                box Name(ast::Name("b")).loc(),
-                box Name(ast::Name("c")).loc(),
-            )
-            .loc(),
+            Box::new(Name(ast::Name("a")).loc()),
+            Box::new(
+                BinaryOp(
+                    BitAnd,
+                    Box::new(Name(ast::Name("b")).loc()),
+                    Box::new(Name(ast::Name("c")).loc()),
+                )
+                .loc(),
+            ),
         )
         .loc(),
         BinaryOp(
             And,
-            box Name(ast::Name("a")).loc(),
-            box BinaryOp(
-                Eq,
-                box Name(ast::Name("b")).loc(),
-                box Name(ast::Name("c")).loc(),
-            )
-            .loc(),
+            Box::new(Name(ast::Name("a")).loc()),
+            Box::new(
+                BinaryOp(
+                    Eq,
+                    Box::new(Name(ast::Name("b")).loc()),
+                    Box::new(Name(ast::Name("c")).loc()),
+                )
+                .loc(),
+            ),
         )
         .loc(),
     ];
@@ -433,50 +466,62 @@ fn cmp_and_shift() -> LangResult<'static, ()> {
     let expected = vec![
         BinaryOp(
             Lt,
-            box BinaryOp(
-                Shl,
-                box Name(ast::Name("a")).loc(),
-                box Name(ast::Name("b")).loc(),
-            )
-            .loc(),
-            box BinaryOp(
-                Shl,
-                box Name(ast::Name("c")).loc(),
-                box Name(ast::Name("d")).loc(),
-            )
-            .loc(),
+            Box::new(
+                BinaryOp(
+                    Shl,
+                    Box::new(Name(ast::Name("a")).loc()),
+                    Box::new(Name(ast::Name("b")).loc()),
+                )
+                .loc(),
+            ),
+            Box::new(
+                BinaryOp(
+                    Shl,
+                    Box::new(Name(ast::Name("c")).loc()),
+                    Box::new(Name(ast::Name("d")).loc()),
+                )
+                .loc(),
+            ),
         )
         .loc(),
         BinaryOp(
             Gt,
-            box BinaryOp(
-                Shr,
-                box Name(ast::Name("a")).loc(),
-                box Name(ast::Name("b")).loc(),
-            )
-            .loc(),
-            box BinaryOp(
-                Shr,
-                box Name(ast::Name("c")).loc(),
-                box Name(ast::Name("d")).loc(),
-            )
-            .loc(),
+            Box::new(
+                BinaryOp(
+                    Shr,
+                    Box::new(Name(ast::Name("a")).loc()),
+                    Box::new(Name(ast::Name("b")).loc()),
+                )
+                .loc(),
+            ),
+            Box::new(
+                BinaryOp(
+                    Shr,
+                    Box::new(Name(ast::Name("c")).loc()),
+                    Box::new(Name(ast::Name("d")).loc()),
+                )
+                .loc(),
+            ),
         )
         .loc(),
         BinaryOp(
             Shr,
-            box BinaryOp(
-                Shr,
-                box Name(ast::Name("a")).loc(),
-                box BinaryOp(
-                    Gt,
-                    box Name(ast::Name("b")).loc(),
-                    box Name(ast::Name("c")).loc(),
+            Box::new(
+                BinaryOp(
+                    Shr,
+                    Box::new(Name(ast::Name("a")).loc()),
+                    Box::new(
+                        BinaryOp(
+                            Gt,
+                            Box::new(Name(ast::Name("b")).loc()),
+                            Box::new(Name(ast::Name("c")).loc()),
+                        )
+                        .loc(),
+                    ),
                 )
                 .loc(),
-            )
-            .loc(),
-            box Name(ast::Name("d")).loc(),
+            ),
+            Box::new(Name(ast::Name("d")).loc()),
         )
         .loc(),
     ];
