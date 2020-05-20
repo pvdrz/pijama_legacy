@@ -6,6 +6,7 @@ mod eval;
 mod parse;
 mod type_check;
 mod util;
+mod ast;
 
 fn panic_after<T, F>(d: Duration, f: F) -> T
 where

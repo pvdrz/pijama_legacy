@@ -1,0 +1,8 @@
+fn foo(x: Int) do
+    fn bar(x: Int) do
+        foo(x) + bar(x)
+    end
+    foo(x)
+end
+
+foo(1)
