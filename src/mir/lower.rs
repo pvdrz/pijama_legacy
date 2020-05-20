@@ -152,8 +152,10 @@ fn lower_fn_def<'a>(
     }
 
     if let Some(name) = opt_name {
-        if is_rec {
-            if let Some(ty) = opt_ty {
+        match (is_rec, opt_ty) {
+            // The function is recursive and has a return type
+            (true, Some(ty)) => {
+                // Must be wrapped inside a `Term::Fix`
                 term = Located::new(
                     Term::Fix(Box::new(Located::new(
                         Term::Abs(
@@ -167,13 +169,22 @@ fn lower_fn_def<'a>(
                     ))),
                     loc,
                 );
-            } else {
-                panic!("expected type");
             }
-        } else if let Some(ty) = opt_ty {
-            let term_ty = ty_check(&term)?;
-            expect_ty(ty, term_ty)?;
-        }
+            // The function is recursive and does not have a return type
+            (true, None) => {
+                // Error asking for the type
+                panic!("expected type")
+            }
+            // The function is not recursive and has a return type
+            (false, Some(ty)) => {
+                // Check that the inferred type matches the user type.
+                let term_ty = ty_check(&term)?;
+                expect_ty(ty, term_ty)?;
+            }
+            // The function is not recursive and does not have a return type
+            (false, None) => (),
+        };
+
         term = Located::new(
             Term::Let(
                 name,
@@ -185,6 +196,10 @@ fn lower_fn_def<'a>(
             ),
             loc,
         );
+    } else if let Some(ty) = opt_ty {
+        // Check that the inferred type matches the user type.
+        let term_ty = ty_check(&term)?;
+        expect_ty(ty, term_ty)?;
     }
 
     Ok(term)
