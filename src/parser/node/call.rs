@@ -10,8 +10,7 @@ use nom::{error::ParseError, IResult};
 
 use nom::{character::complete::space0, combinator::map, sequence::separated_pair};
 
-use crate::ast::Node;
-use crate::parser::name::name;
+use crate::{ast::Node, parser::name::name};
 
 use super::{fn_def::args, node};
 

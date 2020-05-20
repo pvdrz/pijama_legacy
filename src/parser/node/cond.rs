@@ -18,8 +18,10 @@ use nom::{
     sequence::{delimited, pair, terminated, tuple},
 };
 
-use crate::ast::{Block, Node};
-use crate::parser::block::block1;
+use crate::{
+    ast::{Block, Node},
+    parser::block::block1,
+};
 
 /// Parses a [`Node::Cond`].
 ///

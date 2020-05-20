@@ -24,12 +24,14 @@ use nom::{
     sequence::{delimited, pair, preceded, terminated, tuple},
 };
 
-use crate::ast::{Block, Name, Node};
-use crate::parser::{
-    block::block0,
-    helpers::{in_brackets, surrounded},
-    name::name,
-    ty::{binding, colon_ty},
+use crate::{
+    ast::{Block, Name, Node},
+    parser::{
+        block::block0,
+        helpers::{in_brackets, surrounded},
+        name::name,
+        ty::{binding, colon_ty},
+    },
 };
 
 /// Parses a [`Node::FnDef`].

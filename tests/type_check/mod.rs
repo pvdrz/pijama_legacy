@@ -1,5 +1,4 @@
-use pijama::ty::Ty;
-use pijama::{mir, parser, ty, LangResult};
+use pijama::{mir, parser, ty, ty::Ty, LangResult};
 
 mod fail;
 mod pass;
