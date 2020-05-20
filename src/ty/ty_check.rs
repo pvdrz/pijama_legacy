@@ -19,7 +19,6 @@ pub fn expect_ty(expected: Ty, found: Located<Ty>) -> TyResult {
 }
 
 /// Macro version of `expect_ty` that accepts a comma separated list of types to check.
-#[macro_export]
 macro_rules! ensure_ty {
     ($expected:expr, $found:expr) => {
         crate::ty::expect_ty($expected, $found)

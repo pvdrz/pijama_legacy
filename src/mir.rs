@@ -2,8 +2,7 @@ use std::fmt;
 
 use crate::{
     ast::*,
-    ensure_ty,
-    ty::{ty_check, Binding, Ty, TyResult},
+    ty::{expect_ty, ty_check, Binding, Ty, TyResult},
     LangError, LangResult,
 };
 
@@ -157,7 +156,7 @@ fn lower_let_bind<'a>(
 
     if let Some(ty) = opt_ty {
         let term_ty = ty_check(&term)?;
-        ensure_ty!(ty.content, term_ty)?;
+        expect_ty(ty.content, term_ty)?;
     }
 
     Ok(Located::new(
@@ -197,7 +196,7 @@ fn lower_fn_def<'a>(
 
     if let Some(ty) = opt_ty {
         let term_ty = ty_check(&term)?;
-        ensure_ty!(ty, term_ty)?;
+        expect_ty(ty, term_ty)?;
     }
 
     if let Some(name) = opt_name {
