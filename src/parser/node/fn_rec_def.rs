@@ -33,6 +33,8 @@ use crate::{
 /// Parses a [`Node::FnDef`].
 ///
 /// The spacing works the same as with function definitions module.
+///
+/// The location of the returned node matches the start of the `fn` and the end of the `end`.
 pub fn fn_rec_def(input: Span) -> IResult<Located<Node>> {
     map(
         tuple((
@@ -56,6 +58,8 @@ pub fn fn_rec_def(input: Span) -> IResult<Located<Node>> {
 ///
 /// This parser requires that the name is preceded by `"fn"`, at least one space, `"rec"` and at
 /// least another space.
+///
+/// The location of the returned node matches the start of the `fn` and the end of the name.
 fn fn_rec_name(input: Span) -> IResult<Located<Located<Name>>> {
     map(
         separated_pair(

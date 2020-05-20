@@ -36,6 +36,9 @@
 //! Every binary operator here is considered to be left-associative, in contrast with the `->` for
 //! in the [`ty`] module which is right-associative.
 //!
+//! The location of the returned binary operations matches the start of the first operand and the
+//! end of the second.
+//!
 //! [`ty`]: crate::parser::ty
 //! [`node`]: crate::parser::node::node
 //! [`bin_op`]: crate::parser::bin_op

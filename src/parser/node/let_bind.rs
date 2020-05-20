@@ -4,7 +4,7 @@
 //! the rule
 //!
 //! ```abnf
-//! let_bind = name (":" ty)? "=" expr
+//! let_bind = name (":" ty)? "=" node
 //! ```
 //!
 //! Meaning that type bindings are optional.
@@ -22,6 +22,9 @@ use crate::{
 /// Parses a [`Node::LetBind`].
 ///
 /// There can be any number of spaces surrounding the `=` sign.
+///
+/// The location of the returned node matches the start of the name and the end of the node after
+/// the `=`.
 pub fn let_bind(input: Span) -> IResult<Located<Node>> {
     map(
         tuple((

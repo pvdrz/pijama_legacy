@@ -13,6 +13,8 @@ use crate::{
 };
 
 /// Parses a [`Node::UnaryOp`].
+///
+/// The location of the returned node matches the start of the unary operation and the end of the inner node.
 pub fn unary_op(input: Span) -> IResult<Located<Node>> {
     map(tuple((position, un_op, node)), move |(sp, un_op, node)| {
         let loc = Location::from(sp) + node.loc;

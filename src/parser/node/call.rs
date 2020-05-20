@@ -22,6 +22,9 @@ use crate::{
 /// This parser admits:
 /// - Spaces after the name of the function.
 /// - Spaces before and spaces or line breaks after each comma.
+///
+/// The location of the returned node matches the start of the name and the end of the node after
+/// the `=`.
 pub fn call(input: Span) -> IResult<Located<Node>> {
     map(separated_pair(name, space0, args(node)), |(name, args)| {
         let loc = name.loc + args.loc;

@@ -60,6 +60,9 @@ use crate::{
 /// `Bool -> (Int -> Unit)`.
 ///
 /// There can be any number of spaces surrounding the `->`, including no spaces at all.
+///
+/// If the returned type is an `Arrow`, the location matches the start of the first type
+/// and the end of the second. For any other case refer to the [`base_ty`] docs.
 pub fn ty(input: Span) -> IResult<Located<Ty>> {
     let (rem, t1) = base_ty(input)?;
     if let (rem, Some(t2)) = opt(preceded(surrounded(tag("->"), space0), ty))(rem)? {
@@ -112,6 +115,10 @@ pub fn colon_ty(input: Span) -> IResult<Located<Ty>> {
 /// round brackets. It returns a [`Ty`].
 ///
 /// There can be any number of spaces between the brackets and its contents.
+///
+/// If the returned type is one of the string slices mentioned above, the location matches the one
+/// of the slice. If the returned type is surrounded by brackets, the location matches the span of
+/// the brackets.
 fn base_ty(input: Span) -> IResult<Located<Ty>> {
     alt((
         map(tag("Bool"), |span: Span| Located::new(Ty::Bool, span)),

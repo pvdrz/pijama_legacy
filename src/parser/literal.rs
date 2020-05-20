@@ -18,6 +18,9 @@ use crate::{
 ///
 /// The only valid inputs for this parser are `"true"`, `"false"`, `"unit"` or a signed integer
 /// (which is parsed by the [`number`](number) parser).
+///
+/// The location of this element matches the start and end of the inputs mentioned above inside the
+/// source code.
 pub fn literal(input: Span) -> IResult<Located<Literal>> {
     alt((
         map(tag("true"), |span: Span| {

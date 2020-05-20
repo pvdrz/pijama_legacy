@@ -1,8 +1,14 @@
 use std::fmt::{Debug, Display, Formatter, Result};
 
+
+/// Represents a location in the source code file.
+///
+/// Both the start and end correspond to locations reported by `nom_locate`.
 #[derive(Debug, Clone, Copy)]
 pub struct Location {
+    /// Start of the location
     pub start: usize,
+    /// End of the location
     pub end: usize,
 }
 
@@ -12,6 +18,8 @@ impl Location {
     }
 }
 
+/// Adding two locations `l1` and `l2` returns a location starting in `l1.start` and ending in
+/// `l2.end`.
 impl std::ops::Add for Location {
     type Output = Self;
     fn add(mut self, other: Self) -> Self {
@@ -20,9 +28,14 @@ impl std::ops::Add for Location {
     }
 }
 
+/// Wrapper type with a `Location` field.
+///
+/// It is used to add a location to elements in the AST and intermediate representations.
 #[derive(Debug)]
 pub struct Located<T: Debug> {
+    /// Content of the wrapper.
     pub content: T,
+    /// Location of `content` in the source file.
     pub loc: Location,
 }
 

@@ -41,6 +41,8 @@ use crate::{
 /// - Spaces or line breaks after the `")"` at the end of the arguments.
 ///
 /// Other spacing details are in the docs for the other parsers of this module.
+///
+/// The location of the returned node matches the start of the `fn` and the end of the `end`.
 pub fn fn_def(input: Span) -> IResult<Located<Node>> {
     map(
         tuple((
@@ -64,6 +66,8 @@ pub fn fn_def(input: Span) -> IResult<Located<Node>> {
 ///
 /// This parser requires that the name is preceded by `"fn"` and at least one space. If the
 /// function does not have a name, it need to parse the `"fn"` only.
+///
+/// The location of the returned node matches the start of the `fn` and the end of the name.
 fn fn_name(input: Span) -> IResult<Located<Option<Located<Name>>>> {
     map(
         separated_pair(position, tag("fn"), opt(preceded(space1, name))),
@@ -86,6 +90,8 @@ fn fn_name(input: Span) -> IResult<Located<Option<Located<Name>>>> {
 ///
 /// The arguments must be surrounded by brackets and seperated by commas. There can be spaces
 /// before the comma and spaces or line breaks after the comma.
+///
+/// The location of the returned vector starts in `(` and ends in `)`.
 pub fn args<'a, O: std::fmt::Debug>(
     content: impl Fn(Span<'a>) -> IResult<'a, O>,
 ) -> impl Fn(Span<'a>) -> IResult<'a, Located<Vec<O>>> {
@@ -100,6 +106,8 @@ pub fn args<'a, O: std::fmt::Debug>(
 /// The body is parsed as a `Block`. This parser requires that the body is preceded by `"do"` and
 /// at least one space or line break, and followed by zero or more spaces or line breaks and an
 /// `"end"`.
+///
+/// The location of the returned vector starts in `do` and ends in `end`.
 pub fn fn_body(input: Span) -> IResult<Located<Located<Block>>> {
     map(
         tuple((

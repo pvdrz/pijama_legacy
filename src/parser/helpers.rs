@@ -28,6 +28,8 @@ pub fn surrounded<I, O, O2, E: ParseError<I>>(
 ///
 /// The output only contains the expression without the brackets and there can be any number of
 /// spaces or line breaks between the actual content and the brackets.
+///
+/// The location of this element starts in the `(` and ends in the `)`.
 pub fn in_brackets<'a, O: std::fmt::Debug, E: ParseError<Span<'a>>>(
     content: impl Fn(Span<'a>) -> IResult<Span<'a>, O, E>,
 ) -> impl Fn(Span<'a>) -> IResult<Span<'a>, Located<O>, E> {

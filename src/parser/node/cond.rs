@@ -25,6 +25,8 @@ use crate::{
 /// Parses a [`Node::Cond`].
 ///
 /// The spacing is explained in the other parsers of this module.
+///
+/// The location of the returned node matches the start of the `if` and the end of the `end`.
 pub fn cond(input: Span) -> IResult<Located<Node>> {
     map(
         tuple((
@@ -48,6 +50,8 @@ pub fn cond(input: Span) -> IResult<Located<Node>> {
 ///
 /// There must be at least one space or line break between the `if` and the first node in the
 /// block. There can be spaces or line breaks at the end of the block.
+///
+/// The location of the returned block ignores the `if` and spaces surrounding the block.
 fn if_block(input: Span) -> IResult<Located<Block>> {
     delimited(pair(tag("if"), multispace1), block1, multispace0)(input)
 }
@@ -56,6 +60,8 @@ fn if_block(input: Span) -> IResult<Located<Block>> {
 ///
 /// There must be at least one space or line break between the `do` and the first node in the
 /// block. There can be spaces or line breaks at the end of the block.
+///
+/// The location of the returned block ignores the `do` and spaces surrounding the block.
 fn do_block(input: Span) -> IResult<Located<Block>> {
     delimited(pair(tag("do"), multispace1), block1, multispace0)(input)
 }
@@ -64,6 +70,8 @@ fn do_block(input: Span) -> IResult<Located<Block>> {
 ///
 /// There must be at least one space or line break between the `else` and the first node in the
 /// block. There can be spaces or line breaks at the end of the block.
+///
+/// The location of the returned block ignores the `else` and spaces surrounding the block.
 fn else_block(input: Span) -> IResult<Located<Block>> {
     delimited(pair(tag("else"), multispace1), block1, multispace0)(input)
 }
