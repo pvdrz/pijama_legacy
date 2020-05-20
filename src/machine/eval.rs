@@ -22,7 +22,7 @@ impl Machine {
                 }
             }
             // Dispatch step for conditionals
-            Cond(t1, t2, t3) => self.step_conditional(t1, t2, t3),
+            Cond(t1, t2, t3) => self.step_conditional(*t1, *t2, *t3),
             // Dispatch step for fixed point operation
             Fix(t1) => self.step_fix(*t1),
             // Any other term stops the evaluation.
@@ -38,25 +38,23 @@ impl Machine {
     }
 
     /// Evaluation step for conditionals (if t1 then t2 else t3)
-    fn step_conditional(
-        &mut self,
-        mut t1: Box<Term>,
-        t2: Box<Term>,
-        t3: Box<Term>,
-    ) -> (bool, Term) {
+    fn step_conditional(&mut self, mut t1: Term, t2: Term, t3: Term) -> (bool, Term) {
         // If t1 is a literal, we should be able to evaluate the conditional
-        if let Term::Lit(lit) = *t1 {
+        if let Term::Lit(lit) = t1 {
             match lit {
                 // If t1 is true, evaluate to t2.
-                Literal::Bool(true) => (true, *t2),
+                Literal::Bool(true) => (true, t2),
                 // If t1 is false, evaluate to t3.
-                Literal::Bool(false) => (true, *t3),
+                Literal::Bool(false) => (true, t3),
                 // If t1 is any other literal, panic
                 lit => panic!("Found non-boolean literal {} in condition", lit),
             }
         // If t1 is not a literal, evaluate it in place and return (if t1 then t2 else t3)
         } else {
-            (self.step_in_place(&mut t1), Term::Cond(t1, t2, t3))
+            (
+                self.step_in_place(&mut t1),
+                Term::Cond(Box::new(t1), Box::new(t2), Box::new(t3)),
+            )
         }
     }
 
