@@ -4,7 +4,7 @@ use crate::ast::*;
 
 use Term::*;
 
-mod ctx;
+mod lower;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Term {
@@ -37,7 +37,7 @@ impl fmt::Display for Term {
 
 impl Term {
     pub fn from_mir(mir: Located<crate::mir::Term>) -> Self {
-        ctx::remove_names(mir)
+        lower::remove_names(mir)
     }
 
     pub(crate) fn shift(&mut self, up: bool, cutoff: usize) {
@@ -112,3 +112,4 @@ impl Term {
         }
     }
 }
+
