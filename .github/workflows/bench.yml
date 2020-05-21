@@ -1,0 +1,27 @@
+name: Pijama's benchmark
+on:
+    push:
+        branches:
+            - master
+
+jobs:
+    benchmark:
+        name: Continuous Benchmark
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+            - run: rustup toolchain update stable && rustup default stable
+            - name: Run benchmark
+              run: cargo bench --bench eval -- --output-format bencher | tee output.txt
+            - name: Store benchmark result
+              uses: rhysd/github-action-benchmark@v1.8.0
+              with:
+                  name: Rust Benchmark
+                  tool: 'cargo'
+                  output-file-path: output.txt
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+                  auto-push: true
+                  alert-threshold: '150%'
+                  comment-on-alert: true
+                  fail-on-alert: true
+                  alert-comment-cc-users: '@christianpoveda'
