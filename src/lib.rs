@@ -5,6 +5,8 @@ pub mod mir;
 pub mod parser;
 pub mod ty;
 
+use std::io::Write;
+
 use thiserror::Error;
 
 use ast::Location;
@@ -59,10 +61,14 @@ pub fn display_error<'a>(input: &str, path: &str, error: &LangError<'a>) {
 }
 
 pub fn run(input: &str) -> LangResult<lir::Term> {
+    run_with_machine(input, Machine::default())
+}
+
+pub fn run_with_machine<W: Write>(input: &str, mut machine: Machine<W>) -> LangResult<lir::Term> {
     let ast = parser::parse(input)?;
     let mir = mir::Term::from_ast(ast)?;
     let _ty = ty::ty_check(&mir)?;
     let lir = lir::Term::from_mir(mir);
-    let res = Machine::default().evaluate(lir);
+    let res = machine.evaluate(lir);
     Ok(res)
 }

@@ -27,17 +27,20 @@ use nom::{
     character::complete::multispace0,
     combinator::all_consuming,
     error::{ErrorKind, ParseError},
+    lib::std::fmt::Formatter,
     Err::*,
 };
 
 use crate::{
     ast::{Block, Located, Location},
+    LangError::Parse,
     LangResult,
 };
 
-use crate::LangError::Parse;
 use block::block0;
 use helpers::surrounded;
+
+use std::{fmt, fmt::Display};
 
 mod bin_op;
 mod block;
@@ -45,6 +48,7 @@ mod helpers;
 mod literal;
 mod name;
 mod node;
+mod primitive;
 mod ty;
 mod un_op;
 
@@ -75,11 +79,20 @@ pub fn parse(input: &str) -> LangResult<Located<Block>> {
 }
 
 #[derive(Error, Debug, Eq, PartialEq)]
-#[error("Parsing error: {}", .context.as_ref().unwrap_or(&"Parsing rule `{kind:?}` failed.".to_string()))]
 pub struct ParsingError<'a> {
     pub span: Span<'a>,
     kind: ErrorKind,
     context: Option<String>,
+}
+
+impl<'a> Display for ParsingError<'a> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "Parsing error: ")?;
+        match self.context.as_ref() {
+            Some(context) => write!(f, "{}", context),
+            None => write!(f, "Parsing rule `{:?}` failed.", self.kind),
+        }
+    }
 }
 
 impl<'a> ParsingError<'a> {

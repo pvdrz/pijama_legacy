@@ -1,8 +1,8 @@
 //! Parsers for names.
 //!
 //! The entry point for this module is the [`name`] function. Names of variables in Pijama must be
-//! alphabetic `snake_case` strings. Certain keywords such as `fn`, `do` and `end` cannot be names,
-//! such keywords are in the [`KEYWORDS`] constant.
+//! alphabetic `snake_case` strings. Certain keywords such as `fn`, `do` and `end` and primitive
+//! functions cannot be names, these are listed in the [`KEYWORDS`] or [`PRIMITIVES`] constants.
 use nom::{
     character::complete::{alpha1, char},
     combinator::{map, recognize, verify},
@@ -11,7 +11,7 @@ use nom::{
 
 use crate::{
     ast::{Located, Name},
-    parser::{IResult, Span},
+    parser::{primitive::PRIMITIVES, IResult, Span},
 };
 
 /// Words that cannot be names to avoid ambiguities.
@@ -32,6 +32,6 @@ pub fn name(input: Span) -> IResult<Located<Name>> {
             recognize(separated_nonempty_list(char('_'), alpha1)),
             |span: Span| Located::new(Name(span.fragment()), span),
         ),
-        |name| !KEYWORDS.contains(&name.content.0),
+        |name| !KEYWORDS.contains(&name.content.0) && !PRIMITIVES.contains_key(&name.content.0),
     )(input)
 }

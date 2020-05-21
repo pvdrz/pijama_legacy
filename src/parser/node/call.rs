@@ -14,6 +14,7 @@ use crate::{
         helpers::in_brackets,
         name::name,
         node::{fn_def::args, node},
+        primitive::primitive,
         IResult, Span,
     },
 };
@@ -30,6 +31,9 @@ pub fn call(input: Span) -> IResult<Located<Node>> {
     let func = alt((
         map(name, |Located { content, loc }| {
             Located::new(Node::Name(content), loc)
+        }),
+        map(primitive, |Located { content, loc }| {
+            Located::new(Node::PrimFn(content), loc)
         }),
         map(in_brackets(node), |Located { mut content, loc }| {
             content.loc = loc;

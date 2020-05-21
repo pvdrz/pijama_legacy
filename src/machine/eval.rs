@@ -4,9 +4,12 @@ use crate::{
     machine::Machine,
 };
 
-use std::borrow::{Borrow, BorrowMut};
+use std::{
+    borrow::{Borrow, BorrowMut},
+    io::Write,
+};
 
-impl Machine {
+impl<W: Write> Machine<W> {
     pub(super) fn step(&mut self, term: Term) -> (bool, Term) {
         match term {
             // Dispatch step for binary operations
@@ -116,9 +119,12 @@ impl Machine {
         (true, body)
     }
     /// Evaluation step for application of primitive functions (prim arg)
-    fn step_primitive_app(&mut self, prim: Primitive, _arg: Box<Term>) -> (bool, Term) {
+    fn step_primitive_app(&mut self, prim: Primitive, arg: Box<Term>) -> (bool, Term) {
         match prim {
-            _ => todo!("There aren't any primitives yet!"),
+            Primitive::Print => {
+                writeln!(self.env.stdout, "{}", arg).expect("Primitive print failed");
+                (true, Term::Lit(Literal::Unit))
+            }
         }
     }
 }

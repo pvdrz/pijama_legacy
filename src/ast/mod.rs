@@ -114,12 +114,16 @@ impl<'a> Display for Literal {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum Primitive {}
+pub enum Primitive {
+    Print,
+}
 
 impl<'a> Display for Primitive {
     fn fmt(&self, f: &mut Formatter) -> Result {
+        use Primitive::*;
+
         match self {
-            _ => write!(f, "primitive"),
+            Print => write!(f, "print"),
         }
     }
 }

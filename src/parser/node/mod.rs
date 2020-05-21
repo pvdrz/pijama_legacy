@@ -27,6 +27,7 @@ use crate::{
         helpers::{in_brackets, lookahead},
         literal::literal,
         name::name,
+        primitive::primitive,
         un_op::un_op,
         IResult, Span,
     },
@@ -72,6 +73,7 @@ fn base_node(input: Span) -> IResult<Located<Node>> {
         }),
         lookahead(pair(tag("if"), multispace1), cond::cond),
         lookahead(tag("fn"), fn_def::fn_def),
+        lookahead(primitive, call::call),
         lookahead(
             name,
             alt((
