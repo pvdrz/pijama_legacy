@@ -3,6 +3,25 @@ use crate::{
     ty::{Binding, Ty},
 };
 
+/// Trait to traverse the AST.
+///
+/// This trait should be used when you need to traverse the AST and you are only interested in
+/// particular elements of it or do not want to write the code necessary to traverse the AST by
+/// yourself.
+///
+/// There are two kinds of methods here: - The `visit_<foo>` methods: where the code specific to
+/// your visiting resides.  - The `super_<foo>` methods: that destructure each component and take
+/// care of the actual visiting.
+///
+/// The `visit_<foo>` methods are the ones that should be modified. You should always call the
+/// corresponding `super_<foo>` method inside your implementation of `visit_<foo>` to guarantee
+/// that your visitor will visit the whole AST.
+///
+/// You should never implement `super_<foo>` unless you want to modify what to visit inside a
+/// component.
+///
+/// Every update to the `Node` type should be reflected here too. Otherwise, it might end up
+/// breaking all the processes that use this trait to traverse the AST.
 pub trait NodeVisitor<'a> {
     fn super_block(&mut self, block: &Block<'a>) {
         for node in block {
