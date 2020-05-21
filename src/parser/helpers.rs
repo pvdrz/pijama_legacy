@@ -91,10 +91,7 @@ where
 {
     pair(
         keyword(t.clone()),
-        with_context(
-            format!("Space required after keyword {}.", t),
-            multispace1,
-        ),
+        with_context(format!("Space required after keyword {}.", t), multispace1),
     )
 }
 

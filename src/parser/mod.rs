@@ -23,7 +23,12 @@
 //! [nom docs]: https://docs.rs/nom/
 use thiserror::Error;
 
-use nom::{character::complete::multispace0, combinator::all_consuming, error::ErrorKind, Err::*};
+use nom::{
+    character::complete::multispace0,
+    combinator::all_consuming,
+    error::{ErrorKind, ParseError},
+    Err::*,
+};
 
 use crate::{
     ast::{Block, Located, Location},
@@ -33,7 +38,6 @@ use crate::{
 use crate::LangError::Parse;
 use block::block0;
 use helpers::surrounded;
-use nom::error::ParseError;
 
 mod bin_op;
 mod block;
