@@ -1,6 +1,9 @@
 //! Diverse checks that need to be done before lowering.
 use crate::{
-    ast::{visitor::NodeVisitor, Block, Located, Name, Node},
+    ast::{
+        visitor::{BlockRef, NodeVisitor},
+        Block, Located, Name, Node,
+    },
     ty::{Binding, Ty},
 };
 
@@ -19,7 +22,7 @@ pub struct RecursionChecker<'a> {
 
 impl<'a> RecursionChecker<'a> {
     /// Runs the recursion check with the target function's name and body.
-    pub fn run(name: Name<'a>, body: &Block<'a>) -> bool {
+    pub fn run(name: Name<'a>, body: BlockRef<'a, '_>) -> bool {
         let mut this = RecursionChecker {
             name,
             is_rec: false,
@@ -85,7 +88,7 @@ impl<'a> NodeVisitor<'a> for RecursionChecker<'a> {
     fn visit_fn_def(
         &mut self,
         opt_name: &Option<Located<Name<'a>>>,
-        args: &Vec<Located<Binding<'a>>>,
+        args: &[Located<Binding<'a>>],
         body: &Located<Block<'a>>,
         opt_ty: &Option<Located<Ty>>,
     ) {
@@ -101,7 +104,7 @@ impl<'a> NodeVisitor<'a> for RecursionChecker<'a> {
         self.super_fn_def(opt_name, args, body, opt_ty);
     }
 
-    fn visit_block(&mut self, block: &Block<'a>) {
+    fn visit_block(&mut self, block: BlockRef<'a, '_>) {
         // Entering a block means that we need to push a new scope into the stack because the
         // bindings done inside the block can only exist in that block.
         self.push_scope();

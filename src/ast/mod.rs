@@ -2,9 +2,9 @@ use std::fmt::{Debug, Display, Formatter, Result};
 
 use crate::ty::{Binding, Ty};
 
+pub mod analysis;
 mod location;
 mod visitor;
-pub mod analysis;
 
 pub use location::*;
 
