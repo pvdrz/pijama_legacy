@@ -1,5 +1,5 @@
 use crate::{
-    ast::{BinOp, Literal, UnOp, Primitive},
+    ast::{BinOp, Literal, Primitive, UnOp},
     lir::Term::{self, *},
     machine::Machine,
 };
@@ -116,8 +116,10 @@ impl Machine {
         (true, body)
     }
     /// Evaluation step for application of primitive functions (prim arg)
-    fn step_primitive_app(&mut self, _prim: Primitive, _arg: Box<Term>) -> (bool, Term) {
-        todo!()
+    fn step_primitive_app(&mut self, prim: Primitive, _arg: Box<Term>) -> (bool, Term) {
+        match prim {
+            _ => todo!("There aren't any primitives yet!"),
+        }
     }
 }
 

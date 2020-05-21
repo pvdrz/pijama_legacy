@@ -44,7 +44,7 @@ impl<'a> Display for Term<'a> {
             Term::Let(name, t1, t2) => write!(f, "(let {} = {} in {})", name, t1, t2),
             Term::Seq(t1, t2) => write!(f, "{} ; {}", t1, t2),
             Term::Fix(t1) => write!(f, "(fix {})", t1),
-            Term::PrimFn(prim) => write!(f, "{},", prim),
+            Term::PrimFn(prim) => write!(f, "{}", prim),
         }
     }
 }

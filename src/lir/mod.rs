@@ -16,8 +16,8 @@ pub enum Term {
     App(Box<Term>, Box<Term>),
     Cond(Box<Term>, Box<Term>, Box<Term>),
     Fix(Box<Term>),
-    Hole,
     PrimFn(Primitive),
+    Hole,
 }
 
 impl fmt::Display for Term {

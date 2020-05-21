@@ -156,7 +156,7 @@ impl<'a> Context<'a> {
                 }
             }
             Term::PrimFn(prim) => match prim {
-                _ => panic!("There aren't any primitives yet!"),
+                _ => todo!("There aren't any primitives yet!"),
             },
         };
         Ok(Located::new(ty, loc))
