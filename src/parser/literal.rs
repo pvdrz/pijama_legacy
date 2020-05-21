@@ -11,7 +11,7 @@ use nom::{
 
 use crate::{
     ast::{Literal, Located, Location},
-    parser::{IResult, Span},
+    parser::{helpers::with_context, IResult, Span},
 };
 
 /// Parses a [`Literal`](crate::ast::Literal).
@@ -22,18 +22,21 @@ use crate::{
 /// The location of this element matches the start and end of the inputs mentioned above inside the
 /// source code.
 pub fn literal(input: Span) -> IResult<Located<Literal>> {
-    alt((
-        map(tag("true"), |span: Span| {
-            Located::new(Literal::Bool(true), span)
-        }),
-        map(tag("false"), |span: Span| {
-            Located::new(Literal::Bool(false), span)
-        }),
-        map(tag("unit"), |span: Span| Located::new(Literal::Unit, span)),
-        map(number, |Located { content, loc }| {
-            Located::new(Literal::Number(content), loc)
-        }),
-    ))(input)
+    with_context(
+        "Expected literal (true, false, unit) or number",
+        alt((
+            map(tag("true"), |span: Span| {
+                Located::new(Literal::Bool(true), span)
+            }),
+            map(tag("false"), |span: Span| {
+                Located::new(Literal::Bool(false), span)
+            }),
+            map(tag("unit"), |span: Span| Located::new(Literal::Unit, span)),
+            map(number, |Located { content, loc }| {
+                Located::new(Literal::Number(content), loc)
+            }),
+        )),
+    )(input)
 }
 
 /// Parses a signed integer.

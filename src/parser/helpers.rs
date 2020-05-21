@@ -2,11 +2,11 @@
 
 use nom::{
     bytes::complete::tag,
-    character::complete::{char, multispace0},
+    character::complete::{char, multispace0, multispace1},
     combinator::{cut, map, peek},
     error::ParseError,
-    sequence::{delimited, preceded, terminated, tuple},
-    IResult,
+    sequence::{delimited, pair, preceded, terminated, tuple},
+    Compare, IResult, InputLength,
 };
 use nom_locate::position;
 
@@ -14,7 +14,8 @@ use crate::{
     ast::{Located, Location},
     parser::{ParsingError, Span},
 };
-use nom::{character::complete::multispace1, sequence::pair};
+
+use std::fmt::Display;
 
 /// Helper parser for expressions surrounded by a delimiter.
 ///
@@ -63,29 +64,46 @@ pub fn lookahead<'a, O, O2, E: ParseError<Span<'a>>>(
     preceded(peek(hint), cut(content))
 }
 
-pub fn keyword<'a>(
-    i: &'a str,
-) -> impl Fn(Span<'a>) -> IResult<Span<'a>, Span<'a>, ParsingError<'a>> {
-    with_context(format!("Expected keyword {}.", i), tag(i))
+/// Helper parser for a keyword.
+///
+/// This parses uses the ['tag'] combinator to check for an expected keyword
+/// and provides additional context in case it is missing.
+pub fn keyword<'a, T: 'a>(
+    t: T,
+) -> impl Fn(Span<'a>) -> IResult<Span<'a>, Span<'a>, ParsingError<'a>>
+where
+    T: InputLength + Clone + Display,
+    Span<'a>: Compare<T>,
+{
+    with_context(format!("Expected keyword {}.", t), tag(t))
 }
 
-pub fn keyword_space<'a>(
-    i: &'a str,
-) -> impl Fn(Span<'a>) -> IResult<Span<'a>, (Span<'a>, Span<'a>), ParsingError<'a>> {
+/// Helper parser for a keyword with at least one following whitespace.
+///
+/// This parses uses the ['pair'] combinator to check for an expected keyword and following spaces
+/// and provides additional context in case the keyword or the whitespace is missing.
+pub fn keyword_space<'a, T: 'a>(
+    t: T,
+) -> impl Fn(Span<'a>) -> IResult<Span<'a>, (Span<'a>, Span<'a>), ParsingError<'a>>
+where
+    T: InputLength + Clone + Display,
+    Span<'a>: Compare<T>,
+{
     pair(
-        keyword(i),
-        with_context(format!("Space required after keyword {}.", i), multispace1),
+        keyword(t.clone()),
+        with_context(
+            format!("Space required after keyword {}.", t),
+            multispace1,
+        ),
     )
 }
 
-pub fn with_context<'a, F>(
+/// Helper function to associate a context to the `ParsingError` when `inner` fails.
+pub fn with_context<'a, O>(
     context: impl ToString,
-    f: F,
-) -> impl Fn(Span<'a>) -> IResult<Span<'a>, Span<'a>, ParsingError<'a>>
-where
-    F: Fn(Span<'a>) -> IResult<Span<'a>, Span<'a>, ParsingError<'a>>,
-{
-    move |i| match f(i.clone()) {
+    inner: impl Fn(Span<'a>) -> IResult<Span<'a>, O, ParsingError<'a>>,
+) -> impl Fn(Span<'a>) -> IResult<Span<'a>, O, ParsingError<'a>> {
+    move |i| match inner(i) {
         Ok(o) => Ok(o),
         Err(e) => Err(e.map(|error| ParsingError::with_context(i, context.to_string(), error))),
     }

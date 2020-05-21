@@ -18,7 +18,10 @@ use nom::{
 
 use crate::{
     ast::{BinOp, BinOp::*},
-    parser::{helpers::surrounded, IResult, Span},
+    parser::{
+        helpers::{surrounded, with_context},
+        IResult, Span,
+    },
 };
 
 /// Parser for the binary operators with precedence level 1.
@@ -28,7 +31,10 @@ use crate::{
 /// All the binary operators might be surrounded by zero or more spaces.
 pub fn bin_op_1(input: Span) -> IResult<BinOp> {
     surrounded(
-        alt((map(tag("&&"), |_| And), map(tag("||"), |_| Or))),
+        with_context(
+            "Expected logical operator (&&, ||)",
+            alt((map(tag("&&"), |_| And), map(tag("||"), |_| Or))),
+        ),
         space0,
     )(input)
 }
@@ -43,14 +49,17 @@ pub fn bin_op_1(input: Span) -> IResult<BinOp> {
 /// All the binary operators might be surrounded by zero or more spaces.
 pub fn bin_op_2(input: Span) -> IResult<BinOp> {
     surrounded(
-        alt((
-            map(tag("<="), |_| Lte),
-            map(tag(">="), |_| Gte),
-            map(terminated(char('<'), peek(not(char('<')))), |_| Lt),
-            map(terminated(char('>'), peek(not(char('>')))), |_| Gt),
-            map(tag("=="), |_| Eq),
-            map(tag("!="), |_| Neq),
-        )),
+        with_context(
+            "Expected comparision operator (<=, >=, <, >, ==, !=)",
+            alt((
+                map(tag("<="), |_| Lte),
+                map(tag(">="), |_| Gte),
+                map(terminated(char('<'), peek(not(char('<')))), |_| Lt),
+                map(terminated(char('>'), peek(not(char('>')))), |_| Gt),
+                map(tag("=="), |_| Eq),
+                map(tag("!="), |_| Neq),
+            )),
+        ),
         space0,
     )(input)
 }
@@ -65,13 +74,16 @@ pub fn bin_op_2(input: Span) -> IResult<BinOp> {
 /// All the binary operators might be surrounded by zero or more spaces.
 pub fn bin_op_3(input: Span) -> IResult<BinOp> {
     surrounded(
-        alt((
-            map(terminated(char('&'), peek(not(char('&')))), |_| BitAnd),
-            map(terminated(char('|'), peek(not(char('|')))), |_| BitOr),
-            map(char('^'), |_| BitXor),
-            map(tag(">>"), |_| Shr),
-            map(tag("<<"), |_| Shl),
-        )),
+        with_context(
+            "Expected binary operator (&, |, ^, <<, >>)",
+            alt((
+                map(terminated(char('&'), peek(not(char('&')))), |_| BitAnd),
+                map(terminated(char('|'), peek(not(char('|')))), |_| BitOr),
+                map(char('^'), |_| BitXor),
+                map(tag(">>"), |_| Shr),
+                map(tag("<<"), |_| Shl),
+            )),
+        ),
         space0,
     )(input)
 }
@@ -83,7 +95,10 @@ pub fn bin_op_3(input: Span) -> IResult<BinOp> {
 /// All the binary operators might be surrounded by zero or more spaces.
 pub fn bin_op_4(input: Span) -> IResult<BinOp> {
     surrounded(
-        alt((map(char('+'), |_| Add), map(char('-'), |_| Sub))),
+        with_context(
+            "Expected binary operator (+, -)",
+            alt((map(char('+'), |_| Add), map(char('-'), |_| Sub))),
+        ),
         space0,
     )(input)
 }
@@ -95,11 +110,14 @@ pub fn bin_op_4(input: Span) -> IResult<BinOp> {
 /// All the binary operators might be surrounded by zero or more spaces.
 pub fn bin_op_5(input: Span) -> IResult<BinOp> {
     surrounded(
-        alt((
-            map(char('*'), |_| Mul),
-            map(char('/'), |_| Div),
-            map(char('%'), |_| Rem),
-        )),
+        with_context(
+            "Expected binary operator (*, /, %)",
+            alt((
+                map(char('*'), |_| Mul),
+                map(char('/'), |_| Div),
+                map(char('%'), |_| Rem),
+            )),
+        ),
         space0,
     )(input)
 }

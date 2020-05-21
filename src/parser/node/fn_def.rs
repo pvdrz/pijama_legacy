@@ -15,7 +15,6 @@
 //! [`fn_rec_def`]: super::fn_rec_def
 //! [`call`]: super::call
 use nom::{
-    bytes::complete::tag,
     character::complete::{char, multispace0, space0, space1},
     combinator::{map, opt},
     multi::separated_list,
@@ -70,7 +69,7 @@ pub fn fn_def(input: Span) -> IResult<Located<Node>> {
 /// The location of the returned node matches the start of the `fn` and the end of the name.
 fn fn_name(input: Span) -> IResult<Located<Option<Located<Name>>>> {
     map(
-        separated_pair(position, tag("fn"), opt(preceded(space1, name))),
+        separated_pair(position, keyword("fn"), opt(preceded(space1, name))),
         |(span, opt_name)| {
             let mut loc = Location::from(span);
             if let Some(name) = opt_name.as_ref() {
