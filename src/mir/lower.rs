@@ -173,7 +173,7 @@ fn lower_fn_def<'a>(
             // The function is recursive and does not have a return type
             (true, None) => {
                 // Return type is required, throw an error
-                return Err(TyError::Missing(loc));
+                return Err(TyError::Missing(Located::new((), loc)));
             }
             // The function is not recursive and has a return type
             (false, Some(ty)) => {
