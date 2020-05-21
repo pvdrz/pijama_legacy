@@ -51,3 +51,11 @@ of that issue so we can assign it to you and avoid duplicated work.
 Be sure to run the test suite with `cargo test` before submitting a new pull
 request. If your changes modify the language evaluation in any way, run the
 benchmarks with `cargo bench` and publish your results in the pull request.
+
+Pijama compiles with Rust stable without problem and it is our default target.
+However we use some nightly features of `rustfmt` so to format your code you
+need to do
+
+```bash
+cargo +nightly fmt
+```
