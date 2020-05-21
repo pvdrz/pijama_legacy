@@ -1,7 +1,7 @@
 use crate::{
-    ast::{BinOp, Block, Literal, Located, Location, Name, Node, UnOp},
+    ast::{analysis::RecursionChecker, BinOp, Block, Literal, Located, Location, Name, Node, UnOp},
     mir::Term,
-    ty::{expect_ty, ty_check, Binding, Ty, TyResult},
+    ty::{expect_ty, ty_check, Binding, Ty, TyError, TyResult},
 };
 
 pub fn lower_blk<'a>(blk: Located<Block<'a>>) -> TyResult<Located<Term<'a>>> {
@@ -39,7 +39,6 @@ fn lower_node(node: Located<Node<'_>>) -> TyResult<Located<Term<'_>>> {
         Node::FnDef(opt_name, binds, body, opt_ty) => {
             lower_fn_def(loc, opt_name, binds, body, opt_ty)
         }
-        Node::FnRecDef(name, binds, body, ty) => lower_fn_rec_def(loc, name, binds, body, ty),
     }?;
     Ok(term)
 }
@@ -132,6 +131,12 @@ fn lower_fn_def<'a>(
     body: Located<Block<'a>>,
     opt_ty: Option<Located<Ty>>,
 ) -> TyResult<Located<Term<'a>>> {
+    let is_rec = if let Some(name) = &opt_name {
+        RecursionChecker::run(name.content, &body.content)
+    } else {
+        false
+    };
+
     let mut term = lower_blk(body)?;
 
     let opt_ty = opt_ty.map(|ty| {
@@ -146,12 +151,40 @@ fn lower_fn_def<'a>(
         term = Located::new(Term::Abs(bind.content, Box::new(term)), loc);
     }
 
-    if let Some(ty) = opt_ty {
-        let term_ty = ty_check(&term)?;
-        expect_ty(ty, term_ty)?;
-    }
-
     if let Some(name) = opt_name {
+        match (is_rec, opt_ty) {
+            // The function is recursive and has a return type
+            (true, Some(ty)) => {
+                // Must be wrapped inside a `Term::Fix`
+                term = Located::new(
+                    Term::Fix(Box::new(Located::new(
+                        Term::Abs(
+                            Binding {
+                                name: name.content,
+                                ty,
+                            },
+                            Box::new(term),
+                        ),
+                        loc,
+                    ))),
+                    loc,
+                );
+            }
+            // The function is recursive and does not have a return type
+            (true, None) => {
+                // Return type is required, throw an error
+                return Err(TyError::Missing(Located::new((), loc)));
+            }
+            // The function is not recursive and has a return type
+            (false, Some(ty)) => {
+                // Check that the inferred type matches the user type.
+                let term_ty = ty_check(&term)?;
+                expect_ty(ty, term_ty)?;
+            }
+            // The function is not recursive and does not have a return type
+            (false, None) => (),
+        };
+
         term = Located::new(
             Term::Let(
                 name,
@@ -163,51 +196,11 @@ fn lower_fn_def<'a>(
             ),
             loc,
         );
+    } else if let Some(ty) = opt_ty {
+        // Check that the inferred type matches the user type.
+        let term_ty = ty_check(&term)?;
+        expect_ty(ty, term_ty)?;
     }
 
     Ok(term)
-}
-
-fn lower_fn_rec_def<'a>(
-    loc: Location,
-    name: Located<Name<'a>>,
-    binds: Vec<Located<Binding<'a>>>,
-    body: Located<Block<'a>>,
-    ty: Located<Ty>,
-) -> TyResult<Located<Term<'a>>> {
-    let mut term = lower_blk(body)?;
-
-    let mut ty = ty.content;
-
-    for bind in binds.into_iter().rev() {
-        let loc = term.loc;
-        ty = Ty::Arrow(Box::new(bind.content.ty.clone()), Box::new(ty));
-        term = Located::new(Term::Abs(bind.content, Box::new(term)), loc);
-    }
-
-    term = Located::new(
-        Term::Fix(Box::new(Located::new(
-            Term::Abs(
-                Binding {
-                    name: name.content,
-                    ty,
-                },
-                Box::new(term),
-            ),
-            loc,
-        ))),
-        loc,
-    );
-
-    Ok(Located::new(
-        Term::Let(
-            name,
-            Box::new(term),
-            Box::new(Located::new(
-                Term::Lit(Literal::Unit),
-                Location::new(loc.end, loc.end),
-            )),
-        ),
-        loc,
-    ))
 }

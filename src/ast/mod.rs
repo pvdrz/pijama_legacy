@@ -2,7 +2,9 @@ use std::fmt::{Debug, Display, Formatter, Result};
 
 use crate::ty::{Binding, Ty};
 
+pub mod analysis;
 mod location;
+mod visitor;
 
 pub use location::*;
 
@@ -126,12 +128,6 @@ pub enum Node<'a> {
         Vec<Located<Binding<'a>>>,
         Located<Block<'a>>,
         Option<Located<Ty>>,
-    ),
-    FnRecDef(
-        Located<Name<'a>>,
-        Vec<Located<Binding<'a>>>,
-        Located<Block<'a>>,
-        Located<Ty>,
     ),
     Call(Box<Located<Node<'a>>>, Block<'a>),
     Literal(Literal),

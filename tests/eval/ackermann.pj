@@ -1,4 +1,4 @@
-fn rec ack(m: Int, n: Int): Int do
+fn ack(m: Int, n: Int): Int do
     if m == 0 do
         n + 1
     else

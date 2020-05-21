@@ -1,0 +1,12 @@
+fn foo(x: Int) do
+    if true do
+        fn foo(x: Int) do
+            x + 1
+        end
+        foo(x)
+    else
+        foo(x)
+    end
+end
+
+foo

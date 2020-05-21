@@ -1,4 +1,4 @@
-fn rec fact(n: Int, acc: Int): Int do
+fn fact(n: Int, acc: Int): Int do
     if n <= 0 do
         acc
     else

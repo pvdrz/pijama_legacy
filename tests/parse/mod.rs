@@ -353,11 +353,11 @@ fn fn_def() -> LangResult<'static, ()> {
             None,
         )
         .loc(),
-        FnRecDef(
-            ast::Name("foo").loc(),
+        FnDef(
+            Some(ast::Name("foo").loc()),
             vec![],
             vec![Call(Box::new(Name(ast::Name("foo")).loc()), vec![]).loc()].loc(),
-            Ty::Unit.loc(),
+            Some(Ty::Unit.loc()),
         )
         .loc(),
         FnDef(
