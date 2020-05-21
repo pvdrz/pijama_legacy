@@ -64,7 +64,7 @@ pub fn parse(input: &str) -> LangResult<Located<Block>> {
     match result {
         Ok((_, block)) => Ok(block),
         Err(Error(e)) | Err(Failure(e)) => {
-            return Err(ParseError {
+            Err(ParseError {
                 span: e.0,
                 kind: e.1,
             }
