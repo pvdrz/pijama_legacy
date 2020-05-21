@@ -115,11 +115,10 @@ impl<'a> Context<'a> {
                 }
             }
             Term::App(t1, t2) => {
-                let ty1 = self.type_of(t1.as_ref())?;
-
-                if let Term::PrimFn(_) = t1.as_ref().content {
-                    ty1.content
+                if let Term::PrimFn(primitive) = t1.content {
+                    self.type_of_primitive(primitive, t2)
                 } else {
+                    let ty1 = self.type_of(t1.as_ref())?;
                     let ty2 = self.type_of(t2.as_ref())?;
                     match ty1.content {
                         Ty::Arrow(ty11, ty) => {
@@ -160,10 +159,17 @@ impl<'a> Context<'a> {
                     return Err(TyError::ExpectedFn(ty));
                 }
             }
-            Term::PrimFn(prim) => match prim {
-                Primitive::Print => Ty::Unit,
-            },
+            Term::PrimFn(prim) => unreachable!(
+                "Primitives always need special case handling but got {:?}",
+                prim
+            ),
         };
         Ok(Located::new(ty, loc))
+    }
+
+    fn type_of_primitive(&mut self, primitive: Primitive, _arg: &Located<Term>) -> Ty {
+        match primitive {
+            Primitive::Print => Ty::Unit,
+        }
     }
 }
