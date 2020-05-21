@@ -32,7 +32,7 @@ fn lower_node(node: Located<Node<'_>>) -> TyResult<Located<Term<'_>>> {
         Node::Name(name) => Ok(Located::new(Term::Var(name), loc)),
         Node::Cond(if_blk, do_blk, el_blk) => lower_cond(loc, if_blk, do_blk, el_blk),
         Node::Literal(lit) => Ok(Located::new(Term::Lit(lit), loc)),
-        Node::Call(name, args) => lower_call(loc, name, args),
+        Node::Call(node, args) => lower_call(loc, *node, args),
         Node::BinaryOp(bin_op, node1, node2) => lower_binary_op(loc, bin_op, *node1, *node2),
         Node::UnaryOp(un_op, node) => lower_unary_op(loc, un_op, *node),
         Node::LetBind(name, opt_ty, node) => lower_let_bind(loc, name, opt_ty, *node),
@@ -62,10 +62,10 @@ fn lower_cond<'a>(
 
 fn lower_call<'a>(
     loc: Location,
-    name: Located<Name<'a>>,
+    node: Located<Node<'a>>,
     args: Block<'a>,
 ) -> TyResult<Located<Term<'a>>> {
-    let mut term = Located::new(Term::Var(name.content), loc);
+    let mut term = lower_node(node)?;
     for node in args {
         term = Located::new(Term::App(Box::new(term), Box::new(lower_node(node)?)), loc);
     }

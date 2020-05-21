@@ -63,13 +63,11 @@ pub fn parse(input: &str) -> LangResult<Located<Block>> {
     let result: IResult<Located<Block>> = all_consuming(surrounded(block0, multispace0))(span);
     match result {
         Ok((_, block)) => Ok(block),
-        Err(Error(e)) | Err(Failure(e)) => {
-            Err(ParseError {
-                span: e.0,
-                kind: e.1,
-            }
-            .into())
+        Err(Error(e)) | Err(Failure(e)) => Err(ParseError {
+            span: e.0,
+            kind: e.1,
         }
+        .into()),
         _ => unreachable!(),
     }
 }

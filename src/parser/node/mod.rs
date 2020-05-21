@@ -59,10 +59,16 @@ pub fn node(input: Span) -> IResult<Located<Node>> {
 /// This function is very order sensitive. Be careful if you swap the parsers order.
 fn base_node(input: Span) -> IResult<Located<Node>> {
     alt((
-        map(in_brackets(node), |Located { mut content, loc }| {
-            content.loc = loc;
-            content
-        }),
+        lookahead(
+            tag("("),
+            alt((
+                call::call,
+                map(in_brackets(node), |Located { mut content, loc }| {
+                    content.loc = loc;
+                    content
+                }),
+            )),
+        ),
         map(literal, |Located { content, loc }| {
             Located::new(Node::Literal(content), loc)
         }),

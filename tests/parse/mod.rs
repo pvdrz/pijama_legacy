@@ -304,10 +304,14 @@ fn call() -> LangResult<'static, ()> {
     let input = include_str!("call.pj");
     let result = parse(input)?.content;
     let expected = vec![
-        Call(ast::Name("x").loc(), vec![]).loc(),
-        Call(ast::Name("x").loc(), vec![Name(ast::Name("y")).loc()]).loc(),
+        Call(Box::new(Name(ast::Name("x")).loc()), vec![]).loc(),
         Call(
-            ast::Name("x").loc(),
+            Box::new(Name(ast::Name("x")).loc()),
+            vec![Name(ast::Name("y")).loc()],
+        )
+        .loc(),
+        Call(
+            Box::new(Name(ast::Name("x")).loc()),
             vec![Name(ast::Name("y")).loc(), Name(ast::Name("z")).loc()],
         )
         .loc(),
@@ -339,7 +343,7 @@ fn fn_def() -> LangResult<'static, ()> {
         FnRecDef(
             ast::Name("foo").loc(),
             vec![],
-            vec![Call(ast::Name("foo").loc(), vec![]).loc()].loc(),
+            vec![Call(Box::new(Name(ast::Name("foo")).loc()), vec![]).loc()].loc(),
             Ty::Unit.loc(),
         )
         .loc(),
