@@ -1,6 +1,7 @@
 //! Miscellaneous helper parsers.
 
 use nom::{
+    bytes::complete::tag,
     character::complete::{char, multispace0},
     combinator::{cut, map, peek},
     error::ParseError,
@@ -11,8 +12,9 @@ use nom_locate::position;
 
 use crate::{
     ast::{Located, Location},
-    parser::Span,
+    parser::{ParsingError, Span},
 };
+use nom::{character::complete::multispace1, sequence::pair};
 
 /// Helper parser for expressions surrounded by a delimiter.
 ///
@@ -59,4 +61,32 @@ pub fn lookahead<'a, O, O2, E: ParseError<Span<'a>>>(
     content: impl Fn(Span<'a>) -> IResult<Span<'a>, O, E>,
 ) -> impl Fn(Span<'a>) -> IResult<Span<'a>, O, E> {
     preceded(peek(hint), cut(content))
+}
+
+pub fn keyword<'a>(
+    i: &'a str,
+) -> impl Fn(Span<'a>) -> IResult<Span<'a>, Span<'a>, ParsingError<'a>> {
+    with_context(format!("Expected keyword {}.", i), tag(i))
+}
+
+pub fn keyword_space<'a>(
+    i: &'a str,
+) -> impl Fn(Span<'a>) -> IResult<Span<'a>, (Span<'a>, Span<'a>), ParsingError<'a>> {
+    pair(
+        keyword(i),
+        with_context(format!("Space required after keyword {}.", i), multispace1),
+    )
+}
+
+pub fn with_context<'a, F>(
+    context: impl ToString,
+    f: F,
+) -> impl Fn(Span<'a>) -> IResult<Span<'a>, Span<'a>, ParsingError<'a>>
+where
+    F: Fn(Span<'a>) -> IResult<Span<'a>, Span<'a>, ParsingError<'a>>,
+{
+    move |i| match f(i.clone()) {
+        Ok(o) => Ok(o),
+        Err(e) => Err(e.map(|error| ParsingError::with_context(i, context.to_string(), error))),
+    }
 }

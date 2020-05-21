@@ -25,7 +25,7 @@ use crate::{
 ///
 /// These operators are `&&` and `||`.
 ///
-/// All the binary operators might be surronded by zero or more spaces.
+/// All the binary operators might be surrounded by zero or more spaces.
 pub fn bin_op_1(input: Span) -> IResult<BinOp> {
     surrounded(
         alt((map(tag("&&"), |_| And), map(tag("||"), |_| Or))),
@@ -40,7 +40,7 @@ pub fn bin_op_1(input: Span) -> IResult<BinOp> {
 /// An additional check is done for `<` and `>` to be sure they are not the beginning of the `>>`
 /// and `<<` operators.
 ///
-/// All the binary operators might be surronded by zero or more spaces.
+/// All the binary operators might be surrounded by zero or more spaces.
 pub fn bin_op_2(input: Span) -> IResult<BinOp> {
     surrounded(
         alt((
@@ -62,7 +62,7 @@ pub fn bin_op_2(input: Span) -> IResult<BinOp> {
 /// An additional check is done for `&` and `|` to be sure they are not the beginning of the `&&`
 /// and `||` operators.
 ///
-/// All the binary operators might be surronded by zero or more spaces.
+/// All the binary operators might be surrounded by zero or more spaces.
 pub fn bin_op_3(input: Span) -> IResult<BinOp> {
     surrounded(
         alt((
@@ -80,7 +80,7 @@ pub fn bin_op_3(input: Span) -> IResult<BinOp> {
 ///
 /// These operators are `+` and `-`.
 ///
-/// All the binary operators might be surronded by zero or more spaces.
+/// All the binary operators might be surrounded by zero or more spaces.
 pub fn bin_op_4(input: Span) -> IResult<BinOp> {
     surrounded(
         alt((map(char('+'), |_| Add), map(char('-'), |_| Sub))),
@@ -92,7 +92,7 @@ pub fn bin_op_4(input: Span) -> IResult<BinOp> {
 ///
 /// These operators are `*`, `/` and `%`.
 ///
-/// All the binary operators might be surronded by zero or more spaces.
+/// All the binary operators might be surrounded by zero or more spaces.
 pub fn bin_op_5(input: Span) -> IResult<BinOp> {
     surrounded(
         alt((

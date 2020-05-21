@@ -16,7 +16,7 @@
 //! [`call`]: super::call
 use nom::{
     bytes::complete::tag,
-    character::complete::{char, multispace0, multispace1, space0, space1},
+    character::complete::{char, multispace0, space0, space1},
     combinator::{map, opt},
     multi::separated_list,
     sequence::{delimited, pair, preceded, separated_pair, terminated, tuple},
@@ -27,7 +27,7 @@ use crate::{
     ast::{Block, Located, Location, Name, Node},
     parser::{
         block::block0,
-        helpers::{in_brackets, surrounded},
+        helpers::{in_brackets, keyword, keyword_space, surrounded},
         name::name,
         ty::{binding, colon_ty},
         IResult, Span,
@@ -111,9 +111,9 @@ pub fn args<'a, O: std::fmt::Debug>(
 pub fn fn_body(input: Span) -> IResult<Located<Located<Block>>> {
     map(
         tuple((
-            terminated(position, pair(tag("do"), multispace1)),
+            terminated(position, keyword_space("do")),
             block0,
-            preceded(pair(multispace0, tag("end")), position),
+            preceded(pair(multispace0, keyword("end")), position),
         )),
         |(sp1, content, sp2)| {
             let loc1 = Location::from(sp1);
