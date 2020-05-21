@@ -1,4 +1,8 @@
-use crate::test_type;
+use crate::{test_type, util::DummyLoc};
+
 use pijama::{ty::TyError, LangError};
 
-test_type!(unbounded, Err(LangError::Ty(TyError::Unbound(_))));
+test_type!(
+    unbounded,
+    Err(LangError::Ty(TyError::Unbound("x".to_owned().loc())))
+);

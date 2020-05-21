@@ -1,7 +1,6 @@
-use crate::{test_type, test_type_for_all_integer_binops};
+use crate::{test_type, test_type_for_all_integer_binops, util::DummyLoc};
 
 use pijama::{
-    ast::Located,
     ty::{Ty, TyError},
     LangError,
 };
@@ -10,7 +9,7 @@ test_type!(
     wrong_type_minus,
     Err(LangError::Ty(TyError::Unexpected {
         expected: Ty::Int,
-        found: Located { content: Ty::Bool, ..}
+        found: Ty::Bool.loc()
     }))
 );
 
@@ -19,7 +18,7 @@ test_type_for_all_integer_binops!(
     mixed_types_placeholder,
     Err(LangError::Ty(TyError::Unexpected {
         expected: Ty::Int,
-        found: Located { content: Ty::Bool, ..}
+        found: Ty::Bool.loc()
     })),
     OPERATOR
 );
@@ -29,7 +28,7 @@ test_type_for_all_integer_binops!(
     wrong_type_placeholder,
     Err(LangError::Ty(TyError::Unexpected {
         expected: Ty::Int,
-        found: Located { content: Ty::Bool, ..}
+        found: Ty::Bool.loc()
     })),
     OPERATOR
 );

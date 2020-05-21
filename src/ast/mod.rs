@@ -17,7 +17,7 @@ impl<'a> Display for Name<'a> {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum BinOp {
     Add,
     Sub,
@@ -65,7 +65,7 @@ impl<'a> Display for BinOp {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum UnOp {
     Neg,
     Not,
@@ -81,7 +81,7 @@ impl<'a> Display for UnOp {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum Literal {
     Bool(bool),
     Unit,

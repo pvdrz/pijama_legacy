@@ -1,6 +1,3 @@
-#![feature(box_syntax)]
-#![feature(box_patterns)]
-
 extern crate pijama;
 
 use std::{panic, sync::mpsc, thread, time::Duration};
