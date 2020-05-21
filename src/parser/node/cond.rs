@@ -10,16 +10,19 @@
 //! Thus, `else` blocks are optional and are represented as empty [`Block`]s inside the
 //! [`Node::Cond`] variant.
 use nom::{
-    bytes::complete::tag,
-    character::complete::{multispace0, multispace1},
+    character::complete::multispace0,
     combinator::map,
-    sequence::{delimited, pair, preceded, tuple},
+    sequence::{delimited, preceded, tuple},
 };
 use nom_locate::position;
 
 use crate::{
     ast::{Block, Located, Location, Node},
-    parser::{block::block1, IResult, Span},
+    parser::{
+        block::block1,
+        helpers::{keyword, keyword_space},
+        IResult, Span,
+    },
 };
 
 /// Parses a [`Node::Cond`].
@@ -35,7 +38,7 @@ pub fn cond(input: Span) -> IResult<Located<Node>> {
             do_block,
             // FIXME: fix optional else block
             else_block,
-            preceded(tag("end"), position),
+            preceded(keyword("end"), position),
         )),
         move |(sp1, if_block, do_block, else_block, sp2)| {
             Located::new(
@@ -53,7 +56,7 @@ pub fn cond(input: Span) -> IResult<Located<Node>> {
 ///
 /// The location of the returned block ignores the `if` and spaces surrounding the block.
 fn if_block(input: Span) -> IResult<Located<Block>> {
-    delimited(pair(tag("if"), multispace1), block1, multispace0)(input)
+    delimited(keyword_space("if"), block1, multispace0)(input)
 }
 
 /// Parses the `do` block of a [`Node::Cond`].
@@ -63,7 +66,7 @@ fn if_block(input: Span) -> IResult<Located<Block>> {
 ///
 /// The location of the returned block ignores the `do` and spaces surrounding the block.
 fn do_block(input: Span) -> IResult<Located<Block>> {
-    delimited(pair(tag("do"), multispace1), block1, multispace0)(input)
+    delimited(keyword_space("do"), block1, multispace0)(input)
 }
 
 /// Parses the `else` block of a [`Node::Cond`].
@@ -73,5 +76,5 @@ fn do_block(input: Span) -> IResult<Located<Block>> {
 ///
 /// The location of the returned block ignores the `else` and spaces surrounding the block.
 fn else_block(input: Span) -> IResult<Located<Block>> {
-    delimited(pair(tag("else"), multispace1), block1, multispace0)(input)
+    delimited(keyword_space("else"), block1, multispace0)(input)
 }

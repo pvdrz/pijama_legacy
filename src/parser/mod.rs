@@ -23,13 +23,19 @@
 //! [nom docs]: https://docs.rs/nom/
 use thiserror::Error;
 
-use nom::{character::complete::multispace0, combinator::all_consuming, error::ErrorKind, Err::*};
+use nom::{
+    character::complete::multispace0,
+    combinator::all_consuming,
+    error::{ErrorKind, ParseError},
+    Err::*,
+};
 
 use crate::{
     ast::{Block, Located, Location},
     LangResult,
 };
 
+use crate::LangError::Parse;
 use block::block0;
 use helpers::surrounded;
 
@@ -47,12 +53,12 @@ type Span<'a> = nom_locate::LocatedSpan<&'a str>;
 impl<'a> From<Span<'a>> for Location {
     fn from(span: Span<'a>) -> Self {
         let start = span.location_offset();
-        let end = start + span.fragment().len();
+        let end = start + 1;
         Location { start, end }
     }
 }
 
-type IResult<'a, T> = nom::IResult<Span<'a>, T, (Span<'a>, ErrorKind)>;
+type IResult<'a, T> = nom::IResult<Span<'a>, T, ParsingError<'a>>;
 
 /// Produces a [`Block`] from a string slice.
 ///
@@ -63,18 +69,55 @@ pub fn parse(input: &str) -> LangResult<Located<Block>> {
     let result: IResult<Located<Block>> = all_consuming(surrounded(block0, multispace0))(span);
     match result {
         Ok((_, block)) => Ok(block),
-        Err(Error(e)) | Err(Failure(e)) => Err(ParseError {
-            span: e.0,
-            kind: e.1,
-        }
-        .into()),
+        Err(Error(e)) | Err(Failure(e)) => Err(Parse(e)),
         _ => unreachable!(),
     }
 }
 
 #[derive(Error, Debug, Eq, PartialEq)]
-#[error("Parsing rule `{kind:?}` failed.")]
-pub struct ParseError<'a> {
+#[error("Parsing error: {}", .context.as_ref().unwrap_or(&"Parsing rule `{kind:?}` failed.".to_string()))]
+pub struct ParsingError<'a> {
     pub span: Span<'a>,
     kind: ErrorKind,
+    context: Option<String>,
+}
+
+impl<'a> ParsingError<'a> {
+    pub fn with_context(_: Span<'a>, context: String, other: Self) -> Self {
+        ParsingError {
+            span: other.span,
+            kind: other.kind,
+            context: Some(context),
+        }
+    }
+}
+
+impl<'a> ParseError<Span<'a>> for ParsingError<'a> {
+    fn from_error_kind(span: Span<'a>, kind: ErrorKind) -> Self {
+        ParsingError {
+            span,
+            kind,
+            context: None,
+        }
+    }
+
+    fn append(_: Span<'a>, _: ErrorKind, other: Self) -> Self {
+        other
+    }
+
+    fn from_char(span: Span<'a>, c: char) -> Self {
+        ParsingError {
+            span,
+            kind: ErrorKind::Char,
+            context: Some(format!("Expected character '{}'.", c)),
+        }
+    }
+
+    fn add_context(_: Span<'a>, context: &'static str, other: Self) -> Self {
+        ParsingError {
+            span: other.span,
+            kind: other.kind,
+            context: Some(context.to_string()),
+        }
+    }
 }

@@ -9,7 +9,7 @@ use thiserror::Error;
 
 use ast::Location;
 use machine::Machine;
-use parser::ParseError;
+use parser::ParsingError;
 use ty::TyError;
 
 pub type LangResult<'a, T> = Result<T, LangError<'a>>;
@@ -19,11 +19,11 @@ pub enum LangError<'a> {
     #[error("{0}")]
     Ty(#[from] TyError),
     #[error("{0}")]
-    Parse(ParseError<'a>),
+    Parse(ParsingError<'a>),
 }
 
-impl<'a> From<ParseError<'a>> for LangError<'a> {
-    fn from(err: ParseError<'a>) -> Self {
+impl<'a> From<ParsingError<'a>> for LangError<'a> {
+    fn from(err: ParsingError<'a>) -> Self {
         LangError::Parse(err)
     }
 }

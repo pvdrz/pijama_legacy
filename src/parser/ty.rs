@@ -45,7 +45,7 @@ use nom::{
 use crate::{
     ast::{Located, Location},
     parser::{
-        helpers::{in_brackets, surrounded},
+        helpers::{in_brackets, surrounded, with_context},
         name::name,
         IResult, Span,
     },
@@ -120,13 +120,16 @@ pub fn colon_ty(input: Span) -> IResult<Located<Ty>> {
 /// of the slice. If the returned type is surrounded by brackets, the location matches the span of
 /// the brackets.
 fn base_ty(input: Span) -> IResult<Located<Ty>> {
-    alt((
-        map(tag("Bool"), |span: Span| Located::new(Ty::Bool, span)),
-        map(tag("Int"), |span: Span| Located::new(Ty::Int, span)),
-        map(tag("Unit"), |span: Span| Located::new(Ty::Unit, span)),
-        map(in_brackets(ty), |Located { mut content, loc }| {
-            content.loc = loc;
-            content
-        }),
-    ))(input)
+    with_context(
+        "Expected basic type (Bool, Int, Unit) or type in brackets",
+        alt((
+            map(tag("Bool"), |span: Span| Located::new(Ty::Bool, span)),
+            map(tag("Int"), |span: Span| Located::new(Ty::Int, span)),
+            map(tag("Unit"), |span: Span| Located::new(Ty::Unit, span)),
+            map(in_brackets(ty), |Located { mut content, loc }| {
+                content.loc = loc;
+                content
+            }),
+        )),
+    )(input)
 }

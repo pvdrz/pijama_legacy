@@ -17,7 +17,7 @@ mod unary_op;
 use nom::{
     branch::alt,
     bytes::complete::tag,
-    character::complete::{multispace1, space1},
+    character::complete::{char, multispace1, space1},
     combinator::map,
     sequence::{pair, tuple},
 };
@@ -60,7 +60,7 @@ pub fn node(input: Span) -> IResult<Located<Node>> {
 fn base_node(input: Span) -> IResult<Located<Node>> {
     alt((
         lookahead(
-            tag("("),
+            char('('),
             alt((
                 call::call,
                 map(in_brackets(node), |Located { mut content, loc }| {
