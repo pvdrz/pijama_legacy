@@ -17,7 +17,7 @@ use nom::{
 use nom_locate::position;
 
 use crate::{
-    ast::{Block, Located, Location, Node},
+    ast::{Block, Branch, Located, Location, Node},
     parser::{
         block::block1,
         helpers::{keyword, keyword_space},
@@ -42,7 +42,7 @@ pub fn cond(input: Span) -> IResult<Located<Node>> {
         )),
         move |(sp1, if_block, do_block, else_block, sp2)| {
             Located::new(
-                Node::Cond(if_block, do_block, else_block),
+                Node::Cond(Branch { cond: if_block, body: do_block }, else_block),
                 Location::from(sp1) + Location::from(sp2),
             )
         },

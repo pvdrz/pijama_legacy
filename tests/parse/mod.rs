@@ -1,7 +1,7 @@
 use std::include_str;
 
 use pijama::{
-    ast::{self, BinOp::*, Node::*, UnOp},
+    ast::{self, Branch, BinOp::*, Node::*, UnOp},
     parser::parse,
     ty::{Binding, Ty},
     LangResult,
@@ -281,17 +281,19 @@ fn cond() -> LangResult<'static, ()> {
     let result = parse(input)?.content;
     let expected = vec![
         Cond(
-            vec![Name(ast::Name("x")).loc()].loc(),
-            vec![Name(ast::Name("y")).loc()].loc(),
+            Branch {
+                cond: vec![Name(ast::Name("x")).loc()].loc(),
+                body: vec![Name(ast::Name("y")).loc()].loc(),
+            },
             vec![Name(ast::Name("z")).loc()].loc(),
-        )
-        .loc(),
+        ).loc(),
         Cond(
-            vec![Name(ast::Name("u")).loc(), Name(ast::Name("v")).loc()].loc(),
-            vec![Name(ast::Name("w")).loc(), Name(ast::Name("x")).loc()].loc(),
+            Branch {
+                cond: vec![Name(ast::Name("u")).loc(), Name(ast::Name("v")).loc()].loc(),
+                body: vec![Name(ast::Name("w")).loc(), Name(ast::Name("x")).loc()].loc(),
+            },
             vec![Name(ast::Name("y")).loc(), Name(ast::Name("z")).loc()].loc(),
-        )
-        .loc(),
+        ).loc(),
     ];
 
     assert_eq!(expected[0], result[0], "simple blocks");

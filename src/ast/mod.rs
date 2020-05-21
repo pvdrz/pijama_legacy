@@ -125,6 +125,12 @@ impl<'a> Display for Primitive {
 }
 
 #[derive(Debug, Eq, PartialEq)]
+pub struct Branch<'a> {
+    pub cond: Located<Block<'a>>,
+    pub body: Located<Block<'a>>,
+}
+
+#[derive(Debug, Eq, PartialEq)]
 pub enum Node<'a> {
     BinaryOp(BinOp, Box<Located<Node<'a>>>, Box<Located<Node<'a>>>),
     UnaryOp(UnOp, Box<Located<Node<'a>>>),
@@ -133,7 +139,7 @@ pub enum Node<'a> {
         Option<Located<Ty>>,
         Box<Located<Node<'a>>>,
     ),
-    Cond(Located<Block<'a>>, Located<Block<'a>>, Located<Block<'a>>),
+    Cond(Branch<'a>, Located<Block<'a>>),
     FnDef(
         Option<Located<Name<'a>>>,
         Vec<Located<Binding<'a>>>,

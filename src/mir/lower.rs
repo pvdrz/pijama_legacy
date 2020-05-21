@@ -1,5 +1,5 @@
 use crate::{
-    ast::{analysis::RecursionChecker, BinOp, Block, Literal, Located, Location, Name, Node, UnOp},
+    ast::{analysis::RecursionChecker, BinOp, Block, Branch, Literal, Located, Location, Name, Node, UnOp},
     mir::Term,
     ty::{expect_ty, ty_check, Binding, Ty, TyError, TyResult},
 };
@@ -30,7 +30,7 @@ fn lower_node(node: Located<Node<'_>>) -> TyResult<Located<Term<'_>>> {
     let loc = node.loc;
     let term = match node.content {
         Node::Name(name) => Ok(Located::new(Term::Var(name), loc)),
-        Node::Cond(if_blk, do_blk, el_blk) => lower_cond(loc, if_blk, do_blk, el_blk),
+        Node::Cond(branch, el_blk) => lower_cond(loc, branch, el_blk),
         Node::Literal(lit) => Ok(Located::new(Term::Lit(lit), loc)),
         Node::Call(node, args) => lower_call(loc, *node, args),
         Node::BinaryOp(bin_op, node1, node2) => lower_binary_op(loc, bin_op, *node1, *node2),
@@ -46,10 +46,12 @@ fn lower_node(node: Located<Node<'_>>) -> TyResult<Located<Term<'_>>> {
 
 fn lower_cond<'a>(
     loc: Location,
-    if_blk: Located<Block<'a>>,
-    do_blk: Located<Block<'a>>,
+    branch: Branch<'a>,
     el_blk: Located<Block<'a>>,
 ) -> TyResult<Located<Term<'a>>> {
+    let if_blk = branch.cond;
+    let do_blk = branch.body;
+
     Ok(Located::new(
         Term::Cond(
             Box::new(lower_blk(if_blk)?),
