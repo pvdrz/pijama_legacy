@@ -304,11 +304,27 @@ fn call() -> LangResult<'static, ()> {
     let input = include_str!("call.pj");
     let result = parse(input)?.content;
     let expected = vec![
-        Call(ast::Name("x").loc(), vec![]).loc(),
-        Call(ast::Name("x").loc(), vec![Name(ast::Name("y")).loc()]).loc(),
+        Call(Box::new(Name(ast::Name("x")).loc()), vec![]).loc(),
         Call(
-            ast::Name("x").loc(),
+            Box::new(Name(ast::Name("x")).loc()),
+            vec![Name(ast::Name("y")).loc()],
+        )
+        .loc(),
+        Call(
+            Box::new(Name(ast::Name("x")).loc()),
             vec![Name(ast::Name("y")).loc(), Name(ast::Name("z")).loc()],
+        )
+        .loc(),
+        Call(
+            Box::new(
+                BinaryOp(
+                    Add,
+                    Box::new(Name(ast::Name("x")).loc()),
+                    Box::new(Name(ast::Name("y")).loc()),
+                )
+                .loc(),
+            ),
+            vec![Name(ast::Name("z")).loc()],
         )
         .loc(),
     ];
@@ -316,6 +332,7 @@ fn call() -> LangResult<'static, ()> {
     assert_eq!(expected[0], result[0], "nullary call");
     assert_eq!(expected[1], result[1], "unary call");
     assert_eq!(expected[2], result[2], "binary call");
+    assert_eq!(expected[3], result[3], "complex callee");
     Ok(())
 }
 
@@ -339,7 +356,7 @@ fn fn_def() -> LangResult<'static, ()> {
         FnRecDef(
             ast::Name("foo").loc(),
             vec![],
-            vec![Call(ast::Name("foo").loc(), vec![]).loc()].loc(),
+            vec![Call(Box::new(Name(ast::Name("foo")).loc()), vec![]).loc()].loc(),
             Ty::Unit.loc(),
         )
         .loc(),

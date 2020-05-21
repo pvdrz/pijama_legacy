@@ -133,7 +133,7 @@ pub enum Node<'a> {
         Located<Block<'a>>,
         Located<Ty>,
     ),
-    Call(Located<Name<'a>>, Block<'a>),
+    Call(Box<Located<Node<'a>>>, Block<'a>),
     Literal(Literal),
     Name(Name<'a>),
 }

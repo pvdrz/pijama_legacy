@@ -4,13 +4,14 @@
 //! the rule
 //!
 //! ```abnf
-//! call = "name "(" (node ("," node)*)? ")"
+//! call = "(name / "(" node ")") "(" (node ("," node)*)? ")"
 //! ```
-use nom::{character::complete::space0, combinator::map, sequence::separated_pair};
+use nom::{branch::alt, character::complete::space0, combinator::map, sequence::separated_pair};
 
 use crate::{
     ast::{Located, Node},
     parser::{
+        helpers::in_brackets,
         name::name,
         node::{fn_def::args, node},
         IResult, Span,
@@ -20,14 +21,23 @@ use crate::{
 /// Parses a [`Node::Call`].
 ///
 /// This parser admits:
-/// - Spaces after the name of the function.
+/// - Spaces after the callee.
 /// - Spaces before and spaces or line breaks after each comma.
 ///
 /// The location of the returned node matches the start of the name and the end of the node after
 /// the `=`.
 pub fn call(input: Span) -> IResult<Located<Node>> {
-    map(separated_pair(name, space0, args(node)), |(name, args)| {
-        let loc = name.loc + args.loc;
-        Located::new(Node::Call(name, args.content), loc)
+    let func = alt((
+        map(name, |Located { content, loc }| {
+            Located::new(Node::Name(content), loc)
+        }),
+        map(in_brackets(node), |Located { mut content, loc }| {
+            content.loc = loc;
+            content
+        }),
+    ));
+    map(separated_pair(func, space0, args(node)), |(func, args)| {
+        let loc = func.loc + args.loc;
+        Located::new(Node::Call(Box::new(func), args.content), loc)
     })(input)
 }

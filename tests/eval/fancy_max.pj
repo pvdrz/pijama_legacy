@@ -1,13 +1,10 @@
-fn fancy_max(gt: Int -> Int -> Bool, x: Int, y: Int) do
+(fn (gt: Int -> Int -> Bool, x: Int, y: Int) do
     if gt(x, y) do
         x
     else
         y
     end
-end
-
-
-fancy_max(
+end)(
     fn(x: Int, y: Int) do (x - y) > 0 end,
     10,
     -10
