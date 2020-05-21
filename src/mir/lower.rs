@@ -39,6 +39,7 @@ fn lower_node(node: Located<Node<'_>>) -> TyResult<Located<Term<'_>>> {
         Node::FnDef(opt_name, binds, body, opt_ty) => {
             lower_fn_def(loc, opt_name, binds, body, opt_ty)
         }
+        Node::PrimFn(prim) => Ok(Located::new(Term::PrimFn(prim), loc)),
     }?;
     Ok(term)
 }

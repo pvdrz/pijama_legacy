@@ -113,6 +113,17 @@ impl<'a> Display for Literal {
     }
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum Primitive {}
+
+impl<'a> Display for Primitive {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        match self {
+            _ => write!(f, "primitive"),
+        }
+    }
+}
+
 #[derive(Debug, Eq, PartialEq)]
 pub enum Node<'a> {
     BinaryOp(BinOp, Box<Located<Node<'a>>>, Box<Located<Node<'a>>>),
@@ -132,4 +143,5 @@ pub enum Node<'a> {
     Call(Box<Located<Node<'a>>>, Block<'a>),
     Literal(Literal),
     Name(Name<'a>),
+    PrimFn(Primitive),
 }

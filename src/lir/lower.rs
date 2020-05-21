@@ -68,6 +68,7 @@ impl<'a> Context<'a> {
                 let t1 = self.remove_names(t1.content);
                 lir::Term::Fix(Box::new(t1))
             }
+            mir::Term::PrimFn(prim) => lir::Term::PrimFn(prim),
         }
     }
 }

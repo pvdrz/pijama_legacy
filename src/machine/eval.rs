@@ -28,7 +28,7 @@ impl Machine {
             // Dispatch step for fixed point operation
             Fix(t1) => self.step_fix(t1),
             // Any other term stops the evaluation.
-            Var(_) | Lit(_) | Abs(_) | Hole => (false, term),
+            Var(_) | Lit(_) | Abs(_) | PrimFn(_) | Hole => (false, term),
         }
     }
 

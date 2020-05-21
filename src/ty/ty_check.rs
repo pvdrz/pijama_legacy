@@ -155,6 +155,9 @@ impl<'a> Context<'a> {
                     return Err(TyError::ExpectedFn(ty));
                 }
             }
+            Term::PrimFn(prim) => match prim {
+                _ => panic!("There aren't any primitives yet!"),
+            },
         };
         Ok(Located::new(ty, loc))
     }

@@ -17,6 +17,7 @@ pub enum Term {
     Cond(Box<Term>, Box<Term>, Box<Term>),
     Fix(Box<Term>),
     Hole,
+    PrimFn(Primitive),
 }
 
 impl fmt::Display for Term {
@@ -31,6 +32,7 @@ impl fmt::Display for Term {
             Lit(literal) => write!(f, "{}", literal),
             Cond(t1, t2, t3) => write!(f, "(if {} then {} else {})", t1, t2, t3),
             Fix(t1) => write!(f, "(fix {})", t1),
+            PrimFn(prim) => write!(f, "{}", prim),
         }
     }
 }
@@ -42,7 +44,7 @@ impl Term {
 
     pub(crate) fn shift(&mut self, up: bool, cutoff: usize) {
         match self {
-            Lit(_) | Hole => (),
+            Lit(_) | PrimFn(_) | Hole => (),
             Var(index) => {
                 if *index >= cutoff {
                     if up {
@@ -79,7 +81,7 @@ impl Term {
 
     pub(crate) fn replace(&mut self, index: usize, subs: &mut Term) {
         match self {
-            Lit(_) | Hole => (),
+            Lit(_) | PrimFn(_) | Hole => (),
             Var(index2) => {
                 if index == *index2 {
                     *self = subs.clone();
