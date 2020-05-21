@@ -13,6 +13,11 @@ test_type!(
 );
 
 test_type!(
+    detect_recursion_after_shadowing_2,
+    Err(LangError::Ty(TyError::Missing(().loc())))
+);
+
+test_type!(
     detect_recursion_inside_functions,
     Err(LangError::Ty(TyError::Missing(().loc())))
 );

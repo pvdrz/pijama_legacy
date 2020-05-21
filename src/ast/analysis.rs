@@ -1,6 +1,8 @@
 //! Diverse checks that need to be done before lowering.
-use crate::{ast::{Located, Block, Node, Name, visitor::NodeVisitor}, ty::{Binding,Ty}};
-
+use crate::{
+    ast::{visitor::NodeVisitor, Block, Located, Name, Node},
+    ty::{Binding, Ty},
+};
 
 /// Checks if a function is recursive or not.
 pub struct RecursionChecker<'a> {
@@ -27,7 +29,10 @@ impl<'a> RecursionChecker<'a> {
         this.visit_block(body);
         // Sanity check. There should be only one scope after visiting the body function. the
         // original one
-        assert!(this.stack.is_empty(), "Someone forgot to pop a scope from the stack");
+        assert!(
+            this.stack.is_empty(),
+            "Someone forgot to pop a scope from the stack"
+        );
         this.is_rec
     }
 
@@ -45,7 +50,10 @@ impl<'a> RecursionChecker<'a> {
     /// because the stack always starts as non-empty and we should only pop newly added scopes from
     /// the stack.
     fn pop_scope(&mut self) {
-        self.is_shadowed = self.stack.pop().expect("there are no more scopes in the stack");
+        self.is_shadowed = self
+            .stack
+            .pop()
+            .expect("there are no more scopes in the stack");
     }
 }
 
@@ -89,12 +97,18 @@ impl<'a> NodeVisitor<'a> for RecursionChecker<'a> {
             }
             _ => {}
         };
-        // Push a new scope into the stack
-        self.push_scope();
         // Keep visiting
         self.super_fn_def(opt_name, args, body, opt_ty);
-        // Pop the scope after visiting the function
+    }
+
+    fn visit_block(&mut self, block: &Block<'a>) {
+        // Entering a block means that we need to push a new scope into the stack because the
+        // bindings done inside the block can only exist in that block.
+        self.push_scope();
+        // Keep visiting
+        self.super_block(block);
+        // Pop the scope after visiting the block because all the bindings inside the block are
+        // discarded outside it.
         self.pop_scope();
     }
 }
-
