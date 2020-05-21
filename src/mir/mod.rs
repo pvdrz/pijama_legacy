@@ -1,7 +1,7 @@
 use std::fmt::{Display, Formatter, Result};
 
 use crate::{
-    ast::{BinOp, Block, Literal, Located, Name, UnOp},
+    ast::{BinOp, Block, Literal, Located, Name, Primitive, UnOp},
     ty::Binding,
     LangError, LangResult,
 };
@@ -28,6 +28,7 @@ pub enum Term<'a> {
     ),
     Seq(Box<Located<Term<'a>>>, Box<Located<Term<'a>>>),
     Fix(Box<Located<Term<'a>>>),
+    PrimFn(Primitive),
 }
 
 impl<'a> Display for Term<'a> {
@@ -43,6 +44,7 @@ impl<'a> Display for Term<'a> {
             Term::Let(name, t1, t2) => write!(f, "(let {} = {} in {})", name, t1, t2),
             Term::Seq(t1, t2) => write!(f, "{} ; {}", t1, t2),
             Term::Fix(t1) => write!(f, "(fix {})", t1),
+            Term::PrimFn(prim) => write!(f, "{}", prim),
         }
     }
 }

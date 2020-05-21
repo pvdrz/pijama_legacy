@@ -1,5 +1,5 @@
 use crate::{
-    ast::{BinOp, Block, Literal, Located, Name, Node, UnOp},
+    ast::{BinOp, Block, Literal, Located, Name, Node, Primitive, UnOp},
     ty::{Binding, Ty},
 };
 
@@ -46,6 +46,7 @@ pub trait NodeVisitor<'a> {
             Node::Call(func, args) => self.visit_call(func.as_ref(), &args),
             Node::Literal(literal) => self.visit_literal(literal),
             Node::Name(name) => self.visit_name(name),
+            Node::PrimFn(primitive) => self.visit_prim_fn(*primitive),
         }
     }
 
@@ -107,6 +108,8 @@ pub trait NodeVisitor<'a> {
 
     fn super_name(&mut self, _name: &Name<'a>) {}
 
+    fn super_prim_fn(&mut self, _prim_fn: Primitive) {}
+
     fn visit_block(&mut self, block: BlockRef<'a, '_>) {
         self.super_block(block);
     }
@@ -161,5 +164,9 @@ pub trait NodeVisitor<'a> {
 
     fn visit_name(&mut self, name: &Name<'a>) {
         self.super_name(name);
+    }
+
+    fn visit_prim_fn(&mut self, prim_fn: Primitive) {
+        self.super_prim_fn(prim_fn);
     }
 }

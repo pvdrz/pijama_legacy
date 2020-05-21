@@ -1,5 +1,5 @@
 use crate::{
-    ast::{BinOp, Literal, UnOp},
+    ast::{BinOp, Literal, Primitive, UnOp},
     lir::Term::{self, *},
     machine::Machine,
 };
@@ -16,19 +16,17 @@ impl Machine {
             // Dispatch step for beta reduction
             // Application with unevaluated first term (t1 t2)
             // Evaluate t1.
-            App(mut t1, arg) => {
-                if let Abs(body) = *t1 {
-                    self.step_beta_reduction(*body, arg)
-                } else {
-                    (self.step_in_place(t1.borrow_mut()), App(t1, arg))
-                }
-            }
+            App(mut t1, arg) => match *t1 {
+                Abs(body) => self.step_beta_reduction(*body, arg),
+                PrimFn(prim) => self.step_primitive_app(prim, arg),
+                _ => (self.step_in_place(t1.borrow_mut()), App(t1, arg)),
+            },
             // Dispatch step for conditionals
             Cond(t1, t2, t3) => self.step_conditional(t1, t2, t3),
             // Dispatch step for fixed point operation
             Fix(t1) => self.step_fix(t1),
             // Any other term stops the evaluation.
-            Var(_) | Lit(_) | Abs(_) | Hole => (false, term),
+            Var(_) | Lit(_) | Abs(_) | PrimFn(_) | Hole => (false, term),
         }
     }
 
@@ -116,6 +114,12 @@ impl Machine {
         body.shift(false, 0);
         // return the body
         (true, body)
+    }
+    /// Evaluation step for application of primitive functions (prim arg)
+    fn step_primitive_app(&mut self, prim: Primitive, _arg: Box<Term>) -> (bool, Term) {
+        match prim {
+            _ => todo!("There aren't any primitives yet!"),
+        }
     }
 }
 
