@@ -1,0 +1,29 @@
+name: Pijama's benchmark
+on:
+    push:
+        branches:
+            - master
+
+jobs:
+    benchmark:
+        name: Continuous Benchmark
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+            - run: rustup toolchain update stable && rustup default stable
+            - name: Run benchmark
+              run: cargo nightly bench -- --output-format bencher | tee output.txt
+            - name: Store benchmark result
+              uses: rhysd/github-action-benchmark@v1.8.0
+              with:
+                  name: Rust Benchmark
+                  tool: 'cargo'
+                  output-file-path: examples/criterion-rs/output.txt
+                  # Use personal access token instead of GITHUB_TOKEN due to https://github.community/t5/GitHub-Actions/Github-action-not-triggering-gh-pages-upon-push/td-p/26869/highlight/false
+                  github-token: ${{ secrets.PERSONAL_GITHUB_TOKEN }}
+                  auto-push: true
+                  # Show alert with commit comment on detecting possible performance regression
+                  alert-threshold: '150%'
+                  comment-on-alert: true
+                  fail-on-alert: true
+                  alert-comment-cc-users: '@christianpoveda'
