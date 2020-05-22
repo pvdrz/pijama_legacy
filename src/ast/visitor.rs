@@ -80,12 +80,26 @@ pub trait NodeVisitor<'a> {
         branches: &[Branch<'a>],
         el_blk: &Located<Block<'a>>,
     ) {
-        let if_blk = &if_branch.cond;
-        let do_blk = &if_branch.body;
+        self.visit_branch(if_branch);
 
-        self.visit_block(&if_blk.content);
-        self.visit_block(&do_blk.content);
+        for branch in branches {
+            self.visit_branch(branch);
+        }
+
+        // let if_blk = &if_branch.cond;
+        // let do_blk = &if_branch.body;
+
+        // self.visit_block(&if_blk.content);
+        // self.visit_block(&do_blk.content);
         self.visit_block(&el_blk.content);
+    }
+
+    fn super_branch(&mut self, branch: &Branch<'a>) {
+        let cond = &branch.cond;
+        let body = &branch.body;
+
+        self.visit_block(&cond.content);
+        self.visit_block(&body.content);
     }
 
     fn super_fn_def(
@@ -145,6 +159,10 @@ pub trait NodeVisitor<'a> {
         el_blk: &Located<Block<'a>>,
     ) {
         self.super_cond(if_branch, branches, el_blk);
+    }
+
+    fn visit_branch(&mut self, branch: &Branch<'a>) {
+        self.super_branch(branch);
     }
 
     fn visit_fn_def(

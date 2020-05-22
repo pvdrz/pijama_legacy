@@ -52,7 +52,7 @@ fn lower_cond<'a>(
 ) -> TyResult<Located<Term<'a>>> {
     let mut el_term = Box::new(lower_blk(el_blk)?);
 
-    for branch in branches.iter().rev() {
+    for branch in branches.into_iter().rev() {
         el_term = Box::new(Located::new(Term::Cond(Box::new(lower_blk(branch.cond)?), Box::new(lower_blk(branch.body)?), el_term), loc));
     }
 
