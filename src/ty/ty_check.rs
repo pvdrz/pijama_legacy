@@ -1,175 +1,333 @@
-use thiserror::Error;
-
+//! The Pijama type-checker.
+//!
+//! This module contains all the functions and types required to do type checking over the MIR of a
+//! program.
 use crate::{
-    ast::{BinOp, Literal, Located, Location, Primitive, UnOp},
+    ast::{BinOp, Literal, Located, Location, Name, Primitive, UnOp},
     mir::Term,
-    ty::{Binding, Ty},
+    ty::{Binding, Ty, TyError, TyResult},
 };
 
+/// Function that type-checks a term and returns its type.
+///
+/// This function must always be called in the "root" term of the program. Otherwise, the type
+/// checker might not have all the bindings required to do its job.
 pub fn ty_check(term: &Located<Term<'_>>) -> TyResult<Located<Ty>> {
     Context::default().type_of(&term)
 }
 
-pub fn expect_ty(expected: Ty, found: Located<Ty>) -> TyResult {
-    if expected == found.content {
-        Ok(expected)
+/// Function that returns an unexpected type error if the types passed to it are not equal.
+pub fn expect_ty(expected: &Ty, found: &Located<Ty>) -> TyResult<()> {
+    if *expected == found.content {
+        Ok(())
     } else {
-        Err(TyError::Unexpected { expected, found })
+        Err(TyError::Unexpected {
+            expected: expected.clone(),
+            found: found.clone(),
+        })
     }
 }
 
 /// Macro version of `expect_ty` that accepts a comma separated list of types to check.
+///
+/// This only uses references to its parameters instead of using them by value.
 macro_rules! ensure_ty {
     ($expected:expr, $found:expr) => {
-        crate::ty::expect_ty($expected, $found)
+        crate::ty::expect_ty(&$expected, &$found)
     };
     ($expected:expr, $found:expr, $( $other:expr ),*) => {
-        crate::ty::expect_ty($expected, $found)$(.and_then(|_| crate::ty::expect_ty($expected, $other)))*
+        crate::ty::expect_ty(&$expected, &$found)$(.and_then(|_| crate::ty::expect_ty(&$expected, &$other)))*
     };
 }
 
-#[derive(Error, Debug, Eq, PartialEq)]
-pub enum TyError {
-    #[error("Unexpected type: expected {expected}, found {found}")]
-    Unexpected { expected: Ty, found: Located<Ty> },
-    #[error("Name {0} is not bounded")]
-    Unbound(Located<String>),
-    #[error("Unexpected type: expected function, found {0}")]
-    ExpectedFn(Located<Ty>),
-    #[error("Unexpected type: expected a basic type, found {0}")]
-    ExpectedBasic(Located<Ty>),
-    #[error("Missing type: type cannot be inferred")]
-    Missing(Located<()>),
-}
-
-impl TyError {
-    pub fn loc(&self) -> Location {
-        match self {
-            TyError::Unexpected { found, .. } => found.loc,
-            TyError::Unbound(name) => name.loc,
-            TyError::ExpectedBasic(ty) | TyError::ExpectedFn(ty) => ty.loc,
-            TyError::Missing(unit) => unit.loc,
-        }
-    }
-}
-
-pub type TyResult<T = Ty> = Result<T, TyError>;
-
 #[derive(Default)]
+
+/// A typing context.
+///
+/// This structure traverses the MIR of a program and checks the well-typedness of its inner terms.
+/// A context can only have the variables that have been bound in the scope of the term is typing.
 struct Context<'a> {
+    /// Stack for the type bindings done in the current scope.
+    ///
+    /// Ever time a new binding is done via an abstraction or let binding term it is required to push
+    /// that binding into this stack, and pop it after traversing the term.
     inner: Vec<Binding<'a>>,
 }
 
 impl<'a> Context<'a> {
+    /// Returns the type of a term.
+    ///
+    /// The location of the type returned by this function is such that showing a type error
+    /// actually points to the term causing the error. Most of the time this is the same location
+    /// as the one of the term that's being typed.
     fn type_of(&mut self, term: &Located<Term<'a>>) -> TyResult<Located<Ty>> {
         let loc = term.loc;
-        let ty = match &term.content {
-            Term::Lit(lit) => match lit {
-                Literal::Unit => Ty::Unit,
-                Literal::Bool(_) => Ty::Bool,
-                Literal::Number(_) => Ty::Int,
-            },
-            Term::Var(name) => self
-                .inner
-                .iter()
-                .find(|bind| bind.name == *name)
-                .ok_or_else(|| TyError::Unbound(Located::new(name.0.to_string(), loc)))?
-                .ty
-                .clone(),
-            Term::Abs(bind, body) => {
-                self.inner.push(bind.clone());
-                let ty = self.type_of(body.as_ref())?.content;
-                self.inner.pop().unwrap();
-                Ty::Arrow(Box::new(bind.ty.clone()), Box::new(ty))
-            }
-            Term::UnaryOp(op, term) => {
-                let ty = self.type_of(term.as_ref())?;
-                match op {
-                    UnOp::Neg => ensure_ty!(Ty::Int, ty)?,
-                    UnOp::Not => ensure_ty!(Ty::Bool, ty)?,
-                }
-            }
+        match &term.content {
+            Term::Lit(lit) => self.type_of_lit(loc, lit),
+            Term::Var(name) => self.type_of_var(loc, name),
+            Term::Abs(bind, body) => self.type_of_abs(loc, bind, body.as_ref()),
+            Term::UnaryOp(op, term) => self.type_of_unary_op(loc, *op, term.as_ref()),
             Term::BinaryOp(op, t1, t2) => {
-                let ty1 = self.type_of(t1.as_ref())?;
-                let ty2 = self.type_of(t2.as_ref())?;
-                match op {
-                    BinOp::Add
-                    | BinOp::Sub
-                    | BinOp::Mul
-                    | BinOp::Div
-                    | BinOp::Rem
-                    | BinOp::BitAnd
-                    | BinOp::BitOr
-                    | BinOp::BitXor
-                    | BinOp::Shr
-                    | BinOp::Shl => ensure_ty!(Ty::Int, ty1, ty2)?,
-                    BinOp::Or | BinOp::And => ensure_ty!(Ty::Bool, ty1, ty2)?,
-                    BinOp::Lt | BinOp::Gt | BinOp::Lte | BinOp::Gte => {
-                        ensure_ty!(Ty::Int, ty1, ty2)?;
-                        Ty::Bool
-                    }
-                    BinOp::Eq | BinOp::Neq => {
-                        ensure_ty!(ty1.content, ty2)?;
-                        Ty::Bool
-                    }
-                }
+                self.type_of_binary_op(loc, *op, t1.as_ref(), t2.as_ref())
             }
-            Term::App(t1, t2) => {
-                if let Term::PrimFn(primitive) = t1.content {
-                    self.type_of_primitive(primitive, t2)
-                } else {
-                    let ty1 = self.type_of(t1.as_ref())?;
-                    let ty2 = self.type_of(t2.as_ref())?;
-                    match ty1.content {
-                        Ty::Arrow(ty11, ty) => {
-                            ensure_ty!(*ty11, ty2)?;
-                            *ty
-                        }
-                        _ => return Err(TyError::ExpectedFn(ty1)),
-                    }
-                }
-            }
-            Term::Let(name, t1, t2) => {
-                let bind = self.type_of(t1.as_ref()).map(|ty| Binding {
-                    name: name.content,
-                    ty: ty.content,
-                })?;
-                self.inner.push(bind);
-                let ty2 = self.type_of(t2.as_ref())?;
-                self.inner.pop().unwrap();
-                ty2.content
-            }
-            Term::Cond(t1, t2, t3) => {
-                let ty1 = self.type_of(t1.as_ref())?;
-                let ty2 = self.type_of(t2.as_ref())?;
-                let ty3 = self.type_of(t3.as_ref())?;
-                ensure_ty!(Ty::Bool, ty1)?;
-                ensure_ty!(ty2.content, ty3)?
-            }
-            Term::Seq(t1, t2) => {
-                let ty1 = self.type_of(t1.as_ref())?;
-                ensure_ty!(Ty::Unit, ty1)?;
-                return self.type_of(t2.as_ref());
-            }
-            Term::Fix(t1) => {
-                let ty = self.type_of(t1.as_ref())?;
-                if let Ty::Arrow(ty1, ty2) = ty.content {
-                    ensure_ty!(*ty1, Located::new(*ty2, ty.loc))?
-                } else {
-                    return Err(TyError::ExpectedFn(ty));
-                }
-            }
+            Term::App(t1, t2) => self.type_of_app(loc, t1.as_ref(), t2.as_ref()),
+            Term::Let(name, t1, t2) => self.type_of_let(loc, name, t1.as_ref(), t2.as_ref()),
+            Term::Cond(t1, t2, t3) => self.type_of_cond(loc, t1.as_ref(), t2.as_ref(), t3.as_ref()),
+            Term::Seq(t1, t2) => self.type_of_seq(loc, t1.as_ref(), t2.as_ref()),
+            Term::Fix(t1) => self.type_of_fix(loc, t1.as_ref()),
             Term::PrimFn(prim) => unreachable!(
                 "Primitives always need special case handling but got {:?}",
                 prim
             ),
+        }
+    }
+
+    /// Returns the type of a literal.
+    ///
+    /// The type of a literal is only decided by its variant so this cannot fail.
+    fn type_of_lit(&mut self, loc: Location, lit: &Literal) -> TyResult<Located<Ty>> {
+        let ty = match lit {
+            Literal::Unit => Ty::Unit,
+            Literal::Bool(_) => Ty::Bool,
+            Literal::Number(_) => Ty::Int,
         };
         Ok(Located::new(ty, loc))
     }
 
-    fn type_of_primitive(&mut self, primitive: Primitive, _arg: &Located<Term>) -> Ty {
-        match primitive {
-            Primitive::Print => Ty::Unit,
+    /// Returns the type of a variable.
+    ///
+    /// To type a variable, it must have been binded beforehand using a let binding or an
+    /// abstraction and added to the context. If the variable is not in the current context, this
+    /// method returns an error stating that the variable is unbounded.
+    fn type_of_var(&mut self, loc: Location, name: &Name<'a>) -> TyResult<Located<Ty>> {
+        let ty = self
+            .inner
+            .iter()
+            .find(|bind| bind.name == *name)
+            .ok_or_else(|| TyError::Unbound(Located::new(name.0.to_string(), loc)))?
+            .ty
+            .clone();
+        Ok(Located::new(ty, loc))
+    }
+
+
+    /// Returns the type of an abstraction.
+    ///
+    /// To type an abstraction, we need to add the binding done by the abstraction to the current
+    /// context and then type its body. If the body can be typed succesfully, the type of the
+    /// abstraction is `T` -> `U` where `T` is the type of the binding and `U` the type of the
+    /// body.
+    ///
+    /// Afterwards we need to remove the binding from the context because that binding is only
+    /// valid inside the body of the function (lexical scoping). This function panics if it's not
+    /// possible to remove the last added binding to the context (which should be the one this
+    /// method added before).
+    fn type_of_abs(
+        &mut self,
+        loc: Location,
+        bind: &Binding<'a>,
+        body: &Located<Term<'a>>,
+    ) -> TyResult<Located<Ty>> {
+        self.inner.push(bind.clone());
+        let ty = self.type_of(body)?.content;
+        self.inner.pop().unwrap();
+        let ty = Ty::Arrow(Box::new(bind.ty.clone()), Box::new(ty));
+        Ok(Located::new(ty, loc))
+    }
+
+    /// Returns the type of an unary operation.
+    ///
+    /// The type of an unary operation depends on its operator:
+    /// - If it is a negation, the operand must have type `Int`.
+    /// - If it is a logical not, the operand must have type `Bool`.
+    ///
+    /// If that check succeeds, the operation has the same type as the operand.
+    fn type_of_unary_op(
+        &mut self,
+        loc: Location,
+        op: UnOp,
+        term: &Located<Term<'a>>,
+    ) -> TyResult<Located<Ty>> {
+        let ty = self.type_of(term)?;
+        match op {
+            UnOp::Neg => ensure_ty!(Ty::Int, ty)?,
+            UnOp::Not => ensure_ty!(Ty::Bool, ty)?,
+        };
+        Ok(Located::new(ty.content, loc))
+    }
+
+    /// Returns the type of an binary operation.
+    ///
+    /// The type of a binary operation depends on its operator:
+    /// - If it is an arithmetic operator, the operands must have type `Int`.
+    /// - If it is a logic operator, the operands must have type `Bool`.
+    /// - If it is `Eq` or `Neq`, the operands must have the same type.
+    /// - If it is any other comparison operator, the operands must have type `Bool`.
+    ///
+    /// If that check succeeds, the operation has type `Bool` unless it is an arithmetic operation,
+    /// which has type `Int`.
+    fn type_of_binary_op(
+        &mut self,
+        loc: Location,
+        op: BinOp,
+        t1: &Located<Term<'a>>,
+        t2: &Located<Term<'a>>,
+    ) -> TyResult<Located<Ty>> {
+        let ty1 = self.type_of(t1)?;
+        let ty2 = self.type_of(t2)?;
+        let ty = match op {
+            BinOp::Add
+            | BinOp::Sub
+            | BinOp::Mul
+            | BinOp::Div
+            | BinOp::Rem
+            | BinOp::BitAnd
+            | BinOp::BitOr
+            | BinOp::BitXor
+            | BinOp::Shr
+            | BinOp::Shl => {
+                ensure_ty!(Ty::Int, ty1, ty2)?;
+                Ty::Int
+            }
+            BinOp::Or | BinOp::And => {
+                ensure_ty!(Ty::Bool, ty1, ty2)?;
+                Ty::Bool
+            }
+            BinOp::Lt | BinOp::Gt | BinOp::Lte | BinOp::Gte => {
+                ensure_ty!(Ty::Int, ty1, ty2)?;
+                Ty::Bool
+            }
+            BinOp::Eq | BinOp::Neq => {
+                ensure_ty!(ty1.content, ty2)?;
+                Ty::Bool
+            }
+        };
+        Ok(Located::new(ty, loc))
+    }
+    /// Returns the type of an application.
+    ///
+    /// If the first term of the application is a primitive function, the typing is delegated to
+    /// another method.
+    ///
+    /// Otherwise, the first term must have type `T -> U` and the second term must have type `U`.
+    /// If that's the case, the type of the application is `U`. If that's not the case an error is
+    /// returned, either because the first term is not a function, or because the return type of
+    /// the first term doesn't match the type of the second term.
+    fn type_of_app(
+        &mut self,
+        loc: Location,
+        t1: &Located<Term<'a>>,
+        t2: &Located<Term<'a>>,
+    ) -> TyResult<Located<Ty>> {
+        if let Term::PrimFn(primitive) = t1.content {
+            self.type_of_prim_app(loc, primitive, t2)
+        } else {
+            let ty1 = self.type_of(t1)?;
+            let ty2 = self.type_of(t2)?;
+            match ty1.content {
+                Ty::Arrow(ty11, ty) => {
+                    ensure_ty!(ty11, ty2)?;
+                    Ok(Located::new(*ty, loc))
+                }
+                _ => Err(TyError::ExpectedFn(ty1)),
+            }
+        }
+    }
+
+    /// Returns the type of a let binding.
+    ///
+    /// Typing a let binding requires adding a type binding for the name in the context. The name
+    /// is binded to whatever type has the first term. Then, the type of the let binding is
+    /// the same as the type of the second term.
+    ///
+    /// Like when typing abstractions, the type binding added to the context must be removed to
+    /// avoid leaking the binding to the outer scopes. This function returns an error if it is not
+    /// possible to remove such binding.
+    fn type_of_let(
+        &mut self,
+        loc: Location,
+        name: &Located<Name<'a>>,
+        t1: &Located<Term<'a>>,
+        t2: &Located<Term<'a>>,
+    ) -> TyResult<Located<Ty>> {
+        let bind = self.type_of(t1).map(|ty| Binding {
+            name: name.content,
+            ty: ty.content,
+        })?;
+        self.inner.push(bind);
+        let ty2 = self.type_of(t2)?;
+        self.inner.pop().unwrap();
+        Ok(Located::new(ty2.content, loc))
+    }
+
+    /// Returns the type of a conditional.
+    ///
+    /// Typing a conditional requires that the condition has type `Bool` and that both branches
+    /// have the same type. If that's the case, the conditional has the same type as the branches.
+    /// Otherwise an error is returned indicating which requirement was not satisfied.
+    fn type_of_cond(
+        &mut self,
+        loc: Location,
+        t1: &Located<Term<'a>>,
+        t2: &Located<Term<'a>>,
+        t3: &Located<Term<'a>>,
+    ) -> TyResult<Located<Ty>> {
+        let ty1 = self.type_of(t1)?;
+        let ty2 = self.type_of(t2)?;
+        let ty3 = self.type_of(t3)?;
+        ensure_ty!(Ty::Bool, ty1)?;
+        ensure_ty!(ty2.content, ty3)?;
+        Ok(Located::new(ty2.content, loc))
+    }
+
+    /// Returns the type of a sequence.
+    ///
+    /// Typing a sequence requires that the first term has type `Unit`. This is because terms
+    /// cannot be simply ommited during evaluation (this is a limitation of the LIR). If that's the
+    /// case the type of the sequence is the same as the type of the second term. Otherwise an
+    /// error is returned indicating that the first term is not an `Unit`.
+    fn type_of_seq(
+        &mut self,
+        _loc: Location,
+        t1: &Located<Term<'a>>,
+        t2: &Located<Term<'a>>,
+    ) -> TyResult<Located<Ty>> {
+        let ty1 = self.type_of(t1)?;
+        ensure_ty!(Ty::Unit, ty1)?;
+        // FIXME: this is the only method that doesn't use the location of the Term to reflect its
+        // own location. If we can this, all the `type_of_*` methods coud return `TyResult<Ty>`
+        self.type_of(t2)
+    }
+
+    /// Returns the type of a fixed-point operation.
+    ///
+    /// Typing a fixed-point operation requires that the operand has a function type and that such
+    /// type has the form `T -> T`. If that's the case, the type of the operation is just `T`.
+    /// Otherwise an error is returned indicating that either the operand is not a function or that
+    /// the argument type of the function is not equal to the return type.
+    fn type_of_fix(&mut self, loc: Location, t1: &Located<Term<'a>>) -> TyResult<Located<Ty>> {
+        let ty = self.type_of(t1)?;
+        if let Ty::Arrow(ty1, ty2) = ty.content {
+            ensure_ty!(*ty1, Located::new(*ty2, ty.loc))?;
+            Ok(Located::new(*ty1, loc))
+        } else {
+            Err(TyError::ExpectedFn(ty))
+        }
+    }
+
+    /// Returns the type of an application of a primitive function.
+    ///
+    /// The type depends on which primitive function is being applied:
+    ///
+    /// - If the primitive is `print`, the type of the application is `Unit`.
+    fn type_of_prim_app(
+        &mut self,
+        loc: Location,
+        prim: Primitive,
+        _arg: &Located<Term>,
+    ) -> TyResult<Located<Ty>> {
+        match prim {
+            Primitive::Print => Ok(Located::new(Ty::Unit, loc)),
         }
     }
 }
