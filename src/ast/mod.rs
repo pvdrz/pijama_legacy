@@ -124,6 +124,7 @@ impl<'a> Display for Primitive {
     }
 }
 
+/// Encapsulates a conditional where "if `cond` then `body`"
 #[derive(Debug, Eq, PartialEq)]
 pub struct Branch<'a> {
     pub cond: Located<Block<'a>>,
