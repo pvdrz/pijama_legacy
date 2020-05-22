@@ -1,9 +1,7 @@
-use thiserror::Error;
-
 use crate::{
-    ast::{BinOp, Literal, Located, Location, Primitive, UnOp},
+    ast::{BinOp, Literal, Located, Primitive, UnOp},
     mir::Term,
-    ty::{Binding, Ty},
+    ty::{Binding, Ty, TyError, TyResult},
 };
 
 pub fn ty_check(term: &Located<Term<'_>>) -> TyResult<Located<Ty>> {
@@ -27,33 +25,6 @@ macro_rules! ensure_ty {
         crate::ty::expect_ty($expected, $found)$(.and_then(|_| crate::ty::expect_ty($expected, $other)))*
     };
 }
-
-#[derive(Error, Debug, Eq, PartialEq)]
-pub enum TyError {
-    #[error("Unexpected type: expected {expected}, found {found}")]
-    Unexpected { expected: Ty, found: Located<Ty> },
-    #[error("Name {0} is not bounded")]
-    Unbound(Located<String>),
-    #[error("Unexpected type: expected function, found {0}")]
-    ExpectedFn(Located<Ty>),
-    #[error("Unexpected type: expected a basic type, found {0}")]
-    ExpectedBasic(Located<Ty>),
-    #[error("Missing type: type cannot be inferred")]
-    Missing(Located<()>),
-}
-
-impl TyError {
-    pub fn loc(&self) -> Location {
-        match self {
-            TyError::Unexpected { found, .. } => found.loc,
-            TyError::Unbound(name) => name.loc,
-            TyError::ExpectedBasic(ty) | TyError::ExpectedFn(ty) => ty.loc,
-            TyError::Missing(unit) => unit.loc,
-        }
-    }
-}
-
-pub type TyResult<T = Ty> = Result<T, TyError>;
 
 #[derive(Default)]
 struct Context<'a> {
