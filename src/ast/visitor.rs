@@ -86,11 +86,6 @@ pub trait NodeVisitor<'a> {
             self.visit_branch(branch);
         }
 
-        // let if_blk = &if_branch.cond;
-        // let do_blk = &if_branch.body;
-
-        // self.visit_block(&if_blk.content);
-        // self.visit_block(&do_blk.content);
         self.visit_block(&el_blk.content);
     }
 

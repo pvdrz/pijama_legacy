@@ -4,15 +4,16 @@
 //! rule
 //!
 //! ```abnf
-//! cond = "if" block1 "do" block1 ("else" block1)? "end"
+//! cond = "if" block1 "do" block1 ("elif" block1 "do" block1) ("else" block1)? "end"
 //! ```
 //!
-//! Thus, `else` blocks are optional and are represented as empty [`Block`]s inside the
+//! Thus, `elif` and `else` blocks are optional and are represented as empty [`Block`]s inside the
 //! [`Node::Cond`] variant.
 use nom::{
     character::complete::multispace0,
     combinator::map,
-    sequence::{delimited, preceded, tuple},
+    multi::many0,
+    sequence::{delimited, pair, preceded, tuple},
 };
 use nom_locate::position;
 
@@ -36,11 +37,12 @@ pub fn cond(input: Span) -> IResult<Located<Node>> {
             position,
             if_block,
             do_block,
+            many0(pair(elif_block, do_block)),
             // FIXME: fix optional else block
             else_block,
             preceded(keyword("end"), position),
         )),
-        move |(sp1, if_block, do_block, else_block, sp2)| {
+        move |(sp1, if_block, do_block, elif_block, else_block, sp2)| {
             Located::new(
                 Node::Cond(Branch { cond: if_block, body: do_block }, vec![], else_block),
                 Location::from(sp1) + Location::from(sp2),
@@ -71,10 +73,10 @@ fn do_block(input: Span) -> IResult<Located<Block>> {
 
 /// Parses the `elif` block of a [`Node::Cond`].
 ///
-/// There must be at least one space or line break between the `if` and the first node in the
+/// There must be at least one space or line break between the `elif` and the first node in the
 /// block. There can be spaces or line breaks at the end of the block.
 ///
-/// The location of the returned block ignores the `if` and spaces surrounding the block.
+/// The location of the returned block ignores the `elif` and spaces surrounding the block.
 fn elif_block(input: Span) -> IResult<Located<Block>> {
     delimited(keyword_space("elif"), block1, multispace0)(input)
 }
