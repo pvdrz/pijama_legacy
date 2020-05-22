@@ -1,0 +1,2 @@
+print = fn(x: Int) do x end
+print(10)

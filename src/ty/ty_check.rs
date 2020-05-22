@@ -1,7 +1,7 @@
 use thiserror::Error;
 
 use crate::{
-    ast::{BinOp, Literal, Located, Location, UnOp},
+    ast::{BinOp, Literal, Located, Location, Primitive, UnOp},
     mir::Term,
     ty::{Binding, Ty},
 };
@@ -115,14 +115,18 @@ impl<'a> Context<'a> {
                 }
             }
             Term::App(t1, t2) => {
-                let ty1 = self.type_of(t1.as_ref())?;
-                let ty2 = self.type_of(t2.as_ref())?;
-                match ty1.content {
-                    Ty::Arrow(ty11, ty) => {
-                        ensure_ty!(*ty11, ty2)?;
-                        *ty
+                if let Term::PrimFn(primitive) = t1.content {
+                    self.type_of_primitive(primitive, t2)
+                } else {
+                    let ty1 = self.type_of(t1.as_ref())?;
+                    let ty2 = self.type_of(t2.as_ref())?;
+                    match ty1.content {
+                        Ty::Arrow(ty11, ty) => {
+                            ensure_ty!(*ty11, ty2)?;
+                            *ty
+                        }
+                        _ => return Err(TyError::ExpectedFn(ty1)),
                     }
-                    _ => return Err(TyError::ExpectedFn(ty1)),
                 }
             }
             Term::Let(name, t1, t2) => {
@@ -155,10 +159,17 @@ impl<'a> Context<'a> {
                     return Err(TyError::ExpectedFn(ty));
                 }
             }
-            Term::PrimFn(prim) => match prim {
-                _ => todo!("There aren't any primitives yet!"),
-            },
+            Term::PrimFn(prim) => unreachable!(
+                "Primitives always need special case handling but got {:?}",
+                prim
+            ),
         };
         Ok(Located::new(ty, loc))
+    }
+
+    fn type_of_primitive(&mut self, primitive: Primitive, _arg: &Located<Term>) -> Ty {
+        match primitive {
+            Primitive::Print => Ty::Unit,
+        }
     }
 }

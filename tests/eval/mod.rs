@@ -1,6 +1,11 @@
 use std::{include_str, time::Duration};
 
-use pijama::{ast::Literal, lir::Term, run, LangResult};
+use pijama::{
+    ast::Literal,
+    lir::Term,
+    machine::{LangEnv, Machine},
+    run, run_with_machine, LangError, LangResult,
+};
 
 use crate::panic_after;
 
@@ -158,4 +163,75 @@ fn and_short_circuit() -> LangResult<'static, ()> {
         assert_eq!(Term::Lit(Literal::Bool(false)), term);
         Ok(())
     })
+}
+
+#[test]
+fn print_simple() -> LangResult<'static, ()> {
+    let input = include_str!("print_simple.pj");
+    let mut output = Vec::new();
+    let term = run_with_machine(
+        input,
+        Machine::with_env(LangEnv {
+            stdout: &mut output,
+        }),
+    )?;
+    let output = String::from_utf8_lossy(&output);
+    assert_eq!(output, "10\n");
+    assert_eq!(Term::Lit(Literal::Unit), term);
+    Ok(())
+}
+
+#[test]
+fn print_simple_fn() -> LangResult<'static, ()> {
+    let input = include_str!("print_simple_fn.pj");
+    let mut output = Vec::new();
+    let term = run_with_machine(
+        input,
+        Machine::with_env(LangEnv {
+            stdout: &mut output,
+        }),
+    )?;
+    let output = String::from_utf8_lossy(&output);
+    assert_eq!(output, "((λ. _0) 10)\n");
+    assert_eq!(Term::Lit(Literal::Unit), term);
+    Ok(())
+}
+
+#[test]
+fn print_complex_fn() -> LangResult<'static, ()> {
+    let input = include_str!("print_complex_fn.pj");
+    let mut output = Vec::new();
+    let term = run_with_machine(
+        input,
+        Machine::with_env(LangEnv {
+            stdout: &mut output,
+        }),
+    )?;
+    let output = String::from_utf8_lossy(&output);
+    assert_eq!(output, "((λ. (if (_0 > 0) then 1 else 0)) 10)\n");
+    assert_eq!(Term::Lit(Literal::Unit), term);
+    Ok(())
+}
+
+#[test]
+fn print_print() -> LangResult<'static, ()> {
+    let input = include_str!("print_print.pj");
+    let mut output = Vec::new();
+    let term = run_with_machine(
+        input,
+        Machine::with_env(LangEnv {
+            stdout: &mut output,
+        }),
+    )?;
+    let output = String::from_utf8_lossy(&output);
+    assert_eq!(output, "(print 10)\n");
+    assert_eq!(Term::Lit(Literal::Unit), term);
+    Ok(())
+}
+
+#[test]
+fn print_redefine() {
+    let input = include_str!("print_redefine.pj");
+    let err = run(input).unwrap_err();
+    assert!(matches!(err, LangError::Parse(_)))
 }
