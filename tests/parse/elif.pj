@@ -1,0 +1,23 @@
+if x do y elif a do b else z end
+if
+    u
+    v
+do
+    w
+    x
+elif
+    a
+    b
+do
+    c
+    d
+elif
+    e
+    f
+do
+    g
+    h
+else
+    y
+    z
+end

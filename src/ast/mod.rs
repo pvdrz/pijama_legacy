@@ -139,7 +139,7 @@ pub enum Node<'a> {
         Option<Located<Ty>>,
         Box<Located<Node<'a>>>,
     ),
-    Cond(Branch<'a>, Located<Block<'a>>),
+    Cond(Branch<'a>, Vec<Branch<'a>>, Located<Block<'a>>),
     FnDef(
         Option<Located<Name<'a>>>,
         Vec<Located<Binding<'a>>>,
