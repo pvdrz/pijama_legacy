@@ -2,9 +2,13 @@ use pijama::ast::{Located, Location};
 
 use std::fmt::Debug;
 
+pub const fn dummy_loc() -> Location {
+    Location::new(0, 0)
+}
+
 pub trait DummyLoc: Debug + Sized {
     fn loc(self) -> Located<Self> {
-        Located::new(self, Location::new(0, 0))
+        Located::new(self, dummy_loc())
     }
 }
 

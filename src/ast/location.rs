@@ -12,7 +12,7 @@ pub struct Location {
 }
 
 impl Location {
-    pub fn new(start: usize, end: usize) -> Self {
+    pub const fn new(start: usize, end: usize) -> Self {
         Location { start, end }
     }
 }
