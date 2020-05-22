@@ -28,11 +28,3 @@ test_type!(
         found: Ty::Bool.loc()
     }))
 );
-
-test_type!(
-    wrong_return_type_anon_fn_int_to_int,
-    Err(LangError::Ty(TyError::Unexpected {
-        expected: Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Bool)),
-        found: Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int)).loc()
-    }))
-);
