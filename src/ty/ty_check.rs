@@ -8,21 +8,24 @@ pub fn ty_check(term: &Located<Term<'_>>) -> TyResult<Located<Ty>> {
     Context::default().type_of(&term)
 }
 
-pub fn expect_ty(expected: Ty, found: Located<Ty>) -> TyResult {
-    if expected == found.content {
-        Ok(expected)
+pub fn expect_ty(expected: &Ty, found: &Located<Ty>) -> TyResult<()> {
+    if *expected == found.content {
+        Ok(())
     } else {
-        Err(TyError::Unexpected { expected, found })
+        Err(TyError::Unexpected {
+            expected: expected.clone(),
+            found: found.clone(),
+        })
     }
 }
 
 /// Macro version of `expect_ty` that accepts a comma separated list of types to check.
 macro_rules! ensure_ty {
     ($expected:expr, $found:expr) => {
-        crate::ty::expect_ty($expected, $found)
+        crate::ty::expect_ty(&$expected, &$found)
     };
     ($expected:expr, $found:expr, $( $other:expr ),*) => {
-        crate::ty::expect_ty($expected, $found)$(.and_then(|_| crate::ty::expect_ty($expected, $other)))*
+        crate::ty::expect_ty(&$expected, &$found)$(.and_then(|_| crate::ty::expect_ty(&$expected, &$other)))*
     };
 }
 
@@ -94,11 +97,11 @@ impl<'a> Context<'a> {
         term: &Located<Term<'a>>,
     ) -> TyResult<Located<Ty>> {
         let ty = self.type_of(term)?;
-        let ty = match op {
+        match op {
             UnOp::Neg => ensure_ty!(Ty::Int, ty)?,
             UnOp::Not => ensure_ty!(Ty::Bool, ty)?,
         };
-        Ok(Located::new(ty, loc))
+        Ok(Located::new(ty.content, loc))
     }
 
     fn type_of_binary_op(
@@ -120,8 +123,14 @@ impl<'a> Context<'a> {
             | BinOp::BitOr
             | BinOp::BitXor
             | BinOp::Shr
-            | BinOp::Shl => ensure_ty!(Ty::Int, ty1, ty2)?,
-            BinOp::Or | BinOp::And => ensure_ty!(Ty::Bool, ty1, ty2)?,
+            | BinOp::Shl => {
+                ensure_ty!(Ty::Int, ty1, ty2)?;
+                Ty::Int
+            }
+            BinOp::Or | BinOp::And => {
+                ensure_ty!(Ty::Bool, ty1, ty2)?;
+                Ty::Bool
+            }
             BinOp::Lt | BinOp::Gt | BinOp::Lte | BinOp::Gte => {
                 ensure_ty!(Ty::Int, ty1, ty2)?;
                 Ty::Bool
@@ -141,13 +150,13 @@ impl<'a> Context<'a> {
         t2: &Located<Term<'a>>,
     ) -> TyResult<Located<Ty>> {
         if let Term::PrimFn(primitive) = t1.content {
-            self.type_of_primitive(loc, primitive, t2)
+            self.type_of_prim_app(loc, primitive, t2)
         } else {
             let ty1 = self.type_of(t1)?;
             let ty2 = self.type_of(t2)?;
             match ty1.content {
                 Ty::Arrow(ty11, ty) => {
-                    ensure_ty!(*ty11, ty2)?;
+                    ensure_ty!(ty11, ty2)?;
                     Ok(Located::new(*ty, loc))
                 }
                 _ => Err(TyError::ExpectedFn(ty1)),
@@ -183,8 +192,8 @@ impl<'a> Context<'a> {
         let ty2 = self.type_of(t2)?;
         let ty3 = self.type_of(t3)?;
         ensure_ty!(Ty::Bool, ty1)?;
-        let ty = ensure_ty!(ty2.content, ty3)?;
-        Ok(Located::new(ty, loc))
+        ensure_ty!(ty2.content, ty3)?;
+        Ok(Located::new(ty2.content, loc))
     }
 
     fn type_of_seq(
@@ -201,8 +210,8 @@ impl<'a> Context<'a> {
     fn type_of_fix(&mut self, loc: Location, t1: &Located<Term<'a>>) -> TyResult<Located<Ty>> {
         let ty = self.type_of(t1)?;
         if let Ty::Arrow(ty1, ty2) = ty.content {
-            let ty = ensure_ty!(*ty1, Located::new(*ty2, ty.loc))?;
-            Ok(Located::new(ty, loc))
+            ensure_ty!(*ty1, Located::new(*ty2, ty.loc))?;
+            Ok(Located::new(*ty1, loc))
         } else {
             Err(TyError::ExpectedFn(ty))
         }

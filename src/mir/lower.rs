@@ -109,7 +109,7 @@ fn lower_let_bind<'a>(
 
     if let Some(ty) = opt_ty {
         let term_ty = ty_check(&term)?;
-        expect_ty(ty.content, term_ty)?;
+        expect_ty(&ty.content, &term_ty)?;
     }
 
     Ok(Located::new(
@@ -180,7 +180,7 @@ fn lower_fn_def<'a>(
             (false, Some(ty)) => {
                 // Check that the inferred type matches the user type.
                 let term_ty = ty_check(&term)?;
-                expect_ty(ty, term_ty)?;
+                expect_ty(&ty, &term_ty)?;
             }
             // The function is not recursive and does not have a return type
             (false, None) => (),
@@ -200,7 +200,7 @@ fn lower_fn_def<'a>(
     } else if let Some(ty) = opt_ty {
         // Check that the inferred type matches the user type.
         let term_ty = ty_check(&term)?;
-        expect_ty(ty, term_ty)?;
+        expect_ty(&ty, &term_ty)?;
     }
 
     Ok(term)

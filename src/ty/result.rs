@@ -1,6 +1,9 @@
 use thiserror::Error;
 
-use crate::{ty::Ty, ast::{Location, Located}};
+use crate::{
+    ast::{Located, Location},
+    ty::Ty,
+};
 
 pub type TyResult<T = Ty> = Result<T, TyError>;
 

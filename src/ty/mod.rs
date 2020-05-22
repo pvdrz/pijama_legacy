@@ -2,11 +2,11 @@ use std::fmt;
 
 use crate::ast::Name;
 
-mod ty_check;
 mod result;
+mod ty_check;
 
-pub use ty_check::{expect_ty, ty_check};
 pub use result::{TyError, TyResult};
+pub use ty_check::{expect_ty, ty_check};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Ty {

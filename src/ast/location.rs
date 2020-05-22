@@ -60,3 +60,11 @@ impl<T: PartialEq + Debug> PartialEq for Located<T> {
         self.content == other.content
     }
 }
+
+impl<T: Clone + Debug> Clone for Located<T> {
+    fn clone(&self) -> Self {
+        Located::new(self.content.clone(), self.loc)
+    }
+}
+
+impl<T: Copy + Debug> Copy for Located<T> {}
