@@ -42,7 +42,7 @@ pub fn cond(input: Span) -> IResult<Located<Node>> {
         )),
         move |(sp1, if_block, do_block, else_block, sp2)| {
             Located::new(
-                Node::Cond(Branch { cond: if_block, body: do_block }, else_block),
+                Node::Cond(Branch { cond: if_block, body: do_block }, vec![], else_block),
                 Location::from(sp1) + Location::from(sp2),
             )
         },
@@ -67,6 +67,16 @@ fn if_block(input: Span) -> IResult<Located<Block>> {
 /// The location of the returned block ignores the `do` and spaces surrounding the block.
 fn do_block(input: Span) -> IResult<Located<Block>> {
     delimited(keyword_space("do"), block1, multispace0)(input)
+}
+
+/// Parses the `elif` block of a [`Node::Cond`].
+///
+/// There must be at least one space or line break between the `if` and the first node in the
+/// block. There can be spaces or line breaks at the end of the block.
+///
+/// The location of the returned block ignores the `if` and spaces surrounding the block.
+fn elif_block(input: Span) -> IResult<Located<Block>> {
+    delimited(keyword_space("elif"), block1, multispace0)(input)
 }
 
 /// Parses the `else` block of a [`Node::Cond`].

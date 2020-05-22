@@ -39,7 +39,7 @@ pub trait NodeVisitor<'a> {
             }
             Node::UnaryOp(op, node) => self.visit_unary_op(*op, node.as_ref()),
             Node::LetBind(name, opt_ty, node) => self.visit_let_bind(name, opt_ty, node.as_ref()),
-            Node::Cond(branch, el_blk) => self.visit_cond(branch, el_blk),
+            Node::Cond(if_branch, branches, el_blk) => self.visit_cond(if_branch, branches, el_blk),
             Node::FnDef(opt_name, args, body, opt_ty) => {
                 self.visit_fn_def(opt_name, args, body, opt_ty)
             }
@@ -76,11 +76,12 @@ pub trait NodeVisitor<'a> {
 
     fn super_cond(
         &mut self,
-        branch: &Branch<'a>,
+        if_branch: &Branch<'a>,
+        branches: &[Branch<'a>],
         el_blk: &Located<Block<'a>>,
     ) {
-        let if_blk = &branch.cond;
-        let do_blk = &branch.body;
+        let if_blk = &if_branch.cond;
+        let do_blk = &if_branch.body;
 
         self.visit_block(&if_blk.content);
         self.visit_block(&do_blk.content);
@@ -139,10 +140,11 @@ pub trait NodeVisitor<'a> {
 
     fn visit_cond(
         &mut self,
-        branch: &Branch<'a>,
+        if_branch: &Branch<'a>,
+        branches: &[Branch<'a>],
         el_blk: &Located<Block<'a>>,
     ) {
-        self.super_cond(branch, el_blk);
+        self.super_cond(if_branch, branches, el_blk);
     }
 
     fn visit_fn_def(
