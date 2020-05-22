@@ -1,13 +1,22 @@
+//! The Pijama type-checker.
+//!
+//! This module contains all the functions and types required to do type checking over the MIR of a
+//! program.
 use crate::{
     ast::{BinOp, Literal, Located, Location, Name, Primitive, UnOp},
     mir::Term,
     ty::{Binding, Ty, TyError, TyResult},
 };
 
+/// Function that type-checks a term and returns its type.
+///
+/// This function must always be called in the "root" term of the program. Otherwise, the type
+/// checker might not have all the bindings required to do its job.
 pub fn ty_check(term: &Located<Term<'_>>) -> TyResult<Located<Ty>> {
     Context::default().type_of(&term)
 }
 
+/// Function that returns an unexpected type error if the types passed to it are not equal.
 pub fn expect_ty(expected: &Ty, found: &Located<Ty>) -> TyResult<()> {
     if *expected == found.content {
         Ok(())
@@ -20,6 +29,8 @@ pub fn expect_ty(expected: &Ty, found: &Located<Ty>) -> TyResult<()> {
 }
 
 /// Macro version of `expect_ty` that accepts a comma separated list of types to check.
+///
+/// This only uses references to its parameters instead of using them by value.
 macro_rules! ensure_ty {
     ($expected:expr, $found:expr) => {
         crate::ty::expect_ty(&$expected, &$found)
@@ -30,11 +41,25 @@ macro_rules! ensure_ty {
 }
 
 #[derive(Default)]
+
+/// A typing context.
+///
+/// This structure traverses the MIR of a program and checks the well-typedness of its inner terms.
+/// A context can only have the variables that have been bound in the scope of the term is typing.
 struct Context<'a> {
+    /// Stack for the type bindings done in the current scope.
+    ///
+    /// Ever time a new binding is done via an abstraction or let binding term it is required to push
+    /// that binding into this stack, and pop it after traversing the term.
     inner: Vec<Binding<'a>>,
 }
 
 impl<'a> Context<'a> {
+    /// Returns the type of a term.
+    ///
+    /// The location of the type returned by this function is such that showing a type error
+    /// actually points to the term causing the error. Most of the time this is the same location
+    /// as the one of the term that's being typed.
     fn type_of(&mut self, term: &Located<Term<'a>>) -> TyResult<Located<Ty>> {
         let loc = term.loc;
         match &term.content {
@@ -57,6 +82,9 @@ impl<'a> Context<'a> {
         }
     }
 
+    /// Returns the type of a literal.
+    ///
+    /// The type of a literal is only decided by its variant so this cannot fail.
     fn type_of_lit(&mut self, loc: Location, lit: &Literal) -> TyResult<Located<Ty>> {
         let ty = match lit {
             Literal::Unit => Ty::Unit,
@@ -66,6 +94,11 @@ impl<'a> Context<'a> {
         Ok(Located::new(ty, loc))
     }
 
+    /// Returns the type of a variable.
+    ///
+    /// To type a variable, it must have been binded beforehand using a let binding or an
+    /// abstraction and added to the context. If the variable is not in the current context, this
+    /// method returns an error stating that the variable is unbounded.
     fn type_of_var(&mut self, loc: Location, name: &Name<'a>) -> TyResult<Located<Ty>> {
         let ty = self
             .inner
@@ -77,6 +110,18 @@ impl<'a> Context<'a> {
         Ok(Located::new(ty, loc))
     }
 
+
+    /// Returns the type of an abstraction.
+    ///
+    /// To type an abstraction, we need to add the binding done by the abstraction to the current
+    /// context and then type its body. If the body can be typed succesfully, the type of the
+    /// abstraction is `T` -> `U` where `T` is the type of the binding and `U` the type of the
+    /// body.
+    ///
+    /// Afterwards we need to remove the binding from the context because that binding is only
+    /// valid inside the body of the function (lexical scoping). This function panics if it's not
+    /// possible to remove the last added binding to the context (which should be the one this
+    /// method added before).
     fn type_of_abs(
         &mut self,
         loc: Location,
@@ -90,6 +135,13 @@ impl<'a> Context<'a> {
         Ok(Located::new(ty, loc))
     }
 
+    /// Returns the type of an unary operation.
+    ///
+    /// The type of an unary operation depends on its operator:
+    /// - If it is a negation, the operand must have type `Int`.
+    /// - If it is a logical not, the operand must have type `Bool`.
+    ///
+    /// If that check succeeds, the operation has the same type as the operand.
     fn type_of_unary_op(
         &mut self,
         loc: Location,
@@ -104,6 +156,16 @@ impl<'a> Context<'a> {
         Ok(Located::new(ty.content, loc))
     }
 
+    /// Returns the type of an binary operation.
+    ///
+    /// The type of a binary operation depends on its operator:
+    /// - If it is an arithmetic operator, the operands must have type `Int`.
+    /// - If it is a logic operator, the operands must have type `Bool`.
+    /// - If it is `Eq` or `Neq`, the operands must have the same type.
+    /// - If it is any other comparison operator, the operands must have type `Bool`.
+    ///
+    /// If that check succeeds, the operation has type `Bool` unless it is an arithmetic operation,
+    /// which has type `Int`.
     fn type_of_binary_op(
         &mut self,
         loc: Location,
@@ -142,7 +204,15 @@ impl<'a> Context<'a> {
         };
         Ok(Located::new(ty, loc))
     }
-
+    /// Returns the type of an application.
+    ///
+    /// If the first term of the application is a primitive function, the typing is delegated to
+    /// another method.
+    ///
+    /// Otherwise, the first term must have type `T -> U` and the second term must have type `U`.
+    /// If that's the case, the type of the application is `U`. If that's not the case an error is
+    /// returned, either because the first term is not a function, or because the return type of
+    /// the first term doesn't match the type of the second term.
     fn type_of_app(
         &mut self,
         loc: Location,
@@ -164,6 +234,15 @@ impl<'a> Context<'a> {
         }
     }
 
+    /// Returns the type of a let binding.
+    ///
+    /// Typing a let binding requires adding a type binding for the name in the context. The name
+    /// is binded to whatever type has the first term. Then, the type of the let binding is
+    /// the same as the type of the second term.
+    ///
+    /// Like when typing abstractions, the type binding added to the context must be removed to
+    /// avoid leaking the binding to the outer scopes. This function returns an error if it is not
+    /// possible to remove such binding.
     fn type_of_let(
         &mut self,
         loc: Location,
@@ -181,6 +260,11 @@ impl<'a> Context<'a> {
         Ok(Located::new(ty2.content, loc))
     }
 
+    /// Returns the type of a conditional.
+    ///
+    /// Typing a conditional requires that the condition has type `Bool` and that both branches
+    /// have the same type. If that's the case, the conditional has the same type as the branches.
+    /// Otherwise an error is returned indicating which requirement was not satisfied.
     fn type_of_cond(
         &mut self,
         loc: Location,
@@ -196,6 +280,12 @@ impl<'a> Context<'a> {
         Ok(Located::new(ty2.content, loc))
     }
 
+    /// Returns the type of a sequence.
+    ///
+    /// Typing a sequence requires that the first term has type `Unit`. This is because terms
+    /// cannot be simply ommited during evaluation (this is a limitation of the LIR). If that's the
+    /// case the type of the sequence is the same as the type of the second term. Otherwise an
+    /// error is returned indicating that the first term is not an `Unit`.
     fn type_of_seq(
         &mut self,
         _loc: Location,
@@ -204,9 +294,17 @@ impl<'a> Context<'a> {
     ) -> TyResult<Located<Ty>> {
         let ty1 = self.type_of(t1)?;
         ensure_ty!(Ty::Unit, ty1)?;
+        // FIXME: this is the only method that doesn't use the location of the Term to reflect its
+        // own location. If we can this, all the `type_of_*` methods coud return `TyResult<Ty>`
         self.type_of(t2)
     }
 
+    /// Returns the type of a fixed-point operation.
+    ///
+    /// Typing a fixed-point operation requires that the operand has a function type and that such
+    /// type has the form `T -> T`. If that's the case, the type of the operation is just `T`.
+    /// Otherwise an error is returned indicating that either the operand is not a function or that
+    /// the argument type of the function is not equal to the return type.
     fn type_of_fix(&mut self, loc: Location, t1: &Located<Term<'a>>) -> TyResult<Located<Ty>> {
         let ty = self.type_of(t1)?;
         if let Ty::Arrow(ty1, ty2) = ty.content {
@@ -217,6 +315,11 @@ impl<'a> Context<'a> {
         }
     }
 
+    /// Returns the type of an application of a primitive function.
+    ///
+    /// The type depends on which primitive function is being applied:
+    ///
+    /// - If the primitive is `print`, the type of the application is `Unit`.
     fn type_of_prim_app(
         &mut self,
         loc: Location,
