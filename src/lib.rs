@@ -11,6 +11,7 @@ use thiserror::Error;
 
 use ast::Location;
 use machine::Machine;
+use mir::LowerError;
 use parser::ParsingError;
 use ty::TyError;
 
@@ -22,6 +23,8 @@ pub enum LangError<'a> {
     Ty(#[from] TyError),
     #[error("{0}")]
     Parse(ParsingError<'a>),
+    #[error("{0}")]
+    Lower(#[from] LowerError),
 }
 
 impl<'a> From<ParsingError<'a>> for LangError<'a> {
@@ -49,6 +52,7 @@ pub fn display_error<'a>(input: &str, path: &str, error: &LangError<'a>) {
     let (msg, loc) = match &error {
         LangError::Ty(error) => ("Type error", error.loc()),
         LangError::Parse(error) => ("Parsing error", Location::from(error.span)),
+        LangError::Lower(error) => ("Lowering error", error.loc()),
     };
 
     let diagnostic = Diagnostic::error()

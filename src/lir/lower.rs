@@ -1,9 +1,10 @@
 use crate::{
     ast::{Located, Name},
-    lir, mir,
+    lir::Term,
+    mir::{LetKind, Term as MirTerm},
 };
 
-pub fn remove_names(term: Located<mir::Term<'_>>) -> lir::Term {
+pub fn remove_names(term: Located<MirTerm<'_>>) -> Term {
     Context::default().remove_names(term.content)
 }
 
@@ -13,10 +14,10 @@ struct Context<'a> {
 }
 
 impl<'a> Context<'a> {
-    fn remove_names(&mut self, term: mir::Term<'a>) -> lir::Term {
+    fn remove_names(&mut self, term: MirTerm<'a>) -> Term {
         match term {
-            mir::Term::Lit(literal) => lir::Term::Lit(literal),
-            mir::Term::Var(name) => {
+            MirTerm::Lit(literal) => Term::Lit(literal),
+            MirTerm::Var(name) => {
                 let (index, _) = self
                     .inner
                     .iter()
@@ -24,51 +25,64 @@ impl<'a> Context<'a> {
                     .enumerate()
                     .find(|(_, name2)| name == **name2)
                     .unwrap();
-                lir::Term::Var(index)
+                Term::Var(index)
             }
-            mir::Term::Abs(bind, body) => {
+            MirTerm::Abs(bind, body) => {
                 self.inner.push(bind.name);
                 let body = self.remove_names(body.content);
                 self.inner.pop().unwrap();
-                lir::Term::Abs(Box::new(body))
+                Term::Abs(Box::new(body))
             }
-            mir::Term::UnaryOp(op, t1) => {
+            MirTerm::UnaryOp(op, t1) => {
                 let t1 = self.remove_names(t1.content);
-                lir::Term::UnaryOp(op, Box::new(t1))
+                Term::UnaryOp(op, Box::new(t1))
             }
-            mir::Term::BinaryOp(op, t1, t2) => {
-                let t1 = self.remove_names(t1.content);
-                let t2 = self.remove_names(t2.content);
-                lir::Term::BinaryOp(op, Box::new(t1), Box::new(t2))
-            }
-            mir::Term::App(t1, t2) => {
+            MirTerm::BinaryOp(op, t1, t2) => {
                 let t1 = self.remove_names(t1.content);
                 let t2 = self.remove_names(t2.content);
-                lir::Term::App(Box::new(t1), Box::new(t2))
+                Term::BinaryOp(op, Box::new(t1), Box::new(t2))
             }
-            mir::Term::Let(name, t1, t2) => {
+            MirTerm::App(t1, t2) => {
                 let t1 = self.remove_names(t1.content);
-                self.inner.push(name.content);
+                let t2 = self.remove_names(t2.content);
+                Term::App(Box::new(t1), Box::new(t2))
+            }
+            MirTerm::Let(kind, name, t1, t2) => {
+                let t1 = if let LetKind::Rec(_) = kind {
+                    // if the let binding is recursive we are dealing with a recursive function and
+                    // we need its name inside the context to lower its body.
+                    //
+                    // Also the indices must be shifted by one because the function will be wrapped
+                    // in an additional abstraction.
+                    //
+                    // Both things are satisfied by just pushing the name of the function into the
+                    // context.
+                    self.inner.push(name.content);
+                    Term::Fix(Box::new(Term::Abs(Box::new(self.remove_names(t1.content)))))
+                } else {
+                    // if the let binding is non-recursive, we first lower the binded term, and
+                    // then we make its name availabe by pushing it into the context
+                    let t1 = self.remove_names(t1.content);
+                    self.inner.push(name.content);
+                    t1
+                };
+
                 let t2 = self.remove_names(t2.content);
                 self.inner.pop().unwrap();
-                lir::Term::App(Box::new(lir::Term::Abs(Box::new(t2))), Box::new(t1))
+                Term::App(Box::new(Term::Abs(Box::new(t2))), Box::new(t1))
             }
-            mir::Term::Cond(t1, t2, t3) => {
+            MirTerm::Cond(t1, t2, t3) => {
                 let t1 = self.remove_names(t1.content);
                 let t2 = self.remove_names(t2.content);
                 let t3 = self.remove_names(t3.content);
-                lir::Term::Cond(Box::new(t1), Box::new(t2), Box::new(t3))
+                Term::Cond(Box::new(t1), Box::new(t2), Box::new(t3))
             }
-            mir::Term::Seq(t1, t2) => {
+            MirTerm::Seq(t1, t2) => {
                 let t1 = self.remove_names(t1.content);
                 let t2 = self.remove_names(t2.content);
-                lir::Term::App(Box::new(lir::Term::Abs(Box::new(t2))), Box::new(t1))
+                Term::App(Box::new(Term::Abs(Box::new(t2))), Box::new(t1))
             }
-            mir::Term::Fix(t1) => {
-                let t1 = self.remove_names(t1.content);
-                lir::Term::Fix(Box::new(t1))
-            }
-            mir::Term::PrimFn(prim) => lir::Term::PrimFn(prim),
+            MirTerm::PrimFn(prim) => Term::PrimFn(prim),
         }
     }
 }
