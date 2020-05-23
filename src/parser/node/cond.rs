@@ -4,10 +4,10 @@
 //! rule
 //!
 //! ```abnf
-//! cond = "if" block1 "do" block1 ("elif" block1 "do" block1) ("else" block1)? "end"
+//! cond = "if" block1 "do" block1 ("elif" block1 "do" block1)* "else" block1? "end"
 //! ```
 //!
-//! Thus, `elif` and `else` blocks are optional and are represented as empty [`Block`]s inside the
+//! Thus, `elif` blocks are optional and are represented as empty [`Block`]s inside the
 //! [`Node::Cond`] variant.
 use nom::{
     character::complete::multispace0,
@@ -56,26 +56,6 @@ fn branch<'a>(keyword: &'a str) -> impl Fn(Span<'a>) -> IResult<Branch<'a>> {
         |(blk1, blk2)| Branch { cond: blk1, body: blk2 }
     )
 }
-
-// pub fn cond(input: Span) -> IResult<Located<Node>> {
-//     map(
-//         tuple((
-//             position,
-//             keyword_block("if"),
-//             keyword_block("do"),
-//             many0(pair(keyword_block("elif"), keyword_block("do"))),
-//             // FIXME: fix optional else block
-//             keyword_block("else"),
-//             preceded(keyword("end"), position),
-//         )),
-//         move |(sp1, if_block, do_block, elif_block, else_block, sp2)| {
-//             Located::new(
-//                 Node::Cond(Branch { cond: if_block, body: do_block }, vec![], else_block),
-//                 Location::from(sp1) + Location::from(sp2),
-//             )
-//         },
-//     )(input)
-// }
 
 /// Parses the `keyword` block of a [`Node::Cond`].
 ///
