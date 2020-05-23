@@ -110,7 +110,6 @@ impl<'a> Context<'a> {
         Ok(Located::new(ty, loc))
     }
 
-
     /// Returns the type of an abstraction.
     ///
     /// To type an abstraction, we need to add the binding done by the abstraction to the current

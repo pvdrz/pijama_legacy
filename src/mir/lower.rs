@@ -1,5 +1,8 @@
 use crate::{
-    ast::{analysis::RecursionChecker, BinOp, Block, Branch, Literal, Located, Location, Name, Node, UnOp},
+    ast::{
+        analysis::RecursionChecker, BinOp, Block, Branch, Literal, Located, Location, Name, Node,
+        UnOp,
+    },
     mir::Term,
     ty::{expect_ty, ty_check, Binding, Ty, TyError, TyResult},
 };
@@ -53,7 +56,14 @@ fn lower_cond<'a>(
     let mut el_term = Box::new(lower_blk(el_blk)?);
 
     for branch in branches.into_iter().rev() {
-        el_term = Box::new(Located::new(Term::Cond(Box::new(lower_blk(branch.cond)?), Box::new(lower_blk(branch.body)?), el_term), loc));
+        el_term = Box::new(Located::new(
+            Term::Cond(
+                Box::new(lower_blk(branch.cond)?),
+                Box::new(lower_blk(branch.body)?),
+                el_term,
+            ),
+            loc,
+        ));
     }
 
     let if_blk = if_branch.cond;

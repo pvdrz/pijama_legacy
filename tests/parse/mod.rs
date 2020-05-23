@@ -1,7 +1,7 @@
 use std::include_str;
 
 use pijama::{
-    ast::{self, Branch, BinOp::*, Node::*, UnOp},
+    ast::{self, BinOp::*, Branch, Node::*, UnOp},
     parser::parse,
     ty::{Binding, Ty},
     LangResult,
@@ -287,7 +287,8 @@ fn cond() -> LangResult<'static, ()> {
             },
             vec![],
             vec![Name(ast::Name("z")).loc()].loc(),
-        ).loc(),
+        )
+        .loc(),
         Cond(
             Branch {
                 cond: vec![Name(ast::Name("u")).loc(), Name(ast::Name("v")).loc()].loc(),
@@ -295,7 +296,8 @@ fn cond() -> LangResult<'static, ()> {
             },
             vec![],
             vec![Name(ast::Name("y")).loc(), Name(ast::Name("z")).loc()].loc(),
-        ).loc(),
+        )
+        .loc(),
     ];
 
     assert_eq!(expected[0], result[0], "simple blocks");
@@ -313,14 +315,13 @@ fn elif() -> LangResult<'static, ()> {
                 cond: vec![Name(ast::Name("x")).loc()].loc(),
                 body: vec![Name(ast::Name("y")).loc()].loc(),
             },
-            vec![
-                Branch {
-                    cond: vec![Name(ast::Name("a")).loc()].loc(),
-                    body: vec![Name(ast::Name("b")).loc()].loc(),
-                }
-            ],
+            vec![Branch {
+                cond: vec![Name(ast::Name("a")).loc()].loc(),
+                body: vec![Name(ast::Name("b")).loc()].loc(),
+            }],
             vec![Name(ast::Name("z")).loc()].loc(),
-        ).loc(),
+        )
+        .loc(),
         Cond(
             Branch {
                 cond: vec![Name(ast::Name("u")).loc(), Name(ast::Name("v")).loc()].loc(),
@@ -337,7 +338,8 @@ fn elif() -> LangResult<'static, ()> {
                 },
             ],
             vec![Name(ast::Name("y")).loc(), Name(ast::Name("z")).loc()].loc(),
-        ).loc(),
+        )
+        .loc(),
     ];
     assert_eq!(expected[0], result[0], "simple blocks");
     assert_eq!(expected[1], result[1], "long blocks");
