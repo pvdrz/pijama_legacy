@@ -90,15 +90,15 @@ pub enum Literal {
     Number(i128),
 }
 
-impl Into<Literal> for i128 {
-    fn into(self) -> Literal {
-        Literal::Number(self)
+impl From<i128> for Literal {
+    fn from(n: i128) -> Self {
+        Literal::Number(n)
     }
 }
 
-impl Into<Literal> for bool {
-    fn into(self) -> Literal {
-        Literal::Bool(self)
+impl From<bool> for Literal {
+    fn from(b: bool) -> Self {
+        Literal::Bool(b)
     }
 }
 
