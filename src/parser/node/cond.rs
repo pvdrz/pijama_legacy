@@ -53,7 +53,10 @@ pub fn cond(input: Span) -> IResult<Located<Node>> {
 fn branch<'a>(keyword: &'a str) -> impl Fn(Span<'a>) -> IResult<Branch<'a>> {
     map(
         pair(keyword_block(keyword), keyword_block("do")),
-        |(blk1, blk2)| Branch { cond: blk1, body: blk2 }
+        |(blk1, blk2)| Branch {
+            cond: blk1,
+            body: blk2,
+        },
     )
 }
 
