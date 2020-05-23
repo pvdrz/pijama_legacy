@@ -8,11 +8,13 @@ use nom::{
     combinator::{map, map_opt, opt, value},
     sequence::tuple,
 };
+use nom_locate::position;
 
 use crate::{
     ast::{Literal, Located, Location},
     parser::{helpers::with_context, IResult, Span},
 };
+
 use std::borrow::Cow;
 
 /// Parses a [`Literal`](crate::ast::Literal).
@@ -67,17 +69,11 @@ fn number_radix(input: Span) -> IResult<u32> {
 /// * hexadecimal `0x`
 fn number(input: Span) -> IResult<Located<i64>> {
     map_opt(
-        tuple((opt(char('-')), number_radix, hex_digit1)),
-        |(sign, radix, digits_span): (Option<char>, u32, Span)| {
-            let mut loc: Location = digits_span.into();
-
-            if radix != 10 {
-                loc.start -= 2;
-            }
-
+        tuple((position, opt(char('-')), number_radix, hex_digit1)),
+        |(position, sign, radix, digits_span): (Span, Option<char>, u32, Span)| {
             let number = if sign.is_some() {
-                loc.start -= 1;
-
+                // Create a string with enough capacity for the number plus the sign to avoid unnecessary allocations when prepending the sign
+                // This allows using the whole range of i64 numbers without handling the i64::min() case ourselves
                 let mut number = String::with_capacity(digits_span.fragment().len() + 1);
                 number.push('-');
                 number.push_str(digits_span.fragment());
@@ -86,6 +82,7 @@ fn number(input: Span) -> IResult<Located<i64>> {
                 Cow::from(*digits_span.fragment())
             };
             let number = i64::from_str_radix(&number, radix).ok()?;
+            let loc = Location::from(position) + digits_span.into();
 
             Some(Located::new(number, loc))
         },
