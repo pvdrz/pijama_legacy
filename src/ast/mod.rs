@@ -87,11 +87,11 @@ impl<'a> Display for UnOp {
 pub enum Literal {
     Bool(bool),
     Unit,
-    Number(i128),
+    Number(i64),
 }
 
-impl From<i128> for Literal {
-    fn from(n: i128) -> Self {
+impl From<i64> for Literal {
+    fn from(n: i64) -> Self {
         Literal::Number(n)
     }
 }

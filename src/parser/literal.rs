@@ -41,16 +41,16 @@ pub fn literal(input: Span) -> IResult<Located<Literal>> {
 
 /// Parses a signed integer.
 ///
-/// This integer must be in the valid range for the `i128` type. If the number is outside this
+/// This integer must be in the valid range for the `i64` type. If the number is outside this
 /// range, the parser will return an error.
 ///
 /// If the number is negative, there cannot be spaces between the minus sign and the digits of the
 /// number. That kind of expression will be parsed as an unary operation.
-fn number(input: Span) -> IResult<Located<i128>> {
+fn number(input: Span) -> IResult<Located<i64>> {
     map_opt(
         pair(opt(char('-')), digit1),
         |(sign, digits_span): (Option<char>, Span)| {
-            let mut number = digits_span.fragment().parse::<i128>().ok()?;
+            let mut number = digits_span.fragment().parse::<i64>().ok()?;
             let mut loc: Location = digits_span.into();
 
             if sign.is_some() {
