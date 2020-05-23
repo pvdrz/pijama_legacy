@@ -1,5 +1,5 @@
 use crate::{
-    ast::{BinOp, Block, Literal, Located, Name, Node, Primitive, UnOp},
+    ast::{BinOp, Block, Branch, Literal, Located, Name, Node, Primitive, UnOp},
     ty::{Binding, Ty},
 };
 
@@ -39,7 +39,7 @@ pub trait NodeVisitor<'a> {
             }
             Node::UnaryOp(op, node) => self.visit_unary_op(*op, node.as_ref()),
             Node::LetBind(name, opt_ty, node) => self.visit_let_bind(name, opt_ty, node.as_ref()),
-            Node::Cond(if_blk, do_blk, el_blk) => self.visit_cond(if_blk, do_blk, el_blk),
+            Node::Cond(if_branch, branches, el_blk) => self.visit_cond(if_branch, branches, el_blk),
             Node::FnDef(opt_name, args, body, opt_ty) => {
                 self.visit_fn_def(opt_name, args, body, opt_ty)
             }
@@ -76,13 +76,25 @@ pub trait NodeVisitor<'a> {
 
     fn super_cond(
         &mut self,
-        if_blk: &Located<Block<'a>>,
-        do_blk: &Located<Block<'a>>,
+        if_branch: &Branch<'a>,
+        branches: &[Branch<'a>],
         el_blk: &Located<Block<'a>>,
     ) {
-        self.visit_block(&if_blk.content);
-        self.visit_block(&do_blk.content);
+        self.visit_branch(if_branch);
+
+        for branch in branches {
+            self.visit_branch(branch);
+        }
+
         self.visit_block(&el_blk.content);
+    }
+
+    fn super_branch(&mut self, branch: &Branch<'a>) {
+        let cond = &branch.cond;
+        let body = &branch.body;
+
+        self.visit_block(&cond.content);
+        self.visit_block(&body.content);
     }
 
     fn super_fn_def(
@@ -137,11 +149,15 @@ pub trait NodeVisitor<'a> {
 
     fn visit_cond(
         &mut self,
-        if_blk: &Located<Block<'a>>,
-        do_blk: &Located<Block<'a>>,
+        if_branch: &Branch<'a>,
+        branches: &[Branch<'a>],
         el_blk: &Located<Block<'a>>,
     ) {
-        self.super_cond(if_blk, do_blk, el_blk);
+        self.super_cond(if_branch, branches, el_blk);
+    }
+
+    fn visit_branch(&mut self, branch: &Branch<'a>) {
+        self.super_branch(branch);
     }
 
     fn visit_fn_def(
