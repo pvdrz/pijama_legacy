@@ -49,6 +49,7 @@ pub fn cond(input: Span) -> IResult<Located<Node>> {
     )(input)
 }
 
+/// Parses a `Branch` representing either an "if do" conditional statement or an "elif do" statement.
 fn branch<'a>(keyword: &'a str) -> impl Fn(Span<'a>) -> IResult<Branch<'a>> {
     map(
         pair(keyword_block(keyword), keyword_block("do")),

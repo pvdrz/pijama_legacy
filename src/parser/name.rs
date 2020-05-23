@@ -16,7 +16,7 @@ use crate::{
 
 /// Words that cannot be names to avoid ambiguities.
 const KEYWORDS: &[&str] = &[
-    "fn", "rec", "do", "end", "if", "else", "true", "false", "unit", "Bool", "Int", "Unit",
+    "fn", "rec", "do", "end", "if", "elif", "else", "true", "false", "unit", "Bool", "Int", "Unit",
 ];
 
 /// Parser for [`Name`]s.
