@@ -1,13 +1,43 @@
+use std::mem::discriminant;
+
+use thiserror::Error;
+
 use crate::{
     ast::{
         analysis::RecursionChecker, BinOp, Block, Branch, Literal, Located, Location, Name, Node,
         UnOp,
     },
-    mir::Term,
-    ty::{expect_ty, ty_check, Binding, Ty, TyError, TyResult},
+    mir::{LetKind, Term},
+    ty::{Binding, Ty},
 };
 
-pub fn lower_blk<'a>(blk: Located<Block<'a>>) -> TyResult<Located<Term<'a>>> {
+pub type LowerResult<T> = Result<T, LowerError>;
+
+#[derive(Error, Debug)]
+pub enum LowerError {
+    #[error("Recursive functions need a return type annotation")]
+    RecWithoutTy(Location),
+    #[error("Anonymous functions cannot have a return type annotation")]
+    AnonWithTy(Location),
+}
+
+impl LowerError {
+    pub fn loc(&self) -> Location {
+        match self {
+            LowerError::RecWithoutTy(loc) | LowerError::AnonWithTy(loc) => *loc,
+        }
+    }
+}
+
+impl PartialEq for LowerError {
+    fn eq(&self, other: &Self) -> bool {
+        discriminant(self) == discriminant(other)
+    }
+}
+
+impl Eq for LowerError {}
+
+pub fn lower_blk<'a>(blk: Located<Block<'a>>) -> LowerResult<Located<Term<'a>>> {
     let mut terms = blk.content.into_iter().rev().map(lower_node);
     if let Some(term) = terms.next() {
         let mut term = term?;
@@ -16,8 +46,8 @@ pub fn lower_blk<'a>(blk: Located<Block<'a>>) -> TyResult<Located<Term<'a>>> {
             let next_term = Box::new(term);
 
             let loc = prev_term.loc;
-            let content = if let Term::Let(name, value, _) = prev_term.content {
-                Term::Let(name, value, next_term)
+            let content = if let Term::Let(kind, name, value, _) = prev_term.content {
+                Term::Let(kind, name, value, next_term)
             } else {
                 Term::Seq(Box::new(prev_term), next_term)
             };
@@ -29,7 +59,7 @@ pub fn lower_blk<'a>(blk: Located<Block<'a>>) -> TyResult<Located<Term<'a>>> {
     }
 }
 
-fn lower_node(node: Located<Node<'_>>) -> TyResult<Located<Term<'_>>> {
+fn lower_node(node: Located<Node<'_>>) -> LowerResult<Located<Term<'_>>> {
     let loc = node.loc;
     let term = match node.content {
         Node::Name(name) => Ok(Located::new(Term::Var(name), loc)),
@@ -52,7 +82,7 @@ fn lower_cond<'a>(
     if_branch: Branch<'a>,
     branches: Vec<Branch<'a>>,
     el_blk: Located<Block<'a>>,
-) -> TyResult<Located<Term<'a>>> {
+) -> LowerResult<Located<Term<'a>>> {
     let mut el_term = Box::new(lower_blk(el_blk)?);
 
     for branch in branches.into_iter().rev() {
@@ -83,7 +113,7 @@ fn lower_call<'a>(
     loc: Location,
     node: Located<Node<'a>>,
     args: Block<'a>,
-) -> TyResult<Located<Term<'a>>> {
+) -> LowerResult<Located<Term<'a>>> {
     let mut term = lower_node(node)?;
     for node in args {
         term = Located::new(Term::App(Box::new(term), Box::new(lower_node(node)?)), loc);
@@ -96,7 +126,7 @@ fn lower_binary_op<'a>(
     bin_op: BinOp,
     node1: Located<Node<'a>>,
     node2: Located<Node<'a>>,
-) -> TyResult<Located<Term<'a>>> {
+) -> LowerResult<Located<Term<'a>>> {
     Ok(Located::new(
         Term::BinaryOp(
             bin_op,
@@ -111,7 +141,7 @@ fn lower_unary_op(
     loc: Location,
     un_op: UnOp,
     node: Located<Node<'_>>,
-) -> TyResult<Located<Term<'_>>> {
+) -> LowerResult<Located<Term<'_>>> {
     Ok(Located::new(
         Term::UnaryOp(un_op, Box::new(lower_node(node)?)),
         loc,
@@ -123,16 +153,12 @@ fn lower_let_bind<'a>(
     name: Located<Name<'a>>,
     opt_ty: Option<Located<Ty>>,
     node: Located<Node<'a>>,
-) -> TyResult<Located<Term<'a>>> {
+) -> LowerResult<Located<Term<'a>>> {
     let term = lower_node(node)?;
-
-    if let Some(ty) = opt_ty {
-        let term_ty = ty_check(&term)?;
-        expect_ty(&ty.content, &term_ty)?;
-    }
 
     Ok(Located::new(
         Term::Let(
+            LetKind::NonRec(opt_ty),
             name,
             Box::new(term),
             Box::new(Located::new(
@@ -150,63 +176,48 @@ fn lower_fn_def<'a>(
     binds: Vec<Located<Binding<'a>>>,
     body: Located<Block<'a>>,
     opt_ty: Option<Located<Ty>>,
-) -> TyResult<Located<Term<'a>>> {
-    let is_rec = if let Some(name) = &opt_name {
-        RecursionChecker::run(name.content, &body.content)
-    } else {
-        false
-    };
+) -> LowerResult<Located<Term<'a>>> {
+    // if the user added a return type annotation, we transform this type into the type of the
+    // function using the bindings.
+    let opt_ty = opt_ty.map(|located_ty| {
+        let mut ty = located_ty.content;
+        let ty_loc = located_ty.loc;
 
-    let mut term = lower_blk(body)?;
-
-    let opt_ty = opt_ty.map(|ty| {
-        let mut ty = ty.content;
         for bind in binds.iter().rev() {
             ty = Ty::Arrow(Box::new(bind.content.ty.clone()), Box::new(ty));
         }
-        ty
+
+        Located::new(ty, ty_loc)
     });
+
+    // we need to decide if the function is recursive or not
+    let kind = match opt_name.as_ref() {
+        // functions can only be recursive if they have a name.
+        Some(name) if RecursionChecker::run(name.content, &body.content) => {
+            // if the function is recursive, we need the return type.
+            opt_ty
+                .map(LetKind::Rec)
+                .ok_or_else(|| LowerError::RecWithoutTy(name.loc))?
+        }
+        // anonymous functions cannot have type annotations
+        None if opt_ty.is_some() => {
+            return Err(LowerError::AnonWithTy(opt_ty.unwrap().loc));
+        }
+        // otherwise the function is either anonymous without a type anotation or a named
+        // non-recursive function with or without a type annotation.
+        _ => LetKind::NonRec(opt_ty),
+    };
+
+    let mut term = lower_blk(body)?;
 
     for bind in binds.into_iter().rev() {
         term = Located::new(Term::Abs(bind.content, Box::new(term)), loc);
     }
 
     if let Some(name) = opt_name {
-        match (is_rec, opt_ty) {
-            // The function is recursive and has a return type
-            (true, Some(ty)) => {
-                // Must be wrapped inside a `Term::Fix`
-                term = Located::new(
-                    Term::Fix(Box::new(Located::new(
-                        Term::Abs(
-                            Binding {
-                                name: name.content,
-                                ty,
-                            },
-                            Box::new(term),
-                        ),
-                        loc,
-                    ))),
-                    loc,
-                );
-            }
-            // The function is recursive and does not have a return type
-            (true, None) => {
-                // Return type is required, throw an error
-                return Err(TyError::Missing(Located::new((), loc)));
-            }
-            // The function is not recursive and has a return type
-            (false, Some(ty)) => {
-                // Check that the inferred type matches the user type.
-                let term_ty = ty_check(&term)?;
-                expect_ty(&ty, &term_ty)?;
-            }
-            // The function is not recursive and does not have a return type
-            (false, None) => (),
-        };
-
         term = Located::new(
             Term::Let(
+                kind,
                 name,
                 Box::new(term),
                 Box::new(Located::new(
@@ -216,10 +227,6 @@ fn lower_fn_def<'a>(
             ),
             loc,
         );
-    } else if let Some(ty) = opt_ty {
-        // Check that the inferred type matches the user type.
-        let term_ty = ty_check(&term)?;
-        expect_ty(&ty, &term_ty)?;
     }
 
     Ok(term)

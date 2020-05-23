@@ -3,7 +3,7 @@ use std::fmt::{Debug, Display, Formatter, Result};
 /// Represents a location in the source code file.
 ///
 /// Both the start and end correspond to locations reported by `nom_locate`.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct Location {
     /// Start of the location
     pub start: usize,
@@ -12,7 +12,7 @@ pub struct Location {
 }
 
 impl Location {
-    pub fn new(start: usize, end: usize) -> Self {
+    pub const fn new(start: usize, end: usize) -> Self {
         Location { start, end }
     }
 }

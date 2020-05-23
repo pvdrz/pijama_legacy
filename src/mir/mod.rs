@@ -2,11 +2,19 @@ use std::fmt::{Display, Formatter, Result};
 
 use crate::{
     ast::{BinOp, Block, Literal, Located, Name, Primitive, UnOp},
-    ty::Binding,
+    ty::{Binding, Ty},
     LangError, LangResult,
 };
 
+pub use lower::LowerError;
+
 mod lower;
+
+#[derive(Debug)]
+pub enum LetKind {
+    NonRec(Option<Located<Ty>>),
+    Rec(Located<Ty>),
+}
 
 #[derive(Debug)]
 pub enum Term<'a> {
@@ -22,12 +30,12 @@ pub enum Term<'a> {
         Box<Located<Term<'a>>>,
     ),
     Let(
+        LetKind,
         Located<Name<'a>>,
         Box<Located<Term<'a>>>,
         Box<Located<Term<'a>>>,
     ),
     Seq(Box<Located<Term<'a>>>, Box<Located<Term<'a>>>),
-    Fix(Box<Located<Term<'a>>>),
     PrimFn(Primitive),
 }
 
@@ -41,9 +49,16 @@ impl<'a> Display for Term<'a> {
             Term::App(t1, t2) => write!(f, "({} {})", t1, t2),
             Term::Lit(literal) => write!(f, "{}", literal),
             Term::Cond(t1, t2, t3) => write!(f, "(if {} then {} else {})", t1, t2, t3),
-            Term::Let(name, t1, t2) => write!(f, "(let {} = {} in {})", name, t1, t2),
+            Term::Let(LetKind::Rec(ty), name, t1, t2) => {
+                write!(f, "(let rec {} : {} = {} in {})", name, ty.content, t1, t2)
+            }
+            Term::Let(LetKind::NonRec(Some(ty)), name, t1, t2) => {
+                write!(f, "(let {} : {} = {} in {})", name, ty.content, t1, t2)
+            }
+            Term::Let(LetKind::NonRec(None), name, t1, t2) => {
+                write!(f, "(let {} = {} in {})", name, t1, t2)
+            }
             Term::Seq(t1, t2) => write!(f, "{} ; {}", t1, t2),
-            Term::Fix(t1) => write!(f, "(fix {})", t1),
             Term::PrimFn(prim) => write!(f, "{}", prim),
         }
     }
@@ -51,6 +66,6 @@ impl<'a> Display for Term<'a> {
 
 impl<'a> Term<'a> {
     pub fn from_ast(blk: Located<Block<'a>>) -> LangResult<Located<Self>> {
-        lower::lower_blk(blk).map_err(LangError::Ty)
+        lower::lower_blk(blk).map_err(LangError::Lower)
     }
 }

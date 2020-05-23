@@ -4,7 +4,7 @@
 //! program.
 use crate::{
     ast::{BinOp, Literal, Located, Location, Name, Primitive, UnOp},
-    mir::Term,
+    mir::{LetKind, Term},
     ty::{Binding, Ty, TyError, TyResult},
 };
 
@@ -40,12 +40,11 @@ macro_rules! ensure_ty {
     };
 }
 
-#[derive(Default)]
-
 /// A typing context.
 ///
 /// This structure traverses the MIR of a program and checks the well-typedness of its inner terms.
 /// A context can only have the variables that have been bound in the scope of the term is typing.
+#[derive(Default)]
 struct Context<'a> {
     /// Stack for the type bindings done in the current scope.
     ///
@@ -71,10 +70,11 @@ impl<'a> Context<'a> {
                 self.type_of_binary_op(loc, *op, t1.as_ref(), t2.as_ref())
             }
             Term::App(t1, t2) => self.type_of_app(loc, t1.as_ref(), t2.as_ref()),
-            Term::Let(name, t1, t2) => self.type_of_let(loc, name, t1.as_ref(), t2.as_ref()),
+            Term::Let(kind, name, t1, t2) => {
+                self.type_of_let(loc, kind, name, t1.as_ref(), t2.as_ref())
+            }
             Term::Cond(t1, t2, t3) => self.type_of_cond(loc, t1.as_ref(), t2.as_ref(), t3.as_ref()),
             Term::Seq(t1, t2) => self.type_of_seq(loc, t1.as_ref(), t2.as_ref()),
-            Term::Fix(t1) => self.type_of_fix(loc, t1.as_ref()),
             Term::PrimFn(prim) => unreachable!(
                 "Primitives always need special case handling but got {:?}",
                 prim
@@ -239,21 +239,47 @@ impl<'a> Context<'a> {
     /// is binded to whatever type has the first term. Then, the type of the let binding is
     /// the same as the type of the second term.
     ///
+    /// If the user provided a type anotation, the inferred type for the first name must coincide
+    /// with such anotation, otherwise an error is returned.
+    ///
+    /// If the let binding is recursive. A type binding with the name and the type provided by the
+    /// annotation is added to the context before inferring any type in order to guarantee that the
+    /// name of the let binding will be in scope.
+    ///
     /// Like when typing abstractions, the type binding added to the context must be removed to
     /// avoid leaking the binding to the outer scopes. This function returns an error if it is not
     /// possible to remove such binding.
     fn type_of_let(
         &mut self,
         loc: Location,
+        kind: &LetKind,
         name: &Located<Name<'a>>,
         t1: &Located<Term<'a>>,
         t2: &Located<Term<'a>>,
     ) -> TyResult<Located<Ty>> {
-        let bind = self.type_of(t1).map(|ty| Binding {
-            name: name.content,
-            ty: ty.content,
-        })?;
-        self.inner.push(bind);
+        match kind {
+            LetKind::NonRec(opt_ty) => {
+                let ty1 = self.type_of(t1)?;
+
+                if let Some(ty) = opt_ty {
+                    ensure_ty!(ty.content, ty1)?;
+                }
+
+                self.inner.push(Binding {
+                    name: name.content,
+                    ty: ty1.content,
+                });
+            }
+            LetKind::Rec(ty) => {
+                self.inner.push(Binding {
+                    name: name.content,
+                    ty: ty.content.clone(),
+                });
+
+                self.type_of(t1)?;
+            }
+        };
+
         let ty2 = self.type_of(t2)?;
         self.inner.pop().unwrap();
         Ok(Located::new(ty2.content, loc))
@@ -296,22 +322,6 @@ impl<'a> Context<'a> {
         // FIXME: this is the only method that doesn't use the location of the Term to reflect its
         // own location. If we can this, all the `type_of_*` methods coud return `TyResult<Ty>`
         self.type_of(t2)
-    }
-
-    /// Returns the type of a fixed-point operation.
-    ///
-    /// Typing a fixed-point operation requires that the operand has a function type and that such
-    /// type has the form `T -> T`. If that's the case, the type of the operation is just `T`.
-    /// Otherwise an error is returned indicating that either the operand is not a function or that
-    /// the argument type of the function is not equal to the return type.
-    fn type_of_fix(&mut self, loc: Location, t1: &Located<Term<'a>>) -> TyResult<Located<Ty>> {
-        let ty = self.type_of(t1)?;
-        if let Ty::Arrow(ty1, ty2) = ty.content {
-            ensure_ty!(*ty1, Located::new(*ty2, ty.loc))?;
-            Ok(Located::new(*ty1, loc))
-        } else {
-            Err(TyError::ExpectedFn(ty))
-        }
     }
 
     /// Returns the type of an application of a primitive function.

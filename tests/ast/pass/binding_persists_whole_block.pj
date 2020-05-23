@@ -1,0 +1,10 @@
+
+fn foo(x: Int): Int do
+    x + 1
+end
+
+fn bar(x: Int): Int do
+    foo(x)
+end
+
+bar
