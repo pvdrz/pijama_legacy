@@ -35,58 +35,53 @@ pub fn cond(input: Span) -> IResult<Located<Node>> {
     map(
         tuple((
             position,
-            if_block,
-            do_block,
-            many0(pair(elif_block, do_block)),
-            // FIXME: fix optional else block
-            else_block,
+            branch("if"),
+            many0(branch("elif")),
+            keyword_block("else"),
             preceded(keyword("end"), position),
         )),
-        move |(sp1, if_block, do_block, elif_block, else_block, sp2)| {
+        move |(sp1, if_branch, braches, else_block, sp2)| {
             Located::new(
-                Node::Cond(Branch { cond: if_block, body: do_block }, vec![], else_block),
+                Node::Cond(if_branch, branches, else_block),
                 Location::from(sp1) + Location::from(sp2),
             )
         },
     )(input)
 }
 
-/// Parses the `if` block of a [`Node::Cond`].
-///
-/// There must be at least one space or line break between the `if` and the first node in the
-/// block. There can be spaces or line breaks at the end of the block.
-///
-/// The location of the returned block ignores the `if` and spaces surrounding the block.
-fn if_block(input: Span) -> IResult<Located<Block>> {
-    delimited(keyword_space("if"), block1, multispace0)(input)
+fn branch<'a>(keyword: &'a str) -> impl Fn(Span<'a>) -> IResult<Located<Branch<'a>>> {
+    map(
+        pair(keyword_block(keyword), keyword_block("do")),
+        |(blk1, blk2)| Branch { cond: blk1, body: blk2 }
+    )
 }
 
-/// Parses the `do` block of a [`Node::Cond`].
-///
-/// There must be at least one space or line break between the `do` and the first node in the
-/// block. There can be spaces or line breaks at the end of the block.
-///
-/// The location of the returned block ignores the `do` and spaces surrounding the block.
-fn do_block(input: Span) -> IResult<Located<Block>> {
-    delimited(keyword_space("do"), block1, multispace0)(input)
-}
+// pub fn cond(input: Span) -> IResult<Located<Node>> {
+//     map(
+//         tuple((
+//             position,
+//             keyword_block("if"),
+//             keyword_block("do"),
+//             many0(pair(keyword_block("elif"), keyword_block("do"))),
+//             // FIXME: fix optional else block
+//             keyword_block("else"),
+//             preceded(keyword("end"), position),
+//         )),
+//         move |(sp1, if_block, do_block, elif_block, else_block, sp2)| {
+//             Located::new(
+//                 Node::Cond(Branch { cond: if_block, body: do_block }, vec![], else_block),
+//                 Location::from(sp1) + Location::from(sp2),
+//             )
+//         },
+//     )(input)
+// }
 
-/// Parses the `elif` block of a [`Node::Cond`].
+/// Parses the `keyword` block of a [`Node::Cond`].
 ///
-/// There must be at least one space or line break between the `elif` and the first node in the
+/// There must be at least one space or line break between the `keyword` and the first node in the
 /// block. There can be spaces or line breaks at the end of the block.
 ///
-/// The location of the returned block ignores the `elif` and spaces surrounding the block.
-fn elif_block(input: Span) -> IResult<Located<Block>> {
-    delimited(keyword_space("elif"), block1, multispace0)(input)
-}
-
-/// Parses the `else` block of a [`Node::Cond`].
-///
-/// There must be at least one space or line break between the `else` and the first node in the
-/// block. There can be spaces or line breaks at the end of the block.
-///
-/// The location of the returned block ignores the `else` and spaces surrounding the block.
-fn else_block(input: Span) -> IResult<Located<Block>> {
-    delimited(keyword_space("else"), block1, multispace0)(input)
+/// The location of the returned block ignores the `keyword` and spaces surrounding the block.
+fn keyword_block<'a>(keyword: &'a str) -> impl Fn(Span<'a>) -> IResult<Located<Block<'a>>> {
+    delimited(keyword_space(keyword), block1, multispace0)
 }
