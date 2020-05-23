@@ -4,7 +4,7 @@
 //! rule
 //!
 //! ```abnf
-//! cond = "if" block1 "do" block1 ("elif" block1 "do" block1)* "else" block1? "end"
+//! cond = "if" block1 "do" block1 ("elif" block1 "do" block1)* "else" block1 "end"
 //! ```
 //!
 //! Thus, `elif` blocks are optional and are represented as empty [`Block`]s inside the
