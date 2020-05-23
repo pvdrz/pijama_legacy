@@ -40,7 +40,7 @@ pub fn cond(input: Span) -> IResult<Located<Node>> {
             keyword_block("else"),
             preceded(keyword("end"), position),
         )),
-        move |(sp1, if_branch, braches, else_block, sp2)| {
+        move |(sp1, if_branch, branches, else_block, sp2)| {
             Located::new(
                 Node::Cond(if_branch, branches, else_block),
                 Location::from(sp1) + Location::from(sp2),
@@ -49,7 +49,7 @@ pub fn cond(input: Span) -> IResult<Located<Node>> {
     )(input)
 }
 
-fn branch<'a>(keyword: &'a str) -> impl Fn(Span<'a>) -> IResult<Located<Branch<'a>>> {
+fn branch<'a>(keyword: &'a str) -> impl Fn(Span<'a>) -> IResult<Branch<'a>> {
     map(
         pair(keyword_block(keyword), keyword_block("do")),
         |(blk1, blk2)| Branch { cond: blk1, body: blk2 }
