@@ -14,6 +14,6 @@ test_type!(
     Ok(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int)))
 );
 test_type!(
-     binding_persists_whole_block,
+    binding_persists_whole_block,
     Ok(Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int)))
 );

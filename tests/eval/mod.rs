@@ -235,3 +235,19 @@ fn print_redefine() {
     let err = run(input).unwrap_err();
     assert!(matches!(err, LangError::Parse(_)))
 }
+
+#[test]
+fn number_bases_cmp() -> LangResult<'static, ()> {
+    let input = include_str!("number_bases_cmp.pj");
+    let term = run(input)?;
+    assert_eq!(Term::Lit(Literal::Bool(true)), term);
+    Ok(())
+}
+
+#[test]
+fn number_bases_arithmetic() -> LangResult<'static, ()> {
+    let input = include_str!("number_bases_arithmetic.pj");
+    let term = run(input)?;
+    assert_eq!(Term::Lit(Literal::Number(567883 * 4)), term);
+    Ok(())
+}

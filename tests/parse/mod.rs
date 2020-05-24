@@ -33,6 +33,10 @@ fn literal() -> LangResult<'static, ()> {
         Literal(ast::Literal::Number(0)).loc(),
         Literal(ast::Literal::Number(-1)).loc(),
         Literal(ast::Literal::Number(14142)).loc(),
+        Literal(ast::Literal::Number(14142)).loc(),
+        Literal(ast::Literal::Number(14142)).loc(),
+        Literal(ast::Literal::Number(14142)).loc(),
+        Literal(ast::Literal::Number(14142)).loc(),
         Literal(ast::Literal::Bool(true)).loc(),
         Literal(ast::Literal::Bool(false)).loc(),
         Literal(ast::Literal::Unit).loc(),
@@ -40,10 +44,14 @@ fn literal() -> LangResult<'static, ()> {
 
     assert_eq!(expected[0], result[0], "integer");
     assert_eq!(expected[1], result[1], "negative integer");
-    assert_eq!(expected[2], result[2], "large integer");
-    assert_eq!(expected[3], result[3], "true");
-    assert_eq!(expected[4], result[4], "false");
-    assert_eq!(expected[5], result[5], "unit");
+    assert_eq!(
+        expected[2..7],
+        result[2..7],
+        "large integer in different bases"
+    );
+    assert_eq!(expected[7], result[7], "true");
+    assert_eq!(expected[8], result[8], "false");
+    assert_eq!(expected[9], result[9], "unit");
     Ok(())
 }
 
