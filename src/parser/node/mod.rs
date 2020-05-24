@@ -12,6 +12,7 @@ mod cond;
 mod fn_def;
 mod let_bind;
 mod unary_op;
+mod comment;
 
 use nom::{
     branch::alt,
@@ -25,6 +26,7 @@ use crate::{
     ast::{Located, Node},
     parser::{
         helpers::{in_brackets, lookahead},
+        node::comment::comment,
         literal::literal,
         name::name,
         primitive::primitive,
@@ -58,6 +60,7 @@ pub fn node(input: Span) -> IResult<Located<Node>> {
 /// This function is very order sensitive. Be careful if you swap the parsers order.
 fn base_node(input: Span) -> IResult<Located<Node>> {
     alt((
+        comment,
         lookahead(
             char('('),
             alt((
