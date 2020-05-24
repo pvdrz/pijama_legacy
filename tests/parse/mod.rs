@@ -26,6 +26,20 @@ fn name() -> LangResult<'static, ()> {
 }
 
 #[test]
+fn comment() -> LangResult<'static, ()> {
+    let input = include_str!("comment.pj");
+    let result = parse(input)?.content;
+    let expected = vec![
+        Name(ast::Name("x")).loc(),
+        Name(ast::Name("foo_bar")).loc(),
+    ];
+
+    assert_eq!(expected[0], result[0], "single letter");
+    assert_eq!(expected[2], result[2], "snake case");
+    Ok(())
+}
+
+#[test]
 fn literal() -> LangResult<'static, ()> {
     let input = include_str!("literal.pj");
     let result = parse(input)?.content;
