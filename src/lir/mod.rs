@@ -9,7 +9,7 @@ mod lower;
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Term {
     Var(usize),
-    Lit(Literal),
+    Lit(i64),
     Abs(Box<Term>),
     UnaryOp(UnOp, Box<Term>),
     BinaryOp(BinOp, Box<Term>, Box<Term>),
