@@ -5,7 +5,7 @@
 //! [`parser`]: crate::parser
 use nom::{
     character::complete::{line_ending, multispace0},
-    combinator::map,
+    combinator::{opt, map},
     multi::{separated_list, separated_nonempty_list},
     sequence::{preceded, tuple},
 };
@@ -13,7 +13,9 @@ use nom_locate::position;
 
 use crate::{
     ast::{Block, Located, Location},
-    parser::{node::node, IResult, Span},
+    parser::{
+        node::{comment, node}, 
+        IResult, Span},
 };
 
 /// Parser for [`Block`]s.
@@ -27,7 +29,7 @@ use crate::{
 pub fn block0(input: Span) -> IResult<Located<Block>> {
     map(
         tuple((
-            position,
+            preceded(opt(comment::comment), position),
             separated_list(line_ending, preceded(multispace0, node)),
             position,
         )),
@@ -49,7 +51,7 @@ pub fn block0(input: Span) -> IResult<Located<Block>> {
 pub fn block1(input: Span) -> IResult<Located<Block>> {
     map(
         tuple((
-            position,
+            preceded(opt(comment::comment), position),
             separated_nonempty_list(line_ending, preceded(multispace0, node)),
             position,
         )),
