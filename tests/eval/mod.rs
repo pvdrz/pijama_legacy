@@ -1,6 +1,7 @@
 use std::{include_str, time::Duration};
 
 use pijama::{
+    ast::Literal,
     lir::Term,
     machine::{LangEnv, Machine},
     run, run_with_machine, LangError, LangResult,
@@ -20,7 +21,7 @@ fn arithmetic() -> LangResult<'static, ()> {
 fn logic() -> LangResult<'static, ()> {
     let input = include_str!("logic.pj");
     let term = run(input)?;
-    assert_eq!(Term::Lit(0), term);
+    assert_eq!(term, false.into());
     Ok(())
 }
 
@@ -149,7 +150,7 @@ fn or_short_circuit() -> LangResult<'static, ()> {
     panic_after(Duration::from_secs(1), || {
         let input = include_str!("or_short_circuit.pj");
         let term = run(input)?;
-        assert_eq!(Term::Lit(1), term);
+        assert_eq!(term, true.into());
         Ok(())
     })
 }
@@ -159,7 +160,7 @@ fn and_short_circuit() -> LangResult<'static, ()> {
     panic_after(Duration::from_secs(1), || {
         let input = include_str!("and_short_circuit.pj");
         let term = run(input)?;
-        assert_eq!(Term::Lit(0), term);
+        assert_eq!(term, false.into());
         Ok(())
     })
 }
@@ -176,7 +177,7 @@ fn print_simple() -> LangResult<'static, ()> {
     )?;
     let output = String::from_utf8_lossy(&output);
     assert_eq!(output, "10\n");
-    assert_eq!(Term::Lit(0), term);
+    assert_eq!(term, Literal::Unit.into());
     Ok(())
 }
 
@@ -192,7 +193,7 @@ fn print_simple_fn() -> LangResult<'static, ()> {
     )?;
     let output = String::from_utf8_lossy(&output);
     assert_eq!(output, "((λ. _0) 10)\n");
-    assert_eq!(Term::Lit(0), term);
+    assert_eq!(term, Literal::Unit.into());
     Ok(())
 }
 
@@ -208,7 +209,7 @@ fn print_complex_fn() -> LangResult<'static, ()> {
     )?;
     let output = String::from_utf8_lossy(&output);
     assert_eq!(output, "((λ. (if (_0 > 0) then 1 else 0)) 10)\n");
-    assert_eq!(Term::Lit(0), term);
+    assert_eq!(term, Literal::Unit.into());
     Ok(())
 }
 
@@ -224,7 +225,7 @@ fn print_print() -> LangResult<'static, ()> {
     )?;
     let output = String::from_utf8_lossy(&output);
     assert_eq!(output, "(print 10)\n");
-    assert_eq!(Term::Lit(0), term);
+    assert_eq!(term, Literal::Unit.into());
     Ok(())
 }
 
@@ -239,7 +240,7 @@ fn print_redefine() {
 fn number_bases_cmp() -> LangResult<'static, ()> {
     let input = include_str!("number_bases_cmp.pj");
     let term = run(input)?;
-    assert_eq!(Term::Lit(1), term);
+    assert_eq!(term, true.into());
     Ok(())
 }
 

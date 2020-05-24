@@ -1,5 +1,5 @@
 use crate::{
-    ast::{Literal, Located, Name},
+    ast::{Located, Name},
     lir::Term,
     mir::{LetKind, Term as MirTerm},
 };
@@ -16,9 +16,7 @@ struct Context<'a> {
 impl<'a> Context<'a> {
     fn remove_names(&mut self, term: MirTerm<'a>) -> Term {
         match term {
-            MirTerm::Lit(Literal::Number(n)) => Term::Lit(n),
-            MirTerm::Lit(Literal::Bool(b)) => Term::Lit(b.into()),
-            MirTerm::Lit(Literal::Unit) => Term::Lit(0),
+            MirTerm::Lit(lit) => lit.into(),
             MirTerm::Var(name) => {
                 let (index, _) = self
                     .inner

@@ -20,6 +20,44 @@ pub enum Term {
     Hole,
 }
 
+impl Term {
+    pub fn as_bool(&self) -> bool {
+        match self {
+            Lit(0) => false,
+            Lit(1) => true,
+            _ => panic!("Non-boolean literal {}", self),
+        }
+    }
+}
+
+impl From<Literal> for Term {
+    fn from(l: Literal) -> Self {
+        match l {
+            Literal::Bool(b) => b.into(),
+            Literal::Unit => ().into(),
+            Literal::Number(n) => n.into(),
+        }
+    }
+}
+
+impl From<i64> for Term {
+    fn from(i: i64) -> Self {
+        Lit(i)
+    }
+}
+
+impl From<bool> for Term {
+    fn from(b: bool) -> Self {
+        Lit(b.into())
+    }
+}
+
+impl From<()> for Term {
+    fn from(_: ()) -> Self {
+        Lit(0)
+    }
+}
+
 impl fmt::Display for Term {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {

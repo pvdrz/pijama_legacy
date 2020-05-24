@@ -61,7 +61,7 @@ pub fn lower_blk<'a>(blk: Located<Block<'a>>) -> LowerResult<Located<Term<'a>>> 
 
 fn lower_node(node: Located<Node<'_>>) -> LowerResult<Located<Term<'_>>> {
     let loc = node.loc;
-    let term = match node.content {
+    match node.content {
         Node::Name(name) => Ok(Located::new(Term::Var(name), loc)),
         Node::Cond(if_branch, branches, el_blk) => lower_cond(loc, if_branch, branches, el_blk),
         Node::Literal(lit) => Ok(Located::new(Term::Lit(lit), loc)),
@@ -73,8 +73,7 @@ fn lower_node(node: Located<Node<'_>>) -> LowerResult<Located<Term<'_>>> {
             lower_fn_def(loc, opt_name, binds, body, opt_ty)
         }
         Node::PrimFn(prim) => Ok(Located::new(Term::PrimFn(prim), loc)),
-    }?;
-    Ok(term)
+    }
 }
 
 fn lower_cond<'a>(
