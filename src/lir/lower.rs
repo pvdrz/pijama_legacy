@@ -16,7 +16,7 @@ struct Context<'a> {
 impl<'a> Context<'a> {
     fn remove_names(&mut self, term: MirTerm<'a>) -> Term {
         match term {
-            MirTerm::Lit(literal) => Term::Lit(literal),
+            MirTerm::Lit(lit) => lit.into(),
             MirTerm::Var(name) => {
                 let (index, _) = self
                     .inner

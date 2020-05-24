@@ -48,17 +48,16 @@ impl<W: Write> Machine<W> {
         t3: Box<Term>,
     ) -> (bool, Term) {
         // If t1 is a literal, we should be able to evaluate the conditional
-        if let Term::Lit(lit) = t1.borrow() {
-            match lit {
+        if let lit @ Term::Lit(_) = t1.borrow() {
+            if lit.as_bool() {
                 // If t1 is true, evaluate to t2.
-                Literal::Bool(true) => (true, *t2),
+                (true, *t2)
+            } else {
                 // If t1 is false, evaluate to t3.
-                Literal::Bool(false) => (true, *t3),
-                // If t1 is any other literal, panic
-                lit => panic!("Found non-boolean literal {} in condition", lit),
+                (true, *t3)
             }
-        // If t1 is not a literal, evaluate it in place and return (if t1 then t2 else t3)
         } else {
+            // If t1 is not a literal, evaluate it in place and return (if t1 then t2 else t3)
             (self.step_in_place(t1.borrow_mut()), Term::Cond(t1, t2, t3))
         }
     }
@@ -66,14 +65,14 @@ impl<W: Write> Machine<W> {
     /// Evaluation step for binary operations (t1 op t2)
     fn step_bin_op(&mut self, op: BinOp, mut a: Box<Term>, mut b: Box<Term>) -> (bool, Term) {
         use BinOp::*;
-        use Literal::*;
 
         match (op, a.borrow(), b.borrow()) {
-            (_, Lit(l1), Lit(l2)) => (true, Lit(native_bin_op(op, *l1, *l2))),
             // If op is && and t1 is false evaluate to false
-            (And, Lit(Bool(false)), _) => (true, Lit(Bool(false))),
+            (And, Lit(0), _) => (true, false.into()),
             // If op is || and t1 is true evaluate to true
-            (Or, Lit(Bool(true)), _) => (true, Lit(Bool(true))),
+            (Or, Lit(1), _) => (true, true.into()),
+            // If both are literals evaluate with native operation
+            (_, Lit(l1), Lit(l2)) => (true, Lit(native_bin_op(op, *l1, *l2))),
             // If t2 is not a literal, evaluate it.
             (_, Lit(_), _) => (self.step_in_place(b.borrow_mut()), Term::BinaryOp(op, a, b)),
             // If t1 is not a literal, evaluate it.
@@ -123,46 +122,40 @@ impl<W: Write> Machine<W> {
         match prim {
             Primitive::Print => {
                 writeln!(self.env.stdout, "{}", arg).expect("Primitive print failed");
-                (true, Term::Lit(Literal::Unit))
+                (true, Literal::Unit.into())
             }
         }
     }
 }
 
-fn native_bin_op(op: BinOp, l1: Literal, l2: Literal) -> Literal {
+fn native_bin_op(op: BinOp, n1: i64, n2: i64) -> i64 {
     use BinOp::*;
-    use Literal::*;
 
-    match (op, l1, l2) {
-        (Add, Number(n1), Number(n2)) => (n1 + n2).into(),
-        (Sub, Number(n1), Number(n2)) => (n1 - n2).into(),
-        (Mul, Number(n1), Number(n2)) => (n1 * n2).into(),
-        (Div, Number(n1), Number(n2)) => (n1 / n2).into(),
-        (Rem, Number(n1), Number(n2)) => (n1 % n2).into(),
-        (Lt, Number(n1), Number(n2)) => (n1 < n2).into(),
-        (Lte, Number(n1), Number(n2)) => (n1 <= n2).into(),
-        (Gt, Number(n1), Number(n2)) => (n1 > n2).into(),
-        (Gte, Number(n1), Number(n2)) => (n1 >= n2).into(),
-        (Eq, l1, l2) => (l1 == l2).into(),
-        (Neq, l1, l2) => (l1 != l2).into(),
-        (And, Bool(b1), Bool(b2)) => (b1 && b2).into(),
-        (Or, Bool(b1), Bool(b2)) => (b1 || b2).into(),
-        (BitAnd, Number(n1), Number(n2)) => (n1 & n2).into(),
-        (BitOr, Number(n1), Number(n2)) => (n1 | n2).into(),
-        (BitXor, Number(n1), Number(n2)) => (n1 ^ n2).into(),
-        (Shr, Number(n1), Number(n2)) => (n1 >> n2).into(),
-        (Shl, Number(n1), Number(n2)) => (n1 << n2).into(),
-        (op, l1, l2) => panic!("Unexpected operation `{} {} {}`", l1, op, l2),
+    match op {
+        Add => n1 + n2,
+        Sub => n1 - n2,
+        Mul => n1 * n2,
+        Div => n1 / n2,
+        Rem => n1 % n2,
+        Lt => (n1 < n2).into(),
+        Lte => (n1 <= n2).into(),
+        Gt => (n1 > n2).into(),
+        Gte => (n1 >= n2).into(),
+        Eq => (n1 == n2).into(),
+        Neq => (n1 != n2).into(),
+        BitAnd | And => n1 & n2,
+        BitOr | Or => n1 | n2,
+        BitXor => n1 ^ n2,
+        Shr => n1 >> n2,
+        Shl => n1 << n2,
     }
 }
 
-fn native_un_op(op: UnOp, lit: Literal) -> Literal {
-    use Literal::*;
+fn native_un_op(op: UnOp, n: i64) -> i64 {
     use UnOp::*;
 
-    match (op, lit) {
-        (Neg, Number(n)) => (-n).into(),
-        (Not, Bool(b)) => (!b).into(),
-        (op, lit) => panic!("Unexpected operation `{} {}`", op, lit),
+    match op {
+        Neg => -n,
+        Not => !n,
     }
 }
