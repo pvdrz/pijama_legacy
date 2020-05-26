@@ -15,17 +15,18 @@ use crate::{
     ast::{Block, Located, Location},
     parser::{
         node::{comment, node}, 
-        IResult, Span},
+        IResult, Span
+    },
 };
 
-/// Parser for [`Block`]s.
+/// Parser for [`Block`]s which may or may not be empty.
 ///
 /// Nodes in the block can be separated by at least one line break and optional spaces.
 ///
-/// The location of this element matches the start of the first space or line break before the
-/// first `Node` of the `Block`. If there is no spaces or line breaks before the first `Node`, the
-/// start matches the start of the `Node`. The end of the location is handled in an analogous
-/// manner.
+/// The location of this element matches either the start of a comment or the first space 
+/// or line break before the first `Node` of the `Block`. If there are no spaces or line 
+/// breaks before the first `Node`, the start matches the start of the `Node`. The end 
+/// of the location is handled in an analogous manner.
 pub fn block0(input: Span) -> IResult<Located<Block>> {
     map(
         tuple((
@@ -44,10 +45,10 @@ pub fn block0(input: Span) -> IResult<Located<Block>> {
 ///
 /// Nodes in the block can be separated by at least one line break and optional spaces.
 ///
-/// The location of this element matches the start of the first space or line break before the
-/// first `Node` of the `Block`. If there is no spaces or line breaks before the first `Node`, the
-/// start matches the start of the `Node`. The end of the location is handled in an analogous
-/// manner.
+/// The location of this element matches either the start of a comment or the first space 
+/// or line break before the first `Node` of the `Block`. If there are no spaces or line 
+/// breaks before the first `Node`, the start matches the start of the `Node`. The end 
+/// of the location is handled in an analogous manner.
 pub fn block1(input: Span) -> IResult<Located<Block>> {
     map(
         tuple((
