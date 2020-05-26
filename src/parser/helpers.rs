@@ -66,7 +66,7 @@ pub fn lookahead<'a, O, O2, E: ParseError<Span<'a>>>(
 
 /// Helper parser for a keyword.
 ///
-/// This parses uses the ['tag'] combinator to check for an expected keyword
+/// This parses using the ['tag'] combinator to check for an expected keyword
 /// and provides additional context in case it is missing.
 pub fn keyword<'a, T: 'a>(
     t: T,
@@ -80,7 +80,7 @@ where
 
 /// Helper parser for a keyword with at least one following whitespace.
 ///
-/// This parses uses the ['pair'] combinator to check for an expected keyword and following spaces
+/// This parses using the ['pair'] combinator to check for an expected keyword and following spaces
 /// and provides additional context in case the keyword or the whitespace is missing.
 pub fn keyword_space<'a, T: 'a>(
     t: T,
