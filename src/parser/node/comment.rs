@@ -7,7 +7,6 @@ use nom::{
     combinator::value,
     character::complete::{char, line_ending, not_line_ending},
     sequence::delimited,
-    multi::many0,
 };
 
 use crate::{
@@ -16,5 +15,5 @@ use crate::{
 
 /// Parses a comment, returning () if it finds one.
 pub fn comment(input: Span) -> IResult<()> {
-    value((), delimited(char('#'), many0(not_line_ending), line_ending))(input)
+    value((), delimited(char('#'), not_line_ending, line_ending))(input)
 }
