@@ -1,14 +1,22 @@
-use std::{env::args, fs::read_to_string};
+use std::fs::read_to_string;
 
-use pijama::{display_error, run};
+use pijama::{display_error, options::Options, run};
+
+use structopt::StructOpt;
 
 fn main() {
-    let mut args = args();
-    args.next().unwrap();
-    let path = args.next().expect("no path to source code");
-    let input = read_to_string(&path).unwrap();
+    let options = Options::from_args();
+
+    let input = match read_to_string(&options.path) {
+        Ok(input) => input,
+        Err(err) => {
+            eprintln!("{}", err);
+            return ();
+        }
+    };
+
     match run(&input) {
         Ok(term) => println!("{}", term),
-        Err(e) => display_error(&input, &path, &e),
+        Err(err) => display_error(&input, &options.path, &err),
     }
 }
