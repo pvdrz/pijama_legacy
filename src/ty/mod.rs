@@ -6,7 +6,7 @@ mod result;
 mod ty_check;
 
 pub use result::{TyError, TyResult};
-pub use ty_check::{expect_ty, ty_check};
+pub use ty_check::ty_check;
 
 /// A type used by the type-checker.
 #[derive(Debug, Clone, PartialEq, Eq)]

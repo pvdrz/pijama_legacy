@@ -16,8 +16,8 @@ test_type!(
 test_type!(
     wrong_return_type_fn_int_to_int,
     Err(LangError::Ty(TyError::Unexpected {
-        expected: Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Bool)),
-        found: Ty::Arrow(Box::new(Ty::Int), Box::new(Ty::Int)).loc()
+        expected: Ty::Bool,
+        found: Ty::Int.loc()
     }))
 );
 
