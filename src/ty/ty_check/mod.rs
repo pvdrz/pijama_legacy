@@ -86,7 +86,11 @@ impl<'a> Context<'a> {
     /// impossible to satisfy.
     pub fn add_constraint(&mut self, expected: Ty, found: Ty, loc: Location) {
         let constr = Constraint::new(expected, found);
-        self.constraints.push(Located::new(constr, loc))
+        // New constraints are added at the begining because the `Unifier` starts processing
+        // constraints from last to first. If we just push the constraint, we end up taking care of
+        // the newer constraints first. Which are more complex and can end up in less readable type
+        // errors.
+        self.constraints.insert(0, Located::new(constr, loc))
     }
 
     /// Returns the type of a term.

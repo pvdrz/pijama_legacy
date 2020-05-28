@@ -48,7 +48,7 @@ impl fmt::Display for Ty {
                     write!(f, "{} -> {}", t1, t2)
                 }
             }
-            Var(index) => write!(f, "T{}", index),
+            Var(index) => write!(f, "?X{}", index),
         }
     }
 }
