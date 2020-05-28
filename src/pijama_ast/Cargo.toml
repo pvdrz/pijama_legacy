@@ -1,0 +1,8 @@
+[package]
+name = "pijama_ast"
+version = "0.1.0"
+authors = ["Christian Poveda <git@christianpoveda.xyz>", "Sean Chen <seanchen11235@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+thiserror = "1.0"

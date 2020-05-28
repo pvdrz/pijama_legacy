@@ -5,13 +5,7 @@
 
 use std::fmt;
 
-use crate::pijama_ast::Name;
-
-mod result;
-mod ty_check;
-
-pub use result::{TyError, TyResult};
-pub use ty_check::{expect_ty, ty_check};
+use crate::ast::Name;
 
 /// The type of a term.
 ///
