@@ -10,6 +10,7 @@ nom_locate = "2.0.0"
 thiserror = "1.0"
 codespan-reporting = "0.9.4"
 lazy_static = "1.4.0"
+structopt = "0.3.14"
 
 [dev-dependencies]
 criterion = "0.3"

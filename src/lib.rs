@@ -4,6 +4,7 @@ pub mod machine;
 pub mod mir;
 pub mod parser;
 pub mod ty;
+pub mod options;
 
 use std::io::Write;
 
