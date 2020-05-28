@@ -38,44 +38,40 @@ impl Unifier {
     fn unify(&mut self) -> TyResult<()> {
         if let Some(constr) = self.constraints.pop() {
             let loc = constr.loc;
-            let Constraint { lhs: s, rhs: t } = constr.content;
+            let Constraint { lhs, rhs } = constr.content;
 
-            if s == t {
-                return self.unify();
-            }
+            match (lhs, rhs) {
+                (lhs, rhs) if lhs == rhs => self.unify()?,
 
-            if let Ty::Var(_) = s {
-                if !t.contains(&s) {
-                    let subst = Substitution::new(s, t);
+                (lhs @ Ty::Var(_), rhs) if !rhs.contains(&lhs) => {
+                    let subst = Substitution::new(lhs, rhs);
                     self.apply_substitution(&subst);
                     self.unify()?;
                     self.add_substitution(subst);
-                    return Ok(());
                 }
-            }
 
-            if let Ty::Var(_) = t {
-                if !s.contains(&t) {
-                    let subst = Substitution::new(t, s);
+                (lhs, rhs @ Ty::Var(_)) if !lhs.contains(&rhs) => {
+                    let subst = Substitution::new(rhs, lhs);
                     self.apply_substitution(&subst);
                     self.unify()?;
                     self.add_substitution(subst);
-                    return Ok(());
+                }
+
+                (Ty::Arrow(s1, s2), Ty::Arrow(t1, t2)) => {
+                    self.constraints
+                        .push(Located::new(Constraint::new(*s1, *t1), loc));
+                    self.constraints
+                        .push(Located::new(Constraint::new(*s2, *t2), loc));
+                    self.unify()?;
+                }
+
+                (lhs, rhs) => {
+                    return Err(TyError::Unexpected {
+                        expected: lhs,
+                        found: Located::new(rhs, loc),
+                    });
                 }
             }
-
-            if let (Ty::Arrow(s1, s2), Ty::Arrow(t1, t2)) = (s.clone(), t.clone()) {
-                self.constraints
-                    .push(Located::new(Constraint::new(*s1, *t1), loc));
-                self.constraints
-                    .push(Located::new(Constraint::new(*s2, *t2), loc));
-                return self.unify();
-            }
-
-            return Err(TyError::Unexpected {
-                expected: s,
-                found: Located::new(t, loc),
-            });
         }
         Ok(())
     }
