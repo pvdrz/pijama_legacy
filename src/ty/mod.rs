@@ -24,6 +24,9 @@ pub enum Ty {
 }
 
 impl Ty {
+    /// Checks if a `Ty::Var` is contained inside the type.
+    ///
+    /// This method does not work with other `Ty` variants and must be used only with `Ty:Var`.
     fn contains(&self, ty: &Ty) -> bool {
         match self {
             Ty::Bool | Ty::Int | Ty::Unit => false,

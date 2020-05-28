@@ -3,6 +3,9 @@
 //! This module contains all the functions and types required to do type checking over the MIR of a
 //! program. Pijama uses a constraint based typing, which is better suited for type
 //! reconstruction/inference than a regular in-place enforcement of the typing rules.
+//!
+//! The entry-point for this module is the `ty_check` method which does the type checking of a
+//! whole program.
 use pijama_ast::{BinOp, Literal, Located, Location, Name, Primitive, UnOp};
 
 use crate::{
@@ -19,12 +22,14 @@ use unify::{Constraint, Unifier};
 /// This function must always be called in the "root" term of the program. Otherwise, the type
 /// checker might not have all the bindings required to do its job.
 pub fn ty_check(term: &Located<Term<'_>>) -> TyResult<Located<Ty>> {
+    // Create a new, empty context.
     let mut ctx = Context::default();
+    // Obtain typing constraints and the type of `term`.
     let mut ty = ctx.type_of(&term)?;
-
+    // Solve the constraints using unification.
     let unif = Unifier::from_ctx(ctx)?;
+    // Apply the substitutions found during unification over the type of `term`.
     unif.replace(&mut ty.content);
-
     Ok(ty)
 }
 
@@ -54,6 +59,9 @@ struct Context<'a> {
     /// guarantee all type variables are different.
     count: usize,
     /// Typing constraints.
+    ///
+    /// Each typing constraint is introduced by a particular `type_of_*` method with a suitable
+    /// location in case an error needs to be returned.
     constraints: Vec<Located<Constraint>>,
 }
 
