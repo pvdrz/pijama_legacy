@@ -6,8 +6,8 @@
 //!
 //! This algorithm is based on the Chapter 22 of the _Types and Programming Languages_ book by
 //! Benjamin Pierce.
-use pijama_ast::Located;
 use crate::ty::{ty_check::Context, Ty, TyError, TyResult};
+use pijama_ast::Located;
 
 /// Solves the constraints created by the `Context` type.
 ///
@@ -26,7 +26,7 @@ impl Unifier {
     /// Consumes the constraints collected by the `Context` and then tries to unify those
     /// constraints using the `unify` method. If this process is successful, a new `Unifier` is
     /// returned ready to be used to replace type variables.
-    pub(super) fn from_ctx<'a>(ctx: Context<'a>) -> TyResult<Self> {
+    pub(super) fn from_ctx(ctx: Context) -> TyResult<Self> {
         let mut unif = Unifier {
             constraints: ctx.constraints,
             substitutions: Default::default(),
