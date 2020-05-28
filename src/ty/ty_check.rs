@@ -61,9 +61,23 @@ struct Context<'a> {
     /// Ever time a new binding is done via an abstraction or let binding term it is required to push
     /// that binding into this stack, and pop it after traversing the term.
     inner: Vec<TyBinding<'a>>,
+    /// Number of created type variables.
+    ///
+    /// Every time a new variable is created with the `new_var` method, this number is increased to
+    /// guarantee all type variables are different.
+    count: usize
 }
 
 impl<'a> Context<'a> {
+    /// Returns a new type variable.
+    ///
+    /// This variable is guaranteed to be different from all the other types introduced before.
+    fn new_var(&mut self) -> Ty {
+        let ty = Ty::Var(self.count);
+        self.count += 1;
+        ty
+    }
+
     /// Returns the type of a term.
     ///
     /// The location of the type returned by this function is such that showing a type error

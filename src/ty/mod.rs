@@ -19,6 +19,8 @@ pub enum Ty {
     Unit,
     /// The type of functions between two types.
     Arrow(Box<Ty>, Box<Ty>),
+    /// Type variable, used for unification.
+    Var(usize),
 }
 
 impl fmt::Display for Ty {
@@ -35,6 +37,7 @@ impl fmt::Display for Ty {
                     write!(f, "{} -> {}", t1, t2)
                 }
             }
+            Var(index) => write!(f, "T{}", index),
         }
     }
 }
