@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::ast::*;
+use pijama_ast::*;
 
 use Term::*;
 

@@ -21,8 +21,9 @@ use nom::{
 };
 use nom_locate::position;
 
+use pijama_ast::{Block, Located, Location, Name, Node};
+
 use crate::{
-    ast::{Block, Located, Location, Name, Node},
     parser::{
         block::block0,
         helpers::{in_brackets, keyword, keyword_space, surrounded},

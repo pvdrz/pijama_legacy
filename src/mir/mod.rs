@@ -1,7 +1,8 @@
 use std::fmt::{Display, Formatter, Result};
 
+use pijama_ast::{BinOp, Block, Literal, Located, Name, Primitive, UnOp};
+
 use crate::{
-    ast::{BinOp, Block, Literal, Located, Name, Primitive, UnOp},
     ty::{Binding, Ty},
     LangError, LangResult,
 };

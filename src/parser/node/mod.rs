@@ -22,8 +22,9 @@ use nom::{
     sequence::pair,
 };
 
+use pijama_ast::{Located, Node};
+
 use crate::{
-    ast::{Located, Node},
     parser::{
         helpers::{in_brackets, lookahead},
         literal::literal,

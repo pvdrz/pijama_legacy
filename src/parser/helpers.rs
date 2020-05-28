@@ -10,8 +10,9 @@ use nom::{
 };
 use nom_locate::position;
 
+use pijama_ast::{Located, Location};
+
 use crate::{
-    ast::{Located, Location},
     parser::{ParsingError, Span},
 };
 

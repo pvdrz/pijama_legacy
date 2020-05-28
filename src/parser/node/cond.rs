@@ -17,8 +17,9 @@ use nom::{
 };
 use nom_locate::position;
 
+use pijama_ast::{Block, Branch, Located, Location, Node};
+
 use crate::{
-    ast::{Block, Branch, Located, Location, Node},
     parser::{
         block::block1,
         helpers::{keyword, keyword_space},

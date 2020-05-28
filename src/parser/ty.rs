@@ -42,8 +42,9 @@ use nom::{
     sequence::{pair, preceded},
 };
 
+use pijama_ast::{Located, Location};
+
 use crate::{
-    ast::{Located, Location},
     parser::{
         helpers::{in_brackets, surrounded, with_context},
         name::name,

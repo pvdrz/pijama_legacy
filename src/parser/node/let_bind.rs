@@ -14,8 +14,9 @@ use nom::{
     sequence::{preceded, tuple},
 };
 
+use pijama_ast::{Located, Node};
+
 use crate::{
-    ast::{Located, Node},
     parser::{helpers::surrounded, name::name, node::node, ty::colon_ty, IResult, Span},
 };
 

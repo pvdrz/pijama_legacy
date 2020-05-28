@@ -16,8 +16,9 @@ use nom::{
     sequence::terminated,
 };
 
+use pijama_ast::{BinOp, BinOp::*};
+
 use crate::{
-    ast::{BinOp, BinOp::*},
     parser::{
         helpers::{surrounded, with_context},
         IResult, Span,

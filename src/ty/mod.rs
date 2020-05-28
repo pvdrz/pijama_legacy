@@ -4,8 +4,7 @@
 //! and checking.
 
 use std::fmt;
-
-use crate::pijama_ast::Name;
+use pijama_ast::Name;
 
 mod result;
 mod ty_check;

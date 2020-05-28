@@ -47,8 +47,9 @@ use nom::{
     sequence::pair,
 };
 
+use pijama_ast::{Located, Node};
+
 use crate::{
-    ast::{Located, Node},
     parser::{bin_op::*, node::base_node, IResult, Span},
 };
 

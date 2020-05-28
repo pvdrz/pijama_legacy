@@ -2,8 +2,9 @@
 
 use thiserror::Error;
 
+use pijama_ast::{Located, Location};
+
 use crate::{
-    ast::{Located, Location},
     ty::Ty,
 };
 

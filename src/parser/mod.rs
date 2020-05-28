@@ -31,8 +31,9 @@ use nom::{
     Err::*,
 };
 
+use pijama_ast::{Block, Located, Span};
+
 use crate::{
-    ast::{Block, Located, Location},
     LangError::Parse,
     LangResult,
 };
@@ -51,16 +52,6 @@ mod node;
 mod primitive;
 mod ty;
 mod un_op;
-
-type Span<'a> = nom_locate::LocatedSpan<&'a str>;
-
-impl<'a> From<Span<'a>> for Location {
-    fn from(span: Span<'a>) -> Self {
-        let start = span.location_offset();
-        let end = start + 1;
-        Location { start, end }
-    }
-}
 
 type IResult<'a, T> = nom::IResult<Span<'a>, T, ParsingError<'a>>;
 

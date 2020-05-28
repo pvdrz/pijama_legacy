@@ -5,7 +5,7 @@
 
 use std::fmt;
 
-use crate::ast::Name;
+use crate::Name;
 
 /// The type of a term.
 ///

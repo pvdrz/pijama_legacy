@@ -1,12 +1,12 @@
 use std::mem::discriminant;
 
 use thiserror::Error;
+use pijama_ast::{
+    analysis::RecursionChecker, BinOp, Block, Branch, Literal, Located, Location, Name, Node,
+    UnOp,
+};
 
 use crate::{
-    ast::{
-        analysis::RecursionChecker, BinOp, Block, Branch, Literal, Located, Location, Name, Node,
-        UnOp,
-    },
     mir::{LetKind, Term},
     ty::{Binding, Ty},
 };

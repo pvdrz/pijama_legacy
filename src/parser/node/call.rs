@@ -8,8 +8,9 @@
 //! ```
 use nom::{branch::alt, character::complete::space0, combinator::map, sequence::separated_pair};
 
+use pijama_ast::{Located, Node};
+
 use crate::{
-    ast::{Located, Node},
     parser::{
         helpers::in_brackets,
         name::name,

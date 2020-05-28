@@ -7,8 +7,9 @@
 use nom::{combinator::map, sequence::tuple};
 use nom_locate::position;
 
+use pijama_ast::{Located, Location, Node};
+
 use crate::{
-    ast::{Located, Location, Node},
     parser::{node::node, un_op::un_op, IResult, Span},
 };
 

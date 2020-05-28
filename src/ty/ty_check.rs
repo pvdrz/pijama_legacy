@@ -2,8 +2,9 @@
 //!
 //! This module contains all the functions and types required to do type checking over the MIR of a
 //! program.
+use pijama_ast::{BinOp, Literal, Located, Location, Name, Primitive, UnOp};
+
 use crate::{
-    ast::{BinOp, Literal, Located, Location, Name, Primitive, UnOp},
     mir::{LetKind, Term},
     ty::{Binding, Ty, TyError, TyResult},
 };

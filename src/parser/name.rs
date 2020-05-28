@@ -9,8 +9,9 @@ use nom::{
     multi::separated_nonempty_list,
 };
 
+use pijama_ast::{Located, Name};
+
 use crate::{
-    ast::{Located, Name},
     parser::{primitive::PRIMITIVES, IResult, Span},
 };
 

@@ -13,8 +13,9 @@ use lazy_static::lazy_static;
 
 use std::collections::HashMap;
 
+use pijama_ast::{Located, Primitive};
+
 use crate::{
-    ast::{Located, Primitive},
     parser::{IResult, Span},
 };
 

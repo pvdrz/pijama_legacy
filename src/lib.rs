@@ -1,4 +1,3 @@
-pub mod ast;
 pub mod lir;
 pub mod machine;
 pub mod mir;
@@ -9,7 +8,8 @@ use std::io::Write;
 
 use thiserror::Error;
 
-use ast::Location;
+use pijama_ast::Location;
+
 use machine::Machine;
 use mir::LowerError;
 use parser::ParsingError;
