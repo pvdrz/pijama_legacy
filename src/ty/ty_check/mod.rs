@@ -44,7 +44,9 @@ struct TyBinding<'a> {
 
 /// A typing context.
 ///
-/// This structure traverses the MIR of a program and checks the well-typedness of its inner terms.
+/// This structure traverses the MIR of a term and generates a set of constraints that must be
+/// satisfied by the term to be well-typed.
+///
 /// A context can only have the variables that have been bound in the scope of the term is typing.
 #[derive(Default)]
 struct Context<'a> {
@@ -111,10 +113,7 @@ impl<'a> Context<'a> {
             }
             Term::Cond(t1, t2, t3) => self.type_of_cond(loc, t1.as_ref(), t2.as_ref(), t3.as_ref()),
             Term::Seq(t1, t2) => self.type_of_seq(loc, t1.as_ref(), t2.as_ref()),
-            Term::PrimFn(prim) => unreachable!(
-                "Primitives always need special case handling but got {:?}",
-                prim
-            ),
+            Term::PrimFn(prim) => self.type_of_prim_fn(loc, *prim),
         }
     }
 
@@ -260,11 +259,8 @@ impl<'a> Context<'a> {
     }
     /// Returns the type of an application.
     ///
-    /// If the first term of the application is a primitive function, the typing is delegated to
-    /// another method.
-    ///
-    /// Otherwise, there must exist a type `X` such that the first term has type `T -> X` and the
-    /// second term has type `T`.
+    /// If an application is well-typed, there must exist a type `X` such that the first term has
+    /// type `T -> X` and the second term has type `T`.
     ///
     /// This method introduces a new type variable `X` and adds the constraint `T1 = T2 -> X` where
     /// `T1` is `t1`'s type and `T2` is `t2`'s type. The returned type is `X`.
@@ -274,21 +270,17 @@ impl<'a> Context<'a> {
         t1: &Located<Term<'a>>,
         t2: &Located<Term<'a>>,
     ) -> TyResult<Located<Ty>> {
-        if let Term::PrimFn(primitive) = t1.content {
-            self.type_of_prim_app(loc, primitive, t2)
-        } else {
-            let ty1 = self.type_of(t1)?.content;
-            let ty2 = self.type_of(t2)?;
-            let ty = self.new_ty();
+        let ty1 = self.type_of(t1)?.content;
+        let ty2 = self.type_of(t2)?;
+        let ty = self.new_ty();
 
-            self.add_constraint(
-                ty1,
-                Ty::Arrow(Box::new(ty2.content), Box::new(ty.clone())),
-                ty2.loc,
-            );
+        self.add_constraint(
+            ty1,
+            Ty::Arrow(Box::new(ty2.content), Box::new(ty.clone())),
+            ty2.loc,
+        );
 
-            Ok(Located::new(ty, loc))
-        }
+        Ok(Located::new(ty, loc))
     }
 
     /// Returns the type of a let binding.
@@ -386,19 +378,19 @@ impl<'a> Context<'a> {
         self.type_of(t2)
     }
 
-    /// Returns the type of an application of a primitive function.
+    /// Returns the type of a primitive function.
     ///
-    /// The type depends on which primitive function is being applied:
+    /// The typing rules for each primitive are the following:
     ///
-    /// - If the primitive is `print`, the type of the application is `Unit`.
-    fn type_of_prim_app(
-        &mut self,
-        loc: Location,
-        prim: Primitive,
-        _arg: &Located<Term>,
-    ) -> TyResult<Located<Ty>> {
-        match prim {
-            Primitive::Print => Ok(Located::new(Ty::Unit, loc)),
-        }
+    /// - The `print` function has type `X -> Unit` for any `X`. Thus, a new variable is added to
+    /// the typing context to represent this `X`.
+    fn type_of_prim_fn(&mut self, loc: Location, prim: Primitive) -> TyResult<Located<Ty>> {
+        let ty = match prim {
+            Primitive::Print => {
+                let ty = self.new_ty();
+                Ty::Arrow(Box::new(ty), Box::new(Ty::Unit))
+            }
+        };
+        Ok(Located::new(ty, loc))
     }
 }

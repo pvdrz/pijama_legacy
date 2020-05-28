@@ -13,6 +13,7 @@ use pijama_ast::Located;
 ///
 /// This type is able to find a set of `Substitution`s such that the program that produced the
 /// `Context`'s `Constraint`s is well-typed.
+#[derive(Debug)]
 pub struct Unifier {
     /// Substitutions that make the program well-typed.
     substitutions: Vec<Substitution>,
@@ -126,6 +127,7 @@ impl Unifier {
 }
 
 /// Represents a substitution rule over types.
+#[derive(Debug)]
 struct Substitution {
     /// Type to be replaced.
     old: Ty,

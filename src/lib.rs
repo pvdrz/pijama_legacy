@@ -72,7 +72,8 @@ pub fn run(input: &str) -> LangResult<lir::Term> {
 pub fn run_with_machine<W: Write>(input: &str, mut machine: Machine<W>) -> LangResult<lir::Term> {
     let ast = parser::parse(input)?;
     let mir = mir::Term::from_ast(ast)?;
-    let _ty = ty::ty_check(&mir)?;
+    let ty = ty::ty_check(&mir)?;
+    println!("{}", ty);
     let lir = lir::Term::from_mir(mir);
     let res = machine.evaluate(lir);
     Ok(res)
