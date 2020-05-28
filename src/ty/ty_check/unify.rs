@@ -85,8 +85,8 @@ impl Unifier {
                 // If the left side is a type variable and this variable is not on the right side
                 // we can replace the left side type by the right side in all the remaining
                 // constraints and we add this substitution to our solution.
-                (lhs @ Ty::Var(_), rhs) if !rhs.contains(&lhs) => {
-                    let subst = Substitution::new(lhs, rhs);
+                (Ty::Var(index), rhs) if !rhs.contains(index) => {
+                    let subst = Substitution::new(Ty::Var(index), rhs);
                     self.apply_substitution(&subst);
                     self.unify()?;
                     self.add_substitution(subst);
@@ -95,8 +95,8 @@ impl Unifier {
                 // If the right side is a type variable and this variable is not on the left side
                 // we can replace the right side type by the left side in all the remaining
                 // constraints and we add this substitution to our solution.
-                (lhs, rhs @ Ty::Var(_)) if !lhs.contains(&rhs) => {
-                    let subst = Substitution::new(rhs, lhs);
+                (lhs, Ty::Var(index)) if !lhs.contains(index) => {
+                    let subst = Substitution::new(Ty::Var(index), lhs);
                     self.apply_substitution(&subst);
                     self.unify()?;
                     self.add_substitution(subst);

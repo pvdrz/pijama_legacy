@@ -24,14 +24,12 @@ pub enum Ty {
 }
 
 impl Ty {
-    /// Checks if a `Ty::Var` is contained inside the type.
-    ///
-    /// This method does not work with other `Ty` variants and must be used only with `Ty:Var`.
-    fn contains(&self, ty: &Ty) -> bool {
+    /// Checks if the index of a `Ty::Var` is contained inside the type.
+    fn contains(&self, index: usize) -> bool {
         match self {
             Ty::Bool | Ty::Int | Ty::Unit => false,
-            Ty::Arrow(ty1, ty2) => ty1.contains(ty) || ty2.contains(ty),
-            Ty::Var(_) => self == ty,
+            Ty::Arrow(ty1, ty2) => ty1.contains(index) || ty2.contains(index),
+            Ty::Var(inner) => *inner == index,
         }
     }
 }
