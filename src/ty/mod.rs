@@ -31,15 +31,6 @@ impl Ty {
             Ty::Var(_) => self == ty,
         }
     }
-
-    fn replace(&mut self, target: &Ty, subs: &Ty) {
-        if self == target {
-            *self = subs.clone();
-        } else if let Ty::Arrow(ty1, ty2) = self {
-            ty1.replace(target, subs);
-            ty2.replace(target, subs);
-        }
-    }
 }
 
 impl fmt::Display for Ty {

@@ -2,7 +2,7 @@ use pijama_ast::Located;
 use crate::ty::{ty_check::Context, Ty, TyError, TyResult};
 
 pub struct Unifier {
-    substitution: Vec<(Ty, Ty)>,
+    substitutions: Vec<Substitution>,
     constraints: Vec<Located<Constraint>>,
 }
 
@@ -10,29 +10,29 @@ impl Unifier {
     pub(super) fn from_ctx<'a>(ctx: Context<'a>) -> TyResult<Self> {
         let mut unif = Unifier {
             constraints: ctx.constraints,
-            substitution: Default::default(),
+            substitutions: Default::default(),
         };
         unif.unify()?;
         Ok(unif)
     }
 
     pub(super) fn replace(&self, ty: &mut Ty) {
-        for (target, subs) in &self.substitution {
-            ty.replace(target, subs);
+        for subst in &self.substitutions {
+            subst.apply(ty);
         }
     }
 
-    fn apply_subs(&mut self, target: &Ty, subs: &Ty) {
+    fn apply_substitution(&mut self, subst: &Substitution) {
         for constr in &mut self.constraints {
             let Constraint { lhs, rhs } = &mut constr.content;
-            lhs.replace(target, subs);
-            rhs.replace(target, subs);
+            subst.apply(lhs);
+            subst.apply(rhs);
         }
     }
 
-    fn compose_subs(&mut self, target: Ty, mut subs: Ty) {
-        self.replace(&mut subs);
-        self.substitution.push((target, subs));
+    fn add_substitution(&mut self, mut subst: Substitution) {
+        self.replace(&mut subst.new);
+        self.substitutions.push(subst);
     }
 
     fn unify(&mut self) -> TyResult<()> {
@@ -46,18 +46,20 @@ impl Unifier {
 
             if let Ty::Var(_) = s {
                 if !t.contains(&s) {
-                    self.apply_subs(&s, &t);
+                    let subst = Substitution::new(s, t);
+                    self.apply_substitution(&subst);
                     self.unify()?;
-                    self.compose_subs(s, t);
+                    self.add_substitution(subst);
                     return Ok(());
                 }
             }
 
             if let Ty::Var(_) = t {
                 if !s.contains(&t) {
-                    self.apply_subs(&t, &s);
+                    let subst = Substitution::new(t, s);
+                    self.apply_substitution(&subst);
                     self.unify()?;
-                    self.compose_subs(t, s);
+                    self.add_substitution(subst);
                     return Ok(());
                 }
             }
@@ -93,8 +95,15 @@ impl Substitution {
         Substitution { old, new }
     }
 
-    /// Applies the substitution rule. Replacing all occurrences of `old` by `new`.
-    pub fn apply(&self, ty: &mut Ty) {}
+    /// Applies the substitution rule over a type, replacing all occurrences of `old` by `new`.
+    pub fn apply(&self, ty: &mut Ty) {
+        if *ty == self.old {
+            *ty = self.new.clone();
+        } else if let Ty::Arrow(ty1, ty2) = ty {
+            self.apply(ty1);
+            self.apply(ty2);
+        }
+    }
 }
 
 /// Represents a constraint between types.
