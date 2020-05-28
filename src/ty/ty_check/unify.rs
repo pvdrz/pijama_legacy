@@ -4,8 +4,8 @@
 //! a set of substitutions that can make our program well-typed. It is perfectly possible that a
 //! well-typed program still has type variables in its types.
 //!
-//! This algorithm is based on the Chapter 22 of the _Types and Programming Languages_ book by
-//! Benjamin Pierce.
+//! This algorithm is based on Chapter 22 of the _Types and Programming Languages_ book by Benjamin
+//! Pierce.
 use crate::ty::{ty_check::Context, Ty, TyError, TyResult};
 use pijama_ast::Located;
 
@@ -79,12 +79,13 @@ impl Unifier {
             let Constraint { lhs, rhs } = constr.content;
 
             match (lhs, rhs) {
-                // If both sides of the constraint are equal, we can go ahead with the other rules.
+                // If both sides of the constraint are equal, nothing needs to be done. We can skip
+                // this constraint and go ahead with the other rules.
                 (lhs, rhs) if lhs == rhs => self.unify()?,
 
-                // If the left side is a type variable and this variable is not on the right side
-                // we can replace the left side type by the right side in all the remaining
-                // constraints and we add this substitution to our solution.
+                // If the left-hand side is a type variable and this variable is not on the
+                // right-hand side we replace the left-hand side type by the right-hand side in all
+                // the remaining constraints and add this substitution to our solution.
                 (Ty::Var(index), rhs) if !rhs.contains(index) => {
                     let subst = Substitution::new(Ty::Var(index), rhs);
                     self.apply_substitution(&subst);
@@ -92,9 +93,9 @@ impl Unifier {
                     self.add_substitution(subst);
                 }
 
-                // If the right side is a type variable and this variable is not on the left side
-                // we can replace the right side type by the left side in all the remaining
-                // constraints and we add this substitution to our solution.
+                // If the right-hand side is a type variable and this variable is not on the
+                // left-hand side we replace the right-hand side type by the left side-hand in all
+                // the remaining constraints and add this substitution to our solution.
                 (lhs, Ty::Var(index)) if !lhs.contains(index) => {
                     let subst = Substitution::new(Ty::Var(index), lhs);
                     self.apply_substitution(&subst);
