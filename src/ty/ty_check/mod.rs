@@ -9,6 +9,8 @@ use crate::{
     ty::{Ty, TyError, TyResult},
 };
 
+mod unify;
+
 /// Function that type-checks a term and returns its type.
 ///
 /// This function must always be called in the "root" term of the program. Otherwise, the type
