@@ -1,7 +1,8 @@
 //! The Pijama type-checker.
 //!
 //! This module contains all the functions and types required to do type checking over the MIR of a
-//! program.
+//! program. Pijama uses a constraint based typing, which is better suited for type
+//! reconstruction/inference than a regular in-place enforcement of the typing rules.
 use pijama_ast::{BinOp, Literal, Located, Location, Name, Primitive, UnOp};
 
 use crate::{
@@ -39,27 +40,6 @@ pub fn expect_ty(expected: &Ty, found: &Located<Ty>) -> TyResult<()> {
             found: found.clone(),
         })
     }
-}
-
-/// Macro version of `expect_ty` that accepts a comma separated list of types to check.
-///
-/// This only uses references to its parameters instead of using them by value.
-macro_rules! ensure_ty {
-    ($expected:expr, $found:expr) => {
-        crate::ty::expect_ty(&$expected, &$found)
-    };
-    ($expected:expr, $found:expr, $( $other:expr ),*) => {
-        crate::ty::expect_ty(&$expected, &$found)$(.and_then(|_| crate::ty::expect_ty(&$expected, &$other)))*
-    };
-}
-
-/// A type binding.
-///
-/// This represents the binding of a `Name` to a type and is used inside the type-checker to encode
-/// that a variable has a type in the current scope.
-struct TyBinding<'a> {
-    name: Name<'a>,
-    ty: Ty,
 }
 
 struct Unifier {
@@ -127,6 +107,15 @@ impl Unifier {
         }
         Ok(())
     }
+}
+
+/// A type binding.
+///
+/// This represents the binding of a `Name` to a type and is used inside the type-checker to encode
+/// that a variable has a type in the current scope.
+struct TyBinding<'a> {
+    name: Name<'a>,
+    ty: Ty,
 }
 
 /// A typing context.
