@@ -14,7 +14,17 @@ use crate::{
 /// This function must always be called in the "root" term of the program. Otherwise, the type
 /// checker might not have all the bindings required to do its job.
 pub fn ty_check(term: &Located<Term<'_>>) -> TyResult<Located<Ty>> {
-    Context::default().type_of(&term)
+    let mut ctx = Context::default();
+    let mut ty = ctx.type_of(&term)?;
+
+    println!("{:?}", ty);
+
+    let mut unif = Unifier::from_ctx(ctx);
+    println!("{:?}", unif.constraints);
+    unif.unify()?;
+    unif.replace(&mut ty.content);
+
+    Ok(ty)
 }
 
 /// Function that returns an unexpected type error if the types passed to it are not equal.
@@ -50,6 +60,73 @@ struct TyBinding<'a> {
     ty: Ty,
 }
 
+struct Unifier {
+    substitution: Vec<(Ty, Ty)>,
+    constraints: Vec<(Ty, Ty)>,
+}
+
+impl Unifier {
+    fn replace(&self, ty: &mut Ty) {
+        for (target, subs) in &self.substitution {
+            ty.replace(target, subs);
+        }
+    }
+
+    fn from_ctx<'a>(ctx: Context<'a>) -> Self {
+        Unifier {
+            constraints: ctx.constraints,
+            substitution: Default::default(),
+        }
+    }
+
+    fn apply_subs(&mut self, target: &Ty, subs: &Ty) {
+        for (ty1, ty2) in &mut self.constraints {
+            ty1.replace(target, subs);
+            ty2.replace(target, subs);
+        }
+    }
+
+    fn compose_subs(&mut self, target: Ty, mut subs: Ty) {
+        self.replace(&mut subs);
+        self.substitution.push((target, subs));
+    }
+
+    fn unify(&mut self) -> TyResult<()> {
+        if let Some((s, t)) = self.constraints.pop() {
+            if s == t {
+                return self.unify();
+            }
+
+            if let Ty::Var(_) = s {
+                if !t.contains(&s) {
+                    self.apply_subs(&s, &t);
+                    self.unify()?;
+                    self.compose_subs(s, t);
+                    return Ok(());
+                }
+            }
+
+            if let Ty::Var(_) = t {
+                if !s.contains(&t) {
+                    self.apply_subs(&t, &s);
+                    self.unify()?;
+                    self.compose_subs(t, s);
+                    return Ok(());
+                }
+            }
+
+            if let (Ty::Arrow(s1, s2), Ty::Arrow(t1, t2)) = (s, t) {
+                self.constraints.push((*s1, *t1));
+                self.constraints.push((*s2, *t2));
+                return self.unify();
+            }
+
+            unreachable!()
+        }
+        Ok(())
+    }
+}
+
 /// A typing context.
 ///
 /// This structure traverses the MIR of a program and checks the well-typedness of its inner terms.
@@ -63,16 +140,18 @@ struct Context<'a> {
     inner: Vec<TyBinding<'a>>,
     /// Number of created type variables.
     ///
-    /// Every time a new variable is created with the `new_var` method, this number is increased to
+    /// Every time a new variable is created with the `new_ty` method, this number is increased to
     /// guarantee all type variables are different.
-    count: usize
+    count: usize,
+    /// Typing constraints.
+    constraints: Vec<(Ty, Ty)>,
 }
 
 impl<'a> Context<'a> {
     /// Returns a new type variable.
     ///
     /// This variable is guaranteed to be different from all the other types introduced before.
-    fn new_var(&mut self) -> Ty {
+    fn new_ty(&mut self) -> Ty {
         let ty = Ty::Var(self.count);
         self.count += 1;
         ty
@@ -179,8 +258,8 @@ impl<'a> Context<'a> {
     ) -> TyResult<Located<Ty>> {
         let ty = self.type_of(term)?;
         match op {
-            UnOp::Neg => ensure_ty!(Ty::Int, ty)?,
-            UnOp::Not => ensure_ty!(Ty::Bool, ty)?,
+            UnOp::Neg => self.constraints.push((Ty::Int, ty.content.clone())),
+            UnOp::Not => self.constraints.push((Ty::Bool, ty.content.clone())),
         };
         Ok(Located::new(ty.content, loc))
     }
@@ -215,19 +294,22 @@ impl<'a> Context<'a> {
             | BinOp::BitXor
             | BinOp::Shr
             | BinOp::Shl => {
-                ensure_ty!(Ty::Int, ty1, ty2)?;
+                self.constraints.push((Ty::Int, ty1.content));
+                self.constraints.push((Ty::Int, ty2.content));
                 Ty::Int
             }
             BinOp::Or | BinOp::And => {
-                ensure_ty!(Ty::Bool, ty1, ty2)?;
+                self.constraints.push((Ty::Bool, ty1.content));
+                self.constraints.push((Ty::Bool, ty2.content));
                 Ty::Bool
             }
             BinOp::Lt | BinOp::Gt | BinOp::Lte | BinOp::Gte => {
-                ensure_ty!(Ty::Int, ty1, ty2)?;
+                self.constraints.push((Ty::Int, ty1.content));
+                self.constraints.push((Ty::Int, ty2.content));
                 Ty::Bool
             }
             BinOp::Eq | BinOp::Neq => {
-                ensure_ty!(ty1.content, ty2)?;
+                self.constraints.push((ty1.content, ty2.content));
                 Ty::Bool
             }
         };
@@ -253,13 +335,13 @@ impl<'a> Context<'a> {
         } else {
             let ty1 = self.type_of(t1)?;
             let ty2 = self.type_of(t2)?;
-            match ty1.content {
-                Ty::Arrow(ty11, ty) => {
-                    ensure_ty!(ty11, ty2)?;
-                    Ok(Located::new(*ty, loc))
-                }
-                _ => Err(TyError::ExpectedFn(ty1)),
-            }
+            let ty = self.new_ty();
+
+            self.constraints.push((
+                ty1.content,
+                Ty::Arrow(Box::new(ty2.content), Box::new(ty.clone())),
+            ));
+            Ok(Located::new(ty, loc))
         }
     }
 
@@ -269,8 +351,8 @@ impl<'a> Context<'a> {
     /// is binded to whatever type has the first term. Then, the type of the let binding is
     /// the same as the type of the second term.
     ///
-    /// If the user provided a type anotation, the inferred type for the first name must coincide
-    /// with such anotation, otherwise an error is returned.
+    /// If the user provided a type annotation, the inferred type for the first name must coincide
+    /// with such annotation, otherwise an error is returned.
     ///
     /// If the let binding is recursive. A type binding with the name and the type provided by the
     /// annotation is added to the context before inferring any type in order to guarantee that the
@@ -292,7 +374,8 @@ impl<'a> Context<'a> {
                 let ty1 = self.type_of(t1)?;
 
                 if let Some(ty) = opt_ty {
-                    ensure_ty!(ty.content, ty1)?;
+                    self.constraints
+                        .push((ty.content.clone(), ty1.content.clone()));
                 }
 
                 self.inner.push(TyBinding {
@@ -330,15 +413,17 @@ impl<'a> Context<'a> {
         let ty1 = self.type_of(t1)?;
         let ty2 = self.type_of(t2)?;
         let ty3 = self.type_of(t3)?;
-        ensure_ty!(Ty::Bool, ty1)?;
-        ensure_ty!(ty2.content, ty3)?;
+
+        self.constraints.push((Ty::Bool, ty1.content));
+        self.constraints.push((ty2.content.clone(), ty3.content));
+
         Ok(Located::new(ty2.content, loc))
     }
 
     /// Returns the type of a sequence.
     ///
     /// Typing a sequence requires that the first term has type `Unit`. This is because terms
-    /// cannot be simply ommited during evaluation (this is a limitation of the LIR). If that's the
+    /// cannot be simply omitted during evaluation (this is a limitation of the LIR). If that's the
     /// case the type of the sequence is the same as the type of the second term. Otherwise an
     /// error is returned indicating that the first term is not an `Unit`.
     fn type_of_seq(
@@ -348,9 +433,9 @@ impl<'a> Context<'a> {
         t2: &Located<Term<'a>>,
     ) -> TyResult<Located<Ty>> {
         let ty1 = self.type_of(t1)?;
-        ensure_ty!(Ty::Unit, ty1)?;
+        self.constraints.push((Ty::Unit, ty1.content));
         // FIXME: this is the only method that doesn't use the location of the Term to reflect its
-        // own location. If we can this, all the `type_of_*` methods coud return `TyResult<Ty>`
+        // own location. If we can this, all the `type_of_*` methods could return `TyResult<Ty>`
         self.type_of(t2)
     }
 

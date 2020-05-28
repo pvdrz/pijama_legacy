@@ -23,6 +23,25 @@ pub enum Ty {
     Var(usize),
 }
 
+impl Ty {
+    fn contains(&self, ty: &Ty) -> bool {
+        match self {
+            Ty::Bool | Ty::Int | Ty::Unit => false,
+            Ty::Arrow(ty1, ty2) => ty1.contains(ty) || ty2.contains(ty),
+            Ty::Var(_) => self == ty,
+        }
+    }
+
+    fn replace(&mut self, target: &Ty, subs: &Ty) {
+        if self == target {
+            *self = subs.clone();
+        } else if let Ty::Arrow(ty1, ty2) = self {
+            ty1.replace(target, subs);
+            ty2.replace(target, subs);
+        }
+    }
+}
+
 impl fmt::Display for Ty {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use Ty::*;
