@@ -8,6 +8,8 @@
 //! whole program.
 use pijama_ast::{BinOp, Literal, Located, Location, Name, Primitive, UnOp};
 
+use std::collections::VecDeque;
+
 use crate::{
     mir::{LetKind, Term},
     ty::{Ty, TyError, TyResult},
@@ -64,7 +66,7 @@ struct Context<'a> {
     ///
     /// Each typing constraint is introduced by a particular `type_of_*` method with a suitable
     /// location in case an error needs to be returned.
-    constraints: Vec<Located<Constraint>>,
+    constraints: VecDeque<Located<Constraint>>,
 }
 
 impl<'a> Context<'a> {
@@ -86,11 +88,11 @@ impl<'a> Context<'a> {
     /// impossible to satisfy.
     pub fn add_constraint(&mut self, expected: Ty, found: Ty, loc: Location) {
         let constr = Constraint::new(expected, found);
-        // New constraints are added at the begining because the `Unifier` starts processing
-        // constraints from last to first. If we just push the constraint, we end up taking care of
-        // the newer constraints first. Which are more complex and can end up in less readable type
+        // New constraints are front-pushed because the `Unifier` processes constraints by popping
+        // them from the back. If we just back-push the constraints, we end up taking care of the
+        // newer constraints first, which are more complex and can end up in less readable type
         // errors.
-        self.constraints.insert(0, Located::new(constr, loc))
+        self.constraints.push_front(Located::new(constr, loc))
     }
 
     /// Returns the type of a term.

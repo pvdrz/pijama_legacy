@@ -6,8 +6,11 @@
 //!
 //! This algorithm is based on Chapter 22 of the _Types and Programming Languages_ book by Benjamin
 //! Pierce.
-use crate::ty::{ty_check::Context, Ty, TyError, TyResult};
+use std::collections::VecDeque;
+
 use pijama_ast::Located;
+
+use crate::ty::{ty_check::Context, Ty, TyError, TyResult};
 
 /// Solves the constraints created by the `Context` type.
 ///
@@ -18,7 +21,7 @@ pub struct Unifier {
     /// Substitutions that make the program well-typed.
     substitutions: Vec<Substitution>,
     /// Typing constraints of the program.
-    constraints: Vec<Located<Constraint>>,
+    constraints: VecDeque<Located<Constraint>>,
 }
 
 impl Unifier {
@@ -29,8 +32,8 @@ impl Unifier {
     /// returned ready to be used to replace type variables.
     pub(super) fn from_ctx(ctx: Context) -> TyResult<Self> {
         let mut unif = Unifier {
-            constraints: ctx.constraints,
             substitutions: Default::default(),
+            constraints: ctx.constraints,
         };
         unif.unify()?;
         Ok(unif)
@@ -74,7 +77,7 @@ impl Unifier {
     /// `replace` type variables and the program can be assumed to be well-typed.
     fn unify(&mut self) -> TyResult<()> {
         // If there are constraints to be solved, take one.
-        if let Some(constr) = self.constraints.pop() {
+        if let Some(constr) = self.constraints.pop_back() {
             let loc = constr.loc;
             let Constraint { lhs, rhs } = constr.content;
 
@@ -104,12 +107,13 @@ impl Unifier {
                 }
 
                 // If both sides are arrow types, we add new constraints matching each side of the
-                // arrows with their counterpart.
+                // arrows with their counterpart. This constraints are pushed at the back to
+                // prioritize them.
                 (Ty::Arrow(s1, s2), Ty::Arrow(t1, t2)) => {
                     self.constraints
-                        .push(Located::new(Constraint::new(*s1, *t1), loc));
+                        .push_back(Located::new(Constraint::new(*s1, *t1), loc));
                     self.constraints
-                        .push(Located::new(Constraint::new(*s2, *t2), loc));
+                        .push_back(Located::new(Constraint::new(*s2, *t2), loc));
                     self.unify()?;
                 }
 
