@@ -1,9 +1,7 @@
 //! Diverse checks that need to be done before lowering.
 use crate::{
-    ast::{
-        visitor::{BlockRef, NodeVisitor},
-        Block, Located, Name, Node,
-    },
+    visitor::{BlockRef, NodeVisitor},
+    Block, Located, Name, Node,
     ty::{Binding, Ty},
 };
 

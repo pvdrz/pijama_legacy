@@ -1,9 +1,8 @@
 use crate::{test_type, util::DummyLoc};
 
-use pijama::{
-    ty::{Ty, TyError},
-    LangError,
-};
+use pijama::LangError;
+
+use pijama_ast::ty::{Ty, TyError};
 
 test_type!(
     wrong_type_cond_input,

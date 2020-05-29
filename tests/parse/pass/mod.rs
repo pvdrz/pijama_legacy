@@ -1,11 +1,15 @@
 use std::include_str;
 
-use pijama::{
-    ast::{self, BinOp::*, Branch, Node::*, UnOp},
-    parser::parse,
+use pijama_ast::{
+    self,
     ty::{Binding, Ty},
-    LangResult,
+    BinOp::*,
+    Branch,
+    Node::*,
+    UnOp,
 };
+
+use pijama::{parser::parse, LangResult};
 
 use crate::util::DummyLoc;
 
@@ -14,9 +18,9 @@ fn name() -> LangResult<'static, ()> {
     let input = include_str!("name.pj");
     let result = parse(input)?.content;
     let expected = vec![
-        Name(ast::Name("x")).loc(),
-        Name(ast::Name("foo")).loc(),
-        Name(ast::Name("foo_bar")).loc(),
+        Name(pijama_ast::Name("x")).loc(),
+        Name(pijama_ast::Name("foo")).loc(),
+        Name(pijama_ast::Name("foo_bar")).loc(),
     ];
 
     assert_eq!(expected[0], result[0], "single letter");
@@ -29,9 +33,7 @@ fn name() -> LangResult<'static, ()> {
 fn single_comment() -> LangResult<'static, ()> {
     let input = include_str!("single_comment.pj");
     let result = parse(input)?.content;
-    let expected = vec![
-        Name(ast::Name("foo_bar")).loc()
-    ];
+    let expected = vec![Name(pijama_ast::Name("foo_bar")).loc()];
 
     assert_eq!(expected[0], result[0], "snake case");
     Ok(())
@@ -42,16 +44,16 @@ fn literal() -> LangResult<'static, ()> {
     let input = include_str!("literal.pj");
     let result = parse(input)?.content;
     let expected = vec![
-        Literal(ast::Literal::Number(0)).loc(),
-        Literal(ast::Literal::Number(-1)).loc(),
-        Literal(ast::Literal::Number(14142)).loc(),
-        Literal(ast::Literal::Number(14142)).loc(),
-        Literal(ast::Literal::Number(14142)).loc(),
-        Literal(ast::Literal::Number(14142)).loc(),
-        Literal(ast::Literal::Number(14142)).loc(),
-        Literal(ast::Literal::Bool(true)).loc(),
-        Literal(ast::Literal::Bool(false)).loc(),
-        Literal(ast::Literal::Unit).loc(),
+        Literal(pijama_ast::Literal::Number(0)).loc(),
+        Literal(pijama_ast::Literal::Number(-1)).loc(),
+        Literal(pijama_ast::Literal::Number(14142)).loc(),
+        Literal(pijama_ast::Literal::Number(14142)).loc(),
+        Literal(pijama_ast::Literal::Number(14142)).loc(),
+        Literal(pijama_ast::Literal::Number(14142)).loc(),
+        Literal(pijama_ast::Literal::Number(14142)).loc(),
+        Literal(pijama_ast::Literal::Bool(true)).loc(),
+        Literal(pijama_ast::Literal::Bool(false)).loc(),
+        Literal(pijama_ast::Literal::Unit).loc(),
     ];
 
     assert_eq!(expected[0], result[0], "integer");
@@ -74,8 +76,8 @@ fn binary_op() -> LangResult<'static, ()> {
     let expected = vec![
         BinaryOp(
             Add,
-            Box::new(Name(ast::Name("a")).loc()),
-            Box::new(Name(ast::Name("b")).loc()),
+            Box::new(Name(pijama_ast::Name("a")).loc()),
+            Box::new(Name(pijama_ast::Name("b")).loc()),
         )
         .loc(),
         BinaryOp(
@@ -83,22 +85,22 @@ fn binary_op() -> LangResult<'static, ()> {
             Box::new(
                 BinaryOp(
                     Add,
-                    Box::new(Name(ast::Name("a")).loc()),
-                    Box::new(Name(ast::Name("b")).loc()),
+                    Box::new(Name(pijama_ast::Name("a")).loc()),
+                    Box::new(Name(pijama_ast::Name("b")).loc()),
                 )
                 .loc(),
             ),
-            Box::new(Name(ast::Name("c")).loc()),
+            Box::new(Name(pijama_ast::Name("c")).loc()),
         )
         .loc(),
         BinaryOp(
             Add,
-            Box::new(Name(ast::Name("a")).loc()),
+            Box::new(Name(pijama_ast::Name("a")).loc()),
             Box::new(
                 BinaryOp(
                     Add,
-                    Box::new(Name(ast::Name("b")).loc()),
-                    Box::new(Name(ast::Name("c")).loc()),
+                    Box::new(Name(pijama_ast::Name("b")).loc()),
+                    Box::new(Name(pijama_ast::Name("c")).loc()),
                 )
                 .loc(),
             ),
@@ -117,14 +119,14 @@ fn unary_op() -> LangResult<'static, ()> {
     let input = include_str!("un_op.pj");
     let result = parse(input)?.content;
     let expected = vec![
-        UnaryOp(UnOp::Neg, Box::new(Name(ast::Name("x")).loc())).loc(),
-        UnaryOp(UnOp::Not, Box::new(Name(ast::Name("x")).loc())).loc(),
+        UnaryOp(UnOp::Neg, Box::new(Name(pijama_ast::Name("x")).loc())).loc(),
+        UnaryOp(UnOp::Not, Box::new(Name(pijama_ast::Name("x")).loc())).loc(),
         UnaryOp(
             UnOp::Not,
-            Box::new(UnaryOp(UnOp::Not, Box::new(Name(ast::Name("x")).loc())).loc()),
+            Box::new(UnaryOp(UnOp::Not, Box::new(Name(pijama_ast::Name("x")).loc())).loc()),
         )
         .loc(),
-        UnaryOp(UnOp::Not, Box::new(Name(ast::Name("x")).loc())).loc(),
+        UnaryOp(UnOp::Not, Box::new(Name(pijama_ast::Name("x")).loc())).loc(),
     ];
 
     assert_eq!(expected[0], result[0], "minus");
@@ -141,8 +143,8 @@ fn logic_op() -> LangResult<'static, ()> {
     let expected = vec![
         BinaryOp(
             And,
-            Box::new(Name(ast::Name("a")).loc()),
-            Box::new(Name(ast::Name("b")).loc()),
+            Box::new(Name(pijama_ast::Name("a")).loc()),
+            Box::new(Name(pijama_ast::Name("b")).loc()),
         )
         .loc(),
         BinaryOp(
@@ -150,22 +152,22 @@ fn logic_op() -> LangResult<'static, ()> {
             Box::new(
                 BinaryOp(
                     And,
-                    Box::new(Name(ast::Name("a")).loc()),
-                    Box::new(Name(ast::Name("b")).loc()),
+                    Box::new(Name(pijama_ast::Name("a")).loc()),
+                    Box::new(Name(pijama_ast::Name("b")).loc()),
                 )
                 .loc(),
             ),
-            Box::new(Name(ast::Name("c")).loc()),
+            Box::new(Name(pijama_ast::Name("c")).loc()),
         )
         .loc(),
         BinaryOp(
             And,
-            Box::new(Name(ast::Name("a")).loc()),
+            Box::new(Name(pijama_ast::Name("a")).loc()),
             Box::new(
                 BinaryOp(
                     Or,
-                    Box::new(Name(ast::Name("b")).loc()),
-                    Box::new(Name(ast::Name("c")).loc()),
+                    Box::new(Name(pijama_ast::Name("b")).loc()),
+                    Box::new(Name(pijama_ast::Name("c")).loc()),
                 )
                 .loc(),
             ),
@@ -186,8 +188,8 @@ fn bit_op() -> LangResult<'static, ()> {
     let expected = vec![
         BinaryOp(
             BitAnd,
-            Box::new(Name(ast::Name("a")).loc()),
-            Box::new(Name(ast::Name("b")).loc()),
+            Box::new(Name(pijama_ast::Name("a")).loc()),
+            Box::new(Name(pijama_ast::Name("b")).loc()),
         )
         .loc(),
         BinaryOp(
@@ -198,16 +200,16 @@ fn bit_op() -> LangResult<'static, ()> {
                     Box::new(
                         BinaryOp(
                             BitAnd,
-                            Box::new(Name(ast::Name("a")).loc()),
-                            Box::new(Name(ast::Name("b")).loc()),
+                            Box::new(Name(pijama_ast::Name("a")).loc()),
+                            Box::new(Name(pijama_ast::Name("b")).loc()),
                         )
                         .loc(),
                     ),
-                    Box::new(Name(ast::Name("c")).loc()),
+                    Box::new(Name(pijama_ast::Name("c")).loc()),
                 )
                 .loc(),
             ),
-            Box::new(Name(ast::Name("d")).loc()),
+            Box::new(Name(pijama_ast::Name("d")).loc()),
         )
         .loc(),
         BinaryOp(
@@ -215,19 +217,19 @@ fn bit_op() -> LangResult<'static, ()> {
             Box::new(
                 BinaryOp(
                     BitAnd,
-                    Box::new(Name(ast::Name("a")).loc()),
+                    Box::new(Name(pijama_ast::Name("a")).loc()),
                     Box::new(
                         BinaryOp(
                             BitOr,
-                            Box::new(Name(ast::Name("b")).loc()),
-                            Box::new(Name(ast::Name("c")).loc()),
+                            Box::new(Name(pijama_ast::Name("b")).loc()),
+                            Box::new(Name(pijama_ast::Name("c")).loc()),
                         )
                         .loc(),
                     ),
                 )
                 .loc(),
             ),
-            Box::new(Name(ast::Name("d")).loc()),
+            Box::new(Name(pijama_ast::Name("d")).loc()),
         )
         .loc(),
     ];
@@ -244,42 +246,42 @@ fn let_bind() -> LangResult<'static, ()> {
     let result = parse(input)?.content;
     let expected = vec![
         LetBind(
-            ast::Name("x").loc(),
+            pijama_ast::Name("x").loc(),
             None,
-            Box::new(Name(ast::Name("y")).loc()),
+            Box::new(Name(pijama_ast::Name("y")).loc()),
         )
         .loc(),
         LetBind(
-            ast::Name("x").loc(),
+            pijama_ast::Name("x").loc(),
             None,
             Box::new(
                 BinaryOp(
                     Add,
-                    Box::new(Name(ast::Name("y")).loc()),
-                    Box::new(Name(ast::Name("z")).loc()),
+                    Box::new(Name(pijama_ast::Name("y")).loc()),
+                    Box::new(Name(pijama_ast::Name("z")).loc()),
                 )
                 .loc(),
             ),
         )
         .loc(),
         LetBind(
-            ast::Name("x").loc(),
+            pijama_ast::Name("x").loc(),
             Some(Ty::Int.loc()),
-            Box::new(Name(ast::Name("y")).loc()),
+            Box::new(Name(pijama_ast::Name("y")).loc()),
         )
         .loc(),
         LetBind(
-            ast::Name("foo").loc(),
+            pijama_ast::Name("foo").loc(),
             None,
             Box::new(
                 FnDef(
                     None,
                     vec![Binding {
-                        name: ast::Name("x"),
+                        name: pijama_ast::Name("x"),
                         ty: Ty::Int,
                     }
                     .loc()],
-                    vec![Name(ast::Name("x")).loc()].loc(),
+                    vec![Name(pijama_ast::Name("x")).loc()].loc(),
                     None,
                 )
                 .loc(),
@@ -302,20 +304,32 @@ fn cond() -> LangResult<'static, ()> {
     let expected = vec![
         Cond(
             Branch {
-                cond: vec![Name(ast::Name("x")).loc()].loc(),
-                body: vec![Name(ast::Name("y")).loc()].loc(),
+                cond: vec![Name(pijama_ast::Name("x")).loc()].loc(),
+                body: vec![Name(pijama_ast::Name("y")).loc()].loc(),
             },
             vec![],
-            vec![Name(ast::Name("z")).loc()].loc(),
+            vec![Name(pijama_ast::Name("z")).loc()].loc(),
         )
         .loc(),
         Cond(
             Branch {
-                cond: vec![Name(ast::Name("u")).loc(), Name(ast::Name("v")).loc()].loc(),
-                body: vec![Name(ast::Name("w")).loc(), Name(ast::Name("x")).loc()].loc(),
+                cond: vec![
+                    Name(pijama_ast::Name("u")).loc(),
+                    Name(pijama_ast::Name("v")).loc(),
+                ]
+                .loc(),
+                body: vec![
+                    Name(pijama_ast::Name("w")).loc(),
+                    Name(pijama_ast::Name("x")).loc(),
+                ]
+                .loc(),
             },
             vec![],
-            vec![Name(ast::Name("y")).loc(), Name(ast::Name("z")).loc()].loc(),
+            vec![
+                Name(pijama_ast::Name("y")).loc(),
+                Name(pijama_ast::Name("z")).loc(),
+            ]
+            .loc(),
         )
         .loc(),
     ];
@@ -332,32 +346,60 @@ fn elif() -> LangResult<'static, ()> {
     let expected = vec![
         Cond(
             Branch {
-                cond: vec![Name(ast::Name("x")).loc()].loc(),
-                body: vec![Name(ast::Name("y")).loc()].loc(),
+                cond: vec![Name(pijama_ast::Name("x")).loc()].loc(),
+                body: vec![Name(pijama_ast::Name("y")).loc()].loc(),
             },
             vec![Branch {
-                cond: vec![Name(ast::Name("a")).loc()].loc(),
-                body: vec![Name(ast::Name("b")).loc()].loc(),
+                cond: vec![Name(pijama_ast::Name("a")).loc()].loc(),
+                body: vec![Name(pijama_ast::Name("b")).loc()].loc(),
             }],
-            vec![Name(ast::Name("z")).loc()].loc(),
+            vec![Name(pijama_ast::Name("z")).loc()].loc(),
         )
         .loc(),
         Cond(
             Branch {
-                cond: vec![Name(ast::Name("u")).loc(), Name(ast::Name("v")).loc()].loc(),
-                body: vec![Name(ast::Name("w")).loc(), Name(ast::Name("x")).loc()].loc(),
+                cond: vec![
+                    Name(pijama_ast::Name("u")).loc(),
+                    Name(pijama_ast::Name("v")).loc(),
+                ]
+                .loc(),
+                body: vec![
+                    Name(pijama_ast::Name("w")).loc(),
+                    Name(pijama_ast::Name("x")).loc(),
+                ]
+                .loc(),
             },
             vec![
                 Branch {
-                    cond: vec![Name(ast::Name("a")).loc(), Name(ast::Name("b")).loc()].loc(),
-                    body: vec![Name(ast::Name("c")).loc(), Name(ast::Name("d")).loc()].loc(),
+                    cond: vec![
+                        Name(pijama_ast::Name("a")).loc(),
+                        Name(pijama_ast::Name("b")).loc(),
+                    ]
+                    .loc(),
+                    body: vec![
+                        Name(pijama_ast::Name("c")).loc(),
+                        Name(pijama_ast::Name("d")).loc(),
+                    ]
+                    .loc(),
                 },
                 Branch {
-                    cond: vec![Name(ast::Name("e")).loc(), Name(ast::Name("f")).loc()].loc(),
-                    body: vec![Name(ast::Name("g")).loc(), Name(ast::Name("h")).loc()].loc(),
+                    cond: vec![
+                        Name(pijama_ast::Name("e")).loc(),
+                        Name(pijama_ast::Name("f")).loc(),
+                    ]
+                    .loc(),
+                    body: vec![
+                        Name(pijama_ast::Name("g")).loc(),
+                        Name(pijama_ast::Name("h")).loc(),
+                    ]
+                    .loc(),
                 },
             ],
-            vec![Name(ast::Name("y")).loc(), Name(ast::Name("z")).loc()].loc(),
+            vec![
+                Name(pijama_ast::Name("y")).loc(),
+                Name(pijama_ast::Name("z")).loc(),
+            ]
+            .loc(),
         )
         .loc(),
     ];
@@ -371,27 +413,30 @@ fn call() -> LangResult<'static, ()> {
     let input = include_str!("call.pj");
     let result = parse(input)?.content;
     let expected = vec![
-        Call(Box::new(Name(ast::Name("x")).loc()), vec![]).loc(),
+        Call(Box::new(Name(pijama_ast::Name("x")).loc()), vec![]).loc(),
         Call(
-            Box::new(Name(ast::Name("x")).loc()),
-            vec![Name(ast::Name("y")).loc()],
+            Box::new(Name(pijama_ast::Name("x")).loc()),
+            vec![Name(pijama_ast::Name("y")).loc()],
         )
         .loc(),
         Call(
-            Box::new(Name(ast::Name("x")).loc()),
-            vec![Name(ast::Name("y")).loc(), Name(ast::Name("z")).loc()],
+            Box::new(Name(pijama_ast::Name("x")).loc()),
+            vec![
+                Name(pijama_ast::Name("y")).loc(),
+                Name(pijama_ast::Name("z")).loc(),
+            ],
         )
         .loc(),
         Call(
             Box::new(
                 BinaryOp(
                     Add,
-                    Box::new(Name(ast::Name("x")).loc()),
-                    Box::new(Name(ast::Name("y")).loc()),
+                    Box::new(Name(pijama_ast::Name("x")).loc()),
+                    Box::new(Name(pijama_ast::Name("y")).loc()),
                 )
                 .loc(),
             ),
-            vec![Name(ast::Name("z")).loc()],
+            vec![Name(pijama_ast::Name("z")).loc()],
         )
         .loc(),
     ];
@@ -408,62 +453,72 @@ fn fn_def() -> LangResult<'static, ()> {
     let input = include_str!("fn_def.pj");
     let result = parse(input)?.content;
     let expected = vec![
-        FnDef(Some(ast::Name("foo").loc()), vec![], vec![].loc(), None).loc(),
         FnDef(
-            Some(ast::Name("foo").loc()),
-            vec![Binding {
-                name: ast::Name("x"),
-                ty: Ty::Int,
-            }
-            .loc()],
-            vec![Name(ast::Name("x")).loc()].loc(),
+            Some(pijama_ast::Name("foo").loc()),
+            vec![],
+            vec![].loc(),
             None,
         )
         .loc(),
         FnDef(
-            Some(ast::Name("foo").loc()),
+            Some(pijama_ast::Name("foo").loc()),
+            vec![Binding {
+                name: pijama_ast::Name("x"),
+                ty: Ty::Int,
+            }
+            .loc()],
+            vec![Name(pijama_ast::Name("x")).loc()].loc(),
+            None,
+        )
+        .loc(),
+        FnDef(
+            Some(pijama_ast::Name("foo").loc()),
             vec![],
-            vec![Call(Box::new(Name(ast::Name("foo")).loc()), vec![]).loc()].loc(),
+            vec![Call(Box::new(Name(pijama_ast::Name("foo")).loc()), vec![]).loc()].loc(),
             Some(Ty::Unit.loc()),
         )
         .loc(),
         FnDef(
-            Some(ast::Name("foo").loc()),
+            Some(pijama_ast::Name("foo").loc()),
             vec![
                 Binding {
-                    name: ast::Name("x"),
+                    name: pijama_ast::Name("x"),
                     ty: Ty::Int,
                 }
                 .loc(),
                 Binding {
-                    name: ast::Name("y"),
+                    name: pijama_ast::Name("y"),
                     ty: Ty::Int,
                 }
                 .loc(),
             ],
-            vec![Name(ast::Name("x")).loc(), Name(ast::Name("y")).loc()].loc(),
+            vec![
+                Name(pijama_ast::Name("x")).loc(),
+                Name(pijama_ast::Name("y")).loc(),
+            ]
+            .loc(),
             None,
         )
         .loc(),
         FnDef(
             None,
             vec![Binding {
-                name: ast::Name("x"),
+                name: pijama_ast::Name("x"),
                 ty: Ty::Int,
             }
             .loc()],
-            vec![Name(ast::Name("x")).loc()].loc(),
+            vec![Name(pijama_ast::Name("x")).loc()].loc(),
             None,
         )
         .loc(),
         FnDef(
             None,
             vec![Binding {
-                name: ast::Name("x"),
+                name: pijama_ast::Name("x"),
                 ty: Ty::Int,
             }
             .loc()],
-            vec![Name(ast::Name("x")).loc()].loc(),
+            vec![Name(pijama_ast::Name("x")).loc()].loc(),
             None,
         )
         .loc(),
@@ -485,12 +540,12 @@ fn precedence() -> LangResult<'static, ()> {
     let expected = vec![
         BinaryOp(
             Add,
-            Box::new(Name(ast::Name("a")).loc()),
+            Box::new(Name(pijama_ast::Name("a")).loc()),
             Box::new(
                 BinaryOp(
                     Mul,
-                    Box::new(Name(ast::Name("b")).loc()),
-                    Box::new(Name(ast::Name("c")).loc()),
+                    Box::new(Name(pijama_ast::Name("b")).loc()),
+                    Box::new(Name(pijama_ast::Name("c")).loc()),
                 )
                 .loc(),
             ),
@@ -498,12 +553,12 @@ fn precedence() -> LangResult<'static, ()> {
         .loc(),
         BinaryOp(
             BitAnd,
-            Box::new(Name(ast::Name("a")).loc()),
+            Box::new(Name(pijama_ast::Name("a")).loc()),
             Box::new(
                 BinaryOp(
                     Add,
-                    Box::new(Name(ast::Name("b")).loc()),
-                    Box::new(Name(ast::Name("c")).loc()),
+                    Box::new(Name(pijama_ast::Name("b")).loc()),
+                    Box::new(Name(pijama_ast::Name("c")).loc()),
                 )
                 .loc(),
             ),
@@ -511,12 +566,12 @@ fn precedence() -> LangResult<'static, ()> {
         .loc(),
         BinaryOp(
             Eq,
-            Box::new(Name(ast::Name("a")).loc()),
+            Box::new(Name(pijama_ast::Name("a")).loc()),
             Box::new(
                 BinaryOp(
                     BitAnd,
-                    Box::new(Name(ast::Name("b")).loc()),
-                    Box::new(Name(ast::Name("c")).loc()),
+                    Box::new(Name(pijama_ast::Name("b")).loc()),
+                    Box::new(Name(pijama_ast::Name("c")).loc()),
                 )
                 .loc(),
             ),
@@ -524,12 +579,12 @@ fn precedence() -> LangResult<'static, ()> {
         .loc(),
         BinaryOp(
             And,
-            Box::new(Name(ast::Name("a")).loc()),
+            Box::new(Name(pijama_ast::Name("a")).loc()),
             Box::new(
                 BinaryOp(
                     Eq,
-                    Box::new(Name(ast::Name("b")).loc()),
-                    Box::new(Name(ast::Name("c")).loc()),
+                    Box::new(Name(pijama_ast::Name("b")).loc()),
+                    Box::new(Name(pijama_ast::Name("c")).loc()),
                 )
                 .loc(),
             ),
@@ -553,16 +608,16 @@ fn cmp_and_shift() -> LangResult<'static, ()> {
             Box::new(
                 BinaryOp(
                     Shl,
-                    Box::new(Name(ast::Name("a")).loc()),
-                    Box::new(Name(ast::Name("b")).loc()),
+                    Box::new(Name(pijama_ast::Name("a")).loc()),
+                    Box::new(Name(pijama_ast::Name("b")).loc()),
                 )
                 .loc(),
             ),
             Box::new(
                 BinaryOp(
                     Shl,
-                    Box::new(Name(ast::Name("c")).loc()),
-                    Box::new(Name(ast::Name("d")).loc()),
+                    Box::new(Name(pijama_ast::Name("c")).loc()),
+                    Box::new(Name(pijama_ast::Name("d")).loc()),
                 )
                 .loc(),
             ),
@@ -573,16 +628,16 @@ fn cmp_and_shift() -> LangResult<'static, ()> {
             Box::new(
                 BinaryOp(
                     Shr,
-                    Box::new(Name(ast::Name("a")).loc()),
-                    Box::new(Name(ast::Name("b")).loc()),
+                    Box::new(Name(pijama_ast::Name("a")).loc()),
+                    Box::new(Name(pijama_ast::Name("b")).loc()),
                 )
                 .loc(),
             ),
             Box::new(
                 BinaryOp(
                     Shr,
-                    Box::new(Name(ast::Name("c")).loc()),
-                    Box::new(Name(ast::Name("d")).loc()),
+                    Box::new(Name(pijama_ast::Name("c")).loc()),
+                    Box::new(Name(pijama_ast::Name("d")).loc()),
                 )
                 .loc(),
             ),
@@ -593,19 +648,19 @@ fn cmp_and_shift() -> LangResult<'static, ()> {
             Box::new(
                 BinaryOp(
                     Shr,
-                    Box::new(Name(ast::Name("a")).loc()),
+                    Box::new(Name(pijama_ast::Name("a")).loc()),
                     Box::new(
                         BinaryOp(
                             Gt,
-                            Box::new(Name(ast::Name("b")).loc()),
-                            Box::new(Name(ast::Name("c")).loc()),
+                            Box::new(Name(pijama_ast::Name("b")).loc()),
+                            Box::new(Name(pijama_ast::Name("c")).loc()),
                         )
                         .loc(),
                     ),
                 )
                 .loc(),
             ),
-            Box::new(Name(ast::Name("d")).loc()),
+            Box::new(Name(pijama_ast::Name("d")).loc()),
         )
         .loc(),
     ];

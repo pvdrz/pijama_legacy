@@ -21,15 +21,14 @@ use nom::{
 };
 use nom_locate::position;
 
-use crate::{
-    ast::{Block, Located, Location, Name, Node},
-    parser::{
-        block::block0,
-        helpers::{in_brackets, keyword, keyword_space, surrounded},
-        name::name,
-        ty::{binding, colon_ty},
-        IResult, Span,
-    },
+use pijama_ast::{Block, Located, Location, Name, Node};
+
+use crate::parser::{
+    block::block0,
+    helpers::{in_brackets, keyword, keyword_space, surrounded},
+    name::name,
+    ty::{binding, colon_ty},
+    IResult, Span,
 };
 
 /// Parses a [`Node::FnDef`].

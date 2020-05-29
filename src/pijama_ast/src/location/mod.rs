@@ -1,5 +1,15 @@
 use std::fmt::{Debug, Display, Formatter, Result};
 
+pub type Span<'a> = nom_locate::LocatedSpan<&'a str>;
+
+impl<'a> From<Span<'a>> for Location {
+    fn from(span: Span<'a>) -> Self {
+        let start = span.location_offset();
+        let end = start + 1;
+        Location { start, end }
+    }
+}
+
 /// Represents a location in the source code file.
 ///
 /// Both the start and end correspond to locations reported by `nom_locate`.

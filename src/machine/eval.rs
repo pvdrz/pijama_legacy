@@ -1,5 +1,6 @@
+use pijama_ast::{BinOp, Literal, Primitive, UnOp};
+
 use crate::{
-    ast::{BinOp, Literal, Primitive, UnOp},
     lir::Term::{self, *},
     machine::Machine,
 };

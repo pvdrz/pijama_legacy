@@ -1,5 +1,6 @@
+use pijama_ast::{Located, Name};
+
 use crate::{
-    ast::{Located, Name},
     lir::Term,
     mir::{LetKind, Term as MirTerm},
 };

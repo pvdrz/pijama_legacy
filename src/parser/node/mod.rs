@@ -8,11 +8,11 @@
 //! module docs too.
 mod binary_op;
 mod call;
+pub mod comment;
 mod cond;
 mod fn_def;
 mod let_bind;
 mod unary_op;
-pub mod comment;
 
 use nom::{
     branch::alt,
@@ -22,16 +22,15 @@ use nom::{
     sequence::pair,
 };
 
-use crate::{
-    ast::{Located, Node},
-    parser::{
-        helpers::{in_brackets, lookahead},
-        literal::literal,
-        name::name,
-        primitive::primitive,
-        un_op::un_op,
-        IResult, Span,
-    },
+use pijama_ast::{Located, Node};
+
+use crate::parser::{
+    helpers::{in_brackets, lookahead},
+    literal::literal,
+    name::name,
+    primitive::primitive,
+    un_op::un_op,
+    IResult, Span,
 };
 
 /// Parser for [`Node`]s.

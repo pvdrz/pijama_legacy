@@ -1,5 +1,5 @@
 use crate::test_type;
-use pijama::ty::Ty;
+use pijama_ast::ty::Ty;
 
 // Binary operations
 test_type!(lt_is_bool, Ok(Ty::Bool));

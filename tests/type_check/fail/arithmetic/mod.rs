@@ -1,9 +1,8 @@
 use crate::{test_type, test_type_for_all_integer_binops, util::DummyLoc};
 
-use pijama::{
-    ty::{Ty, TyError},
-    LangError,
-};
+use pijama::LangError;
+
+use pijama_ast::ty::{Ty, TyError};
 
 test_type!(
     wrong_type_minus,

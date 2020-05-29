@@ -9,10 +9,9 @@ use nom::{
     multi::separated_nonempty_list,
 };
 
-use crate::{
-    ast::{Located, Name},
-    parser::{primitive::PRIMITIVES, IResult, Span},
-};
+use pijama_ast::{Located, Name};
+
+use crate::parser::{primitive::PRIMITIVES, IResult, Span};
 
 /// Words that cannot be names to avoid ambiguities.
 const KEYWORDS: &[&str] = &[

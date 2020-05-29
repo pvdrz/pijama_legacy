@@ -14,10 +14,9 @@ use nom::{
     sequence::{preceded, tuple},
 };
 
-use crate::{
-    ast::{Located, Node},
-    parser::{helpers::surrounded, name::name, node::node, ty::colon_ty, IResult, Span},
-};
+use pijama_ast::{Located, Node};
+
+use crate::parser::{helpers::surrounded, name::name, node::node, ty::colon_ty, IResult, Span};
 
 /// Parses a [`Node::LetBind`].
 ///

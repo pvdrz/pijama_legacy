@@ -1,5 +1,5 @@
 use crate::{
-    ast::{BinOp, Block, Branch, Literal, Located, Name, Node, Primitive, UnOp},
+    BinOp, Block, Branch, Literal, Located, Name, Node, Primitive, UnOp,
     ty::{Binding, Ty},
 };
 
