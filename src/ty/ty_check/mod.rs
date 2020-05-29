@@ -1,11 +1,11 @@
-//! The Pijama type-checker.
+//! Pijama's type-checker.
 //!
-//! This module contains all the functions and types required to do type checking over the MIR of a
-//! program. Pijama uses a constraint based typing, which is better suited for type
+//! This module contains all the functions and types required to do type-checking over the MIR of a
+//! program. Pijama uses constraint-based typing, which is better suited for type
 //! reconstruction/inference than a regular in-place enforcement of the typing rules.
 //!
 //! The entry-point for this module is the `ty_check` method which does the type checking of a
-//! whole program.
+//! whole program. However, most of the heavy lifting is done by the `Context` and `Unifier` types.
 use pijama_ast::{BinOp, Literal, Located, Location, Name, Primitive, UnOp};
 
 use std::collections::VecDeque;

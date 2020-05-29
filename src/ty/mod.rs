@@ -1,3 +1,10 @@
+//! Pijama's type system.
+//!
+//! This module contains all the types and functions related to Pijama's type system.
+//!
+//! In particular, this module exposes the `Ty` type which is the type representation used by the
+//! type-checker. There is also the `ty_check` module which contains all the logic related to
+//! type-checking.
 use std::fmt;
 
 use pijama_ast::ty::Ty as TyAST;

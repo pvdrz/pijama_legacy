@@ -1,3 +1,5 @@
+//! Error and Result types related to type-checking.
+
 use thiserror::Error;
 
 use pijama_ast::{Located, Location};
