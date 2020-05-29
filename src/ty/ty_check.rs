@@ -2,12 +2,12 @@
 //!
 //! This module contains all the functions and types required to do type checking over the MIR of a
 //! program.
-use pijama_ast::{
-    ty::{Binding, Ty, TyError, TyResult},
-    BinOp, Literal, Located, Location, Name, Primitive, UnOp,
-};
+use pijama_ast::{BinOp, Literal, Located, Location, Name, Primitive, UnOp};
 
-use crate::mir::{LetKind, Term};
+use crate::{
+    mir::{LetKind, Term},
+    ty::{Ty, TyError, TyResult},
+};
 
 /// Function that type-checks a term and returns its type.
 ///
@@ -34,11 +34,20 @@ pub fn expect_ty(expected: &Ty, found: &Located<Ty>) -> TyResult<()> {
 /// This only uses references to its parameters instead of using them by value.
 macro_rules! ensure_ty {
     ($expected:expr, $found:expr) => {
-        crate::ty_check::expect_ty(&$expected, &$found)
+        crate::ty::expect_ty(&$expected, &$found)
     };
     ($expected:expr, $found:expr, $( $other:expr ),*) => {
-        crate::ty_check::expect_ty(&$expected, &$found)$(.and_then(|_| crate::ty_check::expect_ty(&$expected, &$other)))*
+        crate::ty::expect_ty(&$expected, &$found)$(.and_then(|_| crate::ty::expect_ty(&$expected, &$other)))*
     };
+}
+
+/// A type binding.
+///
+/// This represents the binding of a `Name` to a type and is used inside the type-checker to encode
+/// that a variable has a type in the current scope.
+struct TyBinding<'a> {
+    name: Name<'a>,
+    ty: Ty,
 }
 
 /// A typing context.
@@ -51,7 +60,7 @@ struct Context<'a> {
     ///
     /// Ever time a new binding is done via an abstraction or let binding term it is required to push
     /// that binding into this stack, and pop it after traversing the term.
-    inner: Vec<Binding<'a>>,
+    inner: Vec<TyBinding<'a>>,
 }
 
 impl<'a> Context<'a> {
@@ -65,7 +74,7 @@ impl<'a> Context<'a> {
         match &term.content {
             Term::Lit(lit) => self.type_of_lit(loc, lit),
             Term::Var(name) => self.type_of_var(loc, name),
-            Term::Abs(bind, body) => self.type_of_abs(loc, bind, body.as_ref()),
+            Term::Abs(name, ty, body) => self.type_of_abs(loc, *name, ty, body.as_ref()),
             Term::UnaryOp(op, term) => self.type_of_unary_op(loc, *op, term.as_ref()),
             Term::BinaryOp(op, t1, t2) => {
                 self.type_of_binary_op(loc, *op, t1.as_ref(), t2.as_ref())
@@ -125,13 +134,19 @@ impl<'a> Context<'a> {
     fn type_of_abs(
         &mut self,
         loc: Location,
-        bind: &Binding<'a>,
+        name: Name<'a>,
+        ty: &Ty,
         body: &Located<Term<'a>>,
     ) -> TyResult<Located<Ty>> {
-        self.inner.push(bind.clone());
+        let bind = TyBinding {
+            name,
+            ty: ty.clone(),
+        };
+
+        self.inner.push(bind);
         let ty = self.type_of(body)?.content;
-        self.inner.pop().unwrap();
-        let ty = Ty::Arrow(Box::new(bind.ty.clone()), Box::new(ty));
+        let bind = self.inner.pop().unwrap();
+        let ty = Ty::Arrow(Box::new(bind.ty), Box::new(ty));
         Ok(Located::new(ty, loc))
     }
 
@@ -266,13 +281,13 @@ impl<'a> Context<'a> {
                     ensure_ty!(ty.content, ty1)?;
                 }
 
-                self.inner.push(Binding {
+                self.inner.push(TyBinding {
                     name: name.content,
                     ty: ty1.content,
                 });
             }
             LetKind::Rec(ty) => {
-                self.inner.push(Binding {
+                self.inner.push(TyBinding {
                     name: name.content,
                     ty: ty.content.clone(),
                 });

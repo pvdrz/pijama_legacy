@@ -1,19 +1,20 @@
 pub mod lir;
 pub mod machine;
 pub mod mir;
-pub mod parser;
-pub mod ty_check;
 pub mod options;
+pub mod parser;
+pub mod ty;
 
 use std::io::Write;
 
 use thiserror::Error;
 
-use pijama_ast::{ty::TyError, Location};
+use pijama_ast::Location;
 
 use machine::Machine;
 use mir::LowerError;
 use parser::ParsingError;
+use ty::TyError;
 
 pub type LangResult<'a, T> = Result<T, LangError<'a>>;
 
@@ -71,7 +72,7 @@ pub fn run(input: &str) -> LangResult<lir::Term> {
 pub fn run_with_machine<W: Write>(input: &str, mut machine: Machine<W>) -> LangResult<lir::Term> {
     let ast = parser::parse(input)?;
     let mir = mir::Term::from_ast(ast)?;
-    let _ty = ty_check::ty_check(&mir)?;
+    let _ty = ty::ty_check(&mir)?;
     let lir = lir::Term::from_mir(mir);
     let res = machine.evaluate(lir);
     Ok(res)

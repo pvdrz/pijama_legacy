@@ -4,10 +4,10 @@
 //! rule
 //!
 //! ```abnf
-//! fn_def = "fn" name? "(" (binding ("," binding)*)? ")" (":" ty)? "do" block1 "end"
+//! fn_def = "fn" name? "(" (ty_annotation ("," ty_annotation)*)? ")" (":" ty)? "do" block1 "end"
 //! ```
 //!
-//! Meaning that the return type binding and name are optional. If the name is not given, the
+//! Meaning that the return type annotation and name are optional. If the name is not given, the
 //! expression will be interpreted as an anonymous function.
 //!
 //! The [`args`] parser is reutilized in the [`call`] parser.
@@ -27,7 +27,7 @@ use crate::parser::{
     block::block0,
     helpers::{in_brackets, keyword, keyword_space, surrounded},
     name::name,
-    ty::{binding, colon_ty},
+    ty::{colon_ty, ty_annotation},
     IResult, Span,
 };
 
@@ -44,7 +44,7 @@ pub fn fn_def(input: Span) -> IResult<Located<Node>> {
     map(
         tuple((
             fn_name,
-            surrounded(args(binding), space0),
+            surrounded(args(ty_annotation), space0),
             terminated(opt(colon_ty), multispace0),
             fn_body,
         )),
@@ -80,7 +80,7 @@ fn fn_name(input: Span) -> IResult<Located<Option<Located<Name>>>> {
 
 /// Parser for arguments of a function definition or function call.
 ///
-/// - For function definitions: the arguments are bindings.
+/// - For function definitions: the arguments are type annotations.
 /// - For function calls: the arguments are nodes.
 ///
 /// These two options can be specified with the `content` parameter.

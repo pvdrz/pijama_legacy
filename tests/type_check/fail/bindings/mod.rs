@@ -1,8 +1,9 @@
 use crate::{test_type, util::DummyLoc};
 
-use pijama::LangError;
-
-use pijama_ast::ty::{Ty, TyError};
+use pijama::{
+    ty::{Ty, TyError},
+    LangError,
+};
 
 test_type!(
     bind_bool_to_int,

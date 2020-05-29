@@ -2,7 +2,7 @@ use std::include_str;
 
 use pijama_ast::{
     self,
-    ty::{Binding, Ty},
+    ty::{Ty, TyAnnotation},
     BinOp::*,
     Branch,
     Node::*,
@@ -276,7 +276,7 @@ fn let_bind() -> LangResult<'static, ()> {
             Box::new(
                 FnDef(
                     None,
-                    vec![Binding {
+                    vec![TyAnnotation {
                         name: pijama_ast::Name("x"),
                         ty: Ty::Int,
                     }
@@ -462,7 +462,7 @@ fn fn_def() -> LangResult<'static, ()> {
         .loc(),
         FnDef(
             Some(pijama_ast::Name("foo").loc()),
-            vec![Binding {
+            vec![TyAnnotation {
                 name: pijama_ast::Name("x"),
                 ty: Ty::Int,
             }
@@ -481,12 +481,12 @@ fn fn_def() -> LangResult<'static, ()> {
         FnDef(
             Some(pijama_ast::Name("foo").loc()),
             vec![
-                Binding {
+                TyAnnotation {
                     name: pijama_ast::Name("x"),
                     ty: Ty::Int,
                 }
                 .loc(),
-                Binding {
+                TyAnnotation {
                     name: pijama_ast::Name("y"),
                     ty: Ty::Int,
                 }
@@ -502,7 +502,7 @@ fn fn_def() -> LangResult<'static, ()> {
         .loc(),
         FnDef(
             None,
-            vec![Binding {
+            vec![TyAnnotation {
                 name: pijama_ast::Name("x"),
                 ty: Ty::Int,
             }
@@ -513,7 +513,7 @@ fn fn_def() -> LangResult<'static, ()> {
         .loc(),
         FnDef(
             None,
-            vec![Binding {
+            vec![TyAnnotation {
                 name: pijama_ast::Name("x"),
                 ty: Ty::Int,
             }

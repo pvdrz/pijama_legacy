@@ -1,5 +1,5 @@
 use crate::test_type;
-use pijama_ast::ty::Ty;
+use pijama::ty::Ty;
 
 // Unary operations
 test_type!(not_is_bool, Ok(Ty::Bool));

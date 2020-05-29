@@ -5,7 +5,7 @@ pub mod visitor;
 
 use std::fmt::{Debug, Display, Formatter, Result};
 
-use crate::ty::{Binding, Ty};
+use crate::ty::{TyAnnotation, Ty};
 
 pub use location::*;
 
@@ -148,7 +148,7 @@ pub enum Node<'a> {
     Cond(Branch<'a>, Vec<Branch<'a>>, Located<Block<'a>>),
     FnDef(
         Option<Located<Name<'a>>>,
-        Vec<Located<Binding<'a>>>,
+        Vec<Located<TyAnnotation<'a>>>,
         Located<Block<'a>>,
         Option<Located<Ty>>,
     ),
