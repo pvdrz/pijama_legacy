@@ -2,10 +2,7 @@ use std::fmt::{Display, Formatter, Result};
 
 use pijama_ast::{BinOp, Block, Literal, Located, Name, Primitive, UnOp};
 
-use crate::{
-    ty::Ty,
-    {LangError, LangResult},
-};
+use crate::{ty::Ty, LangError, LangResult};
 
 pub use lower::LowerError;
 

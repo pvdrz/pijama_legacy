@@ -27,7 +27,7 @@ use crate::parser::{
     block::block0,
     helpers::{in_brackets, keyword, keyword_space, surrounded},
     name::name,
-    ty::{ty_annotation, colon_ty},
+    ty::{colon_ty, ty_annotation},
     IResult, Span,
 };
 

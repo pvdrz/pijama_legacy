@@ -1,7 +1,6 @@
 use crate::{test_type, util::DummyLoc};
 
-use pijama::ty::TyError;
-use pijama::LangError;
+use pijama::{ty::TyError, LangError};
 
 test_type!(
     unbounded,

@@ -2,8 +2,10 @@ use crate::{
     test_type_for_all_comparision_binops, test_type_for_all_equality_binops, util::DummyLoc,
 };
 
-use pijama::LangError;
-use pijama::ty::{Ty, TyError};
+use pijama::{
+    ty::{Ty, TyError},
+    LangError,
+};
 
 // Test all int comparison operators with bool arguments
 test_type_for_all_comparision_binops!(

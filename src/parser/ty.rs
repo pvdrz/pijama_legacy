@@ -43,7 +43,7 @@ use nom::{
 };
 
 use pijama_ast::{
-    ty::{TyAnnotation, Ty},
+    ty::{Ty, TyAnnotation},
     Located, Location,
 };
 

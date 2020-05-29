@@ -7,8 +7,10 @@ use pijama_ast::{
 };
 use thiserror::Error;
 
-use crate::mir::{LetKind, Term};
-use crate::ty::Ty;
+use crate::{
+    mir::{LetKind, Term},
+    ty::Ty,
+};
 
 pub type LowerResult<T> = Result<T, LowerError>;
 
