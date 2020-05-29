@@ -2,13 +2,9 @@ use std::{include_str, time::Duration};
 
 use pijama_ast::Literal;
 
-use pijama::{
-    lir::Term,
-    machine::{arithmetic::CheckedArithmetic, env::Env, MachineBuilder},
-    run_with_machine, LangError, LangResult,
-};
+use pijama::{lir::Term, machine::env::Env, run_with_machine, LangError, LangResult};
 
-use crate::{panic_after, run};
+use crate::{machine_builder, panic_after, run};
 
 #[test]
 fn arithmetic() -> LangResult<'static, ()> {
@@ -172,10 +168,7 @@ fn print_simple() -> LangResult<'static, ()> {
     let mut output = Vec::new();
     let term = run_with_machine(
         input,
-        MachineBuilder::default()
-            .with_env(Env::new(&mut output))
-            .with_arithmetic(CheckedArithmetic)
-            .build(),
+        machine_builder().with_env(Env::new(&mut output)).build(),
     )?;
     let output = String::from_utf8_lossy(&output);
     assert_eq!(output, "10\n");
@@ -189,10 +182,7 @@ fn print_simple_fn() -> LangResult<'static, ()> {
     let mut output = Vec::new();
     let term = run_with_machine(
         input,
-        MachineBuilder::default()
-            .with_env(Env::new(&mut output))
-            .with_arithmetic(CheckedArithmetic)
-            .build(),
+        machine_builder().with_env(Env::new(&mut output)).build(),
     )?;
     let output = String::from_utf8_lossy(&output);
     assert_eq!(output, "((λ. _0) 10)\n");
@@ -206,10 +196,7 @@ fn print_complex_fn() -> LangResult<'static, ()> {
     let mut output = Vec::new();
     let term = run_with_machine(
         input,
-        MachineBuilder::default()
-            .with_env(Env::new(&mut output))
-            .with_arithmetic(CheckedArithmetic)
-            .build(),
+        machine_builder().with_env(Env::new(&mut output)).build(),
     )?;
     let output = String::from_utf8_lossy(&output);
     assert_eq!(output, "((λ. (if (_0 > 0) then 1 else 0)) 10)\n");
@@ -223,10 +210,7 @@ fn print_print() -> LangResult<'static, ()> {
     let mut output = Vec::new();
     let term = run_with_machine(
         input,
-        MachineBuilder::default()
-            .with_env(Env::new(&mut output))
-            .with_arithmetic(CheckedArithmetic)
-            .build(),
+        machine_builder().with_env(Env::new(&mut output)).build(),
     )?;
     let output = String::from_utf8_lossy(&output);
     assert_eq!(output, "(print 10)\n");
