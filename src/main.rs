@@ -15,7 +15,7 @@ fn main() {
         }
     };
 
-    match run(&input) {
+    match run(&input, &options) {
         Ok(term) => println!("{}", term),
         Err(err) => display_error(&input, &options.path, &err),
     }

@@ -16,6 +16,7 @@ use machine::{eval::Machine, OverflowMachine};
 use mir::LowerError;
 use parser::ParsingError;
 use ty::TyError;
+use options::Options;
 
 pub type LangResult<'a, T> = Result<T, LangError<'a>>;
 
@@ -66,7 +67,7 @@ pub fn display_error<'a>(input: &str, path: &str, error: &LangError<'a>) {
     emit(&mut writer.lock(), &config, &files, &diagnostic).unwrap();
 }
 
-pub fn run(input: &str) -> LangResult<lir::Term> {
+pub fn run<'a>(input: &'a str, options: &Options) -> LangResult<'a, lir::Term> {
     run_with_machine(input, OverflowMachine::with_env(Default::default()))
 }
 
