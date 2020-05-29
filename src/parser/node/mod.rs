@@ -8,11 +8,11 @@
 //! module docs too.
 mod binary_op;
 mod call;
+pub mod comment;
 mod cond;
 mod fn_def;
 mod let_bind;
 mod unary_op;
-pub mod comment;
 
 use nom::{
     branch::alt,

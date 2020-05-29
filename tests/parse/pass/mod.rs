@@ -29,9 +29,7 @@ fn name() -> LangResult<'static, ()> {
 fn single_comment() -> LangResult<'static, ()> {
     let input = include_str!("single_comment.pj");
     let result = parse(input)?.content;
-    let expected = vec![
-        Name(ast::Name("foo_bar")).loc()
-    ];
+    let expected = vec![Name(ast::Name("foo_bar")).loc()];
 
     assert_eq!(expected[0], result[0], "snake case");
     Ok(())

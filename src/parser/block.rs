@@ -5,7 +5,7 @@
 //! [`parser`]: crate::parser
 use nom::{
     character::complete::{line_ending, multispace0},
-    combinator::{opt, map},
+    combinator::{map, opt},
     multi::{separated_list, separated_nonempty_list},
     sequence::{preceded, tuple},
 };
@@ -14,8 +14,8 @@ use nom_locate::position;
 use crate::{
     ast::{Block, Located, Location},
     parser::{
-        node::{comment, node}, 
-        IResult, Span
+        node::{comment, node},
+        IResult, Span,
     },
 };
 
@@ -23,9 +23,9 @@ use crate::{
 ///
 /// Nodes in the block can be separated by at least one line break and optional spaces.
 ///
-/// The location of this element matches either the start of a comment or the first space 
-/// or line break before the first `Node` of the `Block`. If there are no spaces or line 
-/// breaks before the first `Node`, the start matches the start of the `Node`. The end 
+/// The location of this element matches either the start of a comment or the first space
+/// or line break before the first `Node` of the `Block`. If there are no spaces or line
+/// breaks before the first `Node`, the start matches the start of the `Node`. The end
 /// of the location is handled in an analogous manner.
 pub fn block0(input: Span) -> IResult<Located<Block>> {
     map(
@@ -45,9 +45,9 @@ pub fn block0(input: Span) -> IResult<Located<Block>> {
 ///
 /// Nodes in the block can be separated by at least one line break and optional spaces.
 ///
-/// The location of this element matches either the start of a comment or the first space 
-/// or line break before the first `Node` of the `Block`. If there are no spaces or line 
-/// breaks before the first `Node`, the start matches the start of the `Node`. The end 
+/// The location of this element matches either the start of a comment or the first space
+/// or line break before the first `Node` of the `Block`. If there are no spaces or line
+/// breaks before the first `Node`, the start matches the start of the `Node`. The end
 /// of the location is handled in an analogous manner.
 pub fn block1(input: Span) -> IResult<Located<Block>> {
     map(

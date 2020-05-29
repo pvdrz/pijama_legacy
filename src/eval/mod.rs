@@ -1,13 +1,12 @@
-use std::convert::TryFrom;
-use std::io::Write;
+use std::{convert::TryFrom, io::Write};
 
 use crate::ast::{BinOp, UnOp};
 
-mod machine;
 mod lang_env;
+mod machine;
 
-pub use machine::Machine;
 pub use lang_env::LangEnv;
+pub use machine::Machine;
 
 pub struct OverflowMachine<W: Write> {
     env: LangEnv<W>,

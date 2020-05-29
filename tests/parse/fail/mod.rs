@@ -1,6 +1,6 @@
 use std::include_str;
 
-use pijama::{run_with_machine, LangError, eval::CheckedMachine};
+use pijama::{eval::CheckedMachine, run_with_machine, LangError};
 
 #[test]
 fn consecutive_comments() {

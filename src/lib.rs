@@ -11,7 +11,7 @@ use std::io::Write;
 use thiserror::Error;
 
 use ast::Location;
-use eval::{Machine, CheckedMachine, OverflowMachine};
+use eval::{CheckedMachine, Machine, OverflowMachine};
 
 use mir::LowerError;
 use options::Options;
