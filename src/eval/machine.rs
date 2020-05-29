@@ -134,7 +134,7 @@ pub trait Machine<W: Write>: Sized {
     fn step_primitive_app(&mut self, prim: Primitive, arg: Box<Term>) -> (bool, Term) {
         match prim {
             Primitive::Print => {
-                writeln!(self.lang_env().stdout, "{}", arg).expect("Primitive print failed");
+                writeln!(self.lang_env().stdout(), "{}", arg).expect("Primitive print failed");
                 (true, Literal::Unit.into())
             }
         }

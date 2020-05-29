@@ -3,7 +3,17 @@ use std::io::{stdout, Stdout, Write};
 use crate::eval::{CheckedMachine, Machine, OverflowMachine};
 
 pub struct LangEnv<W: Write> {
-    pub stdout: W,
+    stdout: W,
+}
+
+impl<W: Write> LangEnv<W> {
+    pub fn new(stdout: W) -> Self {
+        LangEnv { stdout }
+    }
+
+    pub fn stdout(&mut self) -> &mut W {
+        &mut self.stdout
+    }
 }
 
 impl Default for LangEnv<Stdout> {
