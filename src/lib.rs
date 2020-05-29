@@ -3,6 +3,7 @@ pub mod machine;
 pub mod mir;
 pub mod parser;
 pub mod ty_check;
+pub mod options;
 
 use std::io::Write;
 
