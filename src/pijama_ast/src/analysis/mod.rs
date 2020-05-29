@@ -2,7 +2,7 @@
 use crate::{
     visitor::{BlockRef, NodeVisitor},
     Block, Located, Name, Node,
-    ty::{Binding, Ty},
+    ty::{TyAnnotation, Ty},
 };
 
 /// Checks if a function is recursive or not.
@@ -86,7 +86,7 @@ impl<'a> NodeVisitor<'a> for RecursionChecker<'a> {
     fn visit_fn_def(
         &mut self,
         opt_name: &Option<Located<Name<'a>>>,
-        args: &[Located<Binding<'a>>],
+        args: &[Located<TyAnnotation<'a>>],
         body: &Located<Block<'a>>,
         opt_ty: &Option<Located<Ty>>,
     ) {

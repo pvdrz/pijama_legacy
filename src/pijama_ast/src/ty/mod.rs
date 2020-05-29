@@ -1,19 +1,9 @@
-//! Types and functions related to Pijama's type system.
-//!
-//! The entry point for this module is the `ty_check` function which takes care of type inference
-//! and checking.
-// pub mod ty_error;
+//! The AST representation of types.
 
-use std::fmt;
-
-use thiserror::Error;
-
-use crate::Name;
-use crate::{Located, Location};
-
-/// The type of a term.
+/// A type in the AST.
 ///
-/// Each variant here represents the type a term might have.
+/// This type must only represent the kinds of types is possible to write in the AST. Other `Ty`
+/// types exist with different purposes.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Ty {
     /// The type of booleans.
@@ -44,49 +34,12 @@ impl fmt::Display for Ty {
     }
 }
 
-/// A type binding.
+/// A type annotation.
 ///
-/// This represents a binding of a `Name` to a type and is used inside the type checker as the
-/// default way of encoding that a variable has a type in the current scope.
+/// This represents an annotation of a `Name` with a type and is used to represent any type
+/// annotations written by the user.
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct Binding<'a> {
+pub struct TyAnnotation<'a> {
     pub name: Name<'a>,
     pub ty: Ty,
-}
-
-/// The type returned by methods and functions in this module.
-pub type TyResult<T = Ty> = Result<T, TyError>;
-
-/// A typing error.
-///
-/// Each variant here represents a reason why the type-checker could fail.
-#[derive(Error, Debug, Eq, PartialEq)]
-pub enum TyError {
-    /// Variant used when two types that should be equal are not.
-    #[error("Unexpected type: expected {expected}, found {found}")]
-    Unexpected { expected: Ty, found: Located<Ty> },
-    /// Variant used when a name has not been binded to any type in the current scope.
-    #[error("Name {0} is not bounded")]
-    Unbound(Located<String>),
-    /// Variant used when a type was expected to be a `Ty::Arrow` function type.
-    #[error("Unexpected type: expected function, found {0}")]
-    ExpectedFn(Located<Ty>),
-    /// Variant used when a type was expected to not be a `Ty::Arrow` function type.
-    #[error("Unexpected type: expected a basic type, found {0}")]
-    ExpectedBasic(Located<Ty>),
-    /// Variant used when a required type annotation is missing.
-    #[error("Missing type: type cannot be inferred")]
-    Missing(Located<()>),
-}
-
-impl TyError {
-    /// Returns the location of the error.
-    pub fn loc(&self) -> Location {
-        match self {
-            TyError::Unexpected { found, .. } => found.loc,
-            TyError::Unbound(name) => name.loc,
-            TyError::ExpectedBasic(ty) | TyError::ExpectedFn(ty) => ty.loc,
-            TyError::Missing(unit) => unit.loc,
-        }
-    }
 }

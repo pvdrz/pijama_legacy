@@ -1,6 +1,6 @@
 use crate::{
     BinOp, Block, Branch, Literal, Located, Name, Node, Primitive, UnOp,
-    ty::{Binding, Ty},
+    ty::{TyAnnotation, Ty},
 };
 
 /// Helper type alias to traverse references to blocks as slices.
@@ -100,7 +100,7 @@ pub trait NodeVisitor<'a> {
     fn super_fn_def(
         &mut self,
         opt_name: &Option<Located<Name<'a>>>,
-        _args: &[Located<Binding<'a>>],
+        _args: &[Located<TyAnnotation<'a>>],
         body: &Located<Block<'a>>,
         _opt_ty: &Option<Located<Ty>>,
     ) {
@@ -163,7 +163,7 @@ pub trait NodeVisitor<'a> {
     fn visit_fn_def(
         &mut self,
         opt_name: &Option<Located<Name<'a>>>,
-        args: &[Located<Binding<'a>>],
+        args: &[Located<TyAnnotation<'a>>],
         body: &Located<Block<'a>>,
         opt_ty: &Option<Located<Ty>>,
     ) {

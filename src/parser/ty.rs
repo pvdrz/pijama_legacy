@@ -21,18 +21,18 @@
 //! completely. The [`ty`] and [`base_ty`] parsers in this module corresponds to each one of the
 //! rules in the grammar above.
 //!
-//! In addition we have the [`binding`] parser, which parses expressions with the grammar
+//! In addition we have the [`ty_annotation`] parser, which parses expressions with the grammar
 //!
 //! ```abnf
-//! binding = name ":" ty
+//! ty_annotation = name ":" ty
 //! ```
 //! The parser for names is explained in the [`name`] module.
 //!
 //! [`ty`]: crate::parser::ty::ty
 //! [`base_ty`]: crate::parser::ty::base_ty
-//! [`binding`]: crate::parser::ty::binding
+//! [`ty_annotation`]: crate::parser::ty::ty_annotation
 //! [`Ty`]: crate::ty::Ty
-//! [`Binding`]: crate::ty::Binding
+//! [`TyAnnotation`]: crate::ty::TyAnnotation
 //! [`name`]: crate::parser::name
 use nom::{
     branch::alt,
@@ -43,7 +43,7 @@ use nom::{
 };
 
 use pijama_ast::{
-    ty::{Binding, Ty},
+    ty::{TyAnnotation, Ty},
     Located, Location,
 };
 
@@ -79,11 +79,11 @@ pub fn ty(input: Span) -> IResult<Located<Ty>> {
     }
 }
 
-/// Parser for type bindings.
+/// Parser for type annotations.
 ///
-/// This parser returns a [`Binding`], there can be any number of spaces surrounding the `:`,
+/// This parser returns a [`TyAnnotation`], there can be any number of spaces surrounding the `:`,
 /// including no spaces at all.
-pub fn binding(input: Span) -> IResult<Located<Binding>> {
+pub fn ty_annotation(input: Span) -> IResult<Located<TyAnnotation>> {
     map(
         pair(name, colon_ty),
         |(
@@ -95,7 +95,7 @@ pub fn binding(input: Span) -> IResult<Located<Binding>> {
                 content: ty,
                 loc: loc2,
             },
-        )| { Located::new(Binding { name, ty }, loc1 + loc2) },
+        )| { Located::new(TyAnnotation { name, ty }, loc1 + loc2) },
     )(input)
 }
 
@@ -103,9 +103,9 @@ pub fn binding(input: Span) -> IResult<Located<Binding>> {
 ///
 /// This parser returns a [`Ty`] and there can be any number of spaces surrounding the colon.
 ///
-/// This parser exists with the sole purpose of being reutilized for type bindings that are not
-/// stored in [`Binding`]s such as the return type of functions or the optional type binding for
-/// let bindings.
+/// This parser exists with the sole purpose of being reutilized for type annotations that are not
+/// stored in [`TyAnnotation`]s such as the return type of functions or the optional type
+/// annotation for let bindings.
 pub fn colon_ty(input: Span) -> IResult<Located<Ty>> {
     preceded(surrounded(char(':'), space0), ty)(input)
 }
