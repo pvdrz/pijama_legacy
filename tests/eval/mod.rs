@@ -240,3 +240,17 @@ fn number_bases_arithmetic() -> LangResult<'static, ()> {
     assert_eq!(Term::Lit(567_883 * 4), term);
     Ok(())
 }
+
+#[test]
+#[should_panic]
+fn add_overflow_panics() {
+    let input = include_str!("add_overflow_panics.pj");
+    run(input).ok();
+}
+
+#[test]
+#[should_panic]
+fn neg_overflow_panics() {
+    let input = include_str!("neg_overflow_panics.pj");
+    run(input).ok();
+}
