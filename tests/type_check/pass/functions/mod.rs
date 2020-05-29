@@ -1,5 +1,5 @@
 use crate::test_type;
-use pijama_ast::ty::Ty;
+use pijama::ty::Ty;
 
 // Non-recursive functions
 test_type!(
