@@ -1,0 +1,40 @@
+use pijama_ast::{BinOp, BinOp::*, UnOp, UnOp::*};
+
+/// Trait determining how arithmetic operations should be handled.
+pub trait Arithmetic {
+    fn native_bin_op(op: BinOp, n1: i64, n2: i64) -> i64;
+    fn native_un_op(op: UnOp, n: i64) -> i64;
+}
+
+/// Regular arithmetic that is allowed to overflow or panic when dividing by zero.
+pub struct OverflowArithmetic;
+
+impl Arithmetic for OverflowArithmetic {
+    fn native_bin_op(op: BinOp, n1: i64, n2: i64) -> i64 {
+        match op {
+            Add => n1 + n2,
+            Sub => n1 - n2,
+            Mul => n1 * n2,
+            Div => n1 / n2,
+            Rem => n1 % n2,
+            Lt => (n1 < n2).into(),
+            Lte => (n1 <= n2).into(),
+            Gt => (n1 > n2).into(),
+            Gte => (n1 >= n2).into(),
+            Eq => (n1 == n2).into(),
+            Neq => (n1 != n2).into(),
+            BitAnd | And => n1 & n2,
+            BitOr | Or => n1 | n2,
+            BitXor => n1 ^ n2,
+            Shr => n1 >> n2,
+            Shl => n1 << n2,
+        }
+    }
+
+    fn native_un_op(op: UnOp, n: i64) -> i64 {
+        match op {
+            Neg => -n,
+            Not => !n,
+        }
+    }
+}

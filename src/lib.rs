@@ -5,13 +5,13 @@ pub mod options;
 pub mod parser;
 pub mod ty;
 
-use std::io::Write;
-
 use thiserror::Error;
+
+use std::io::Write;
 
 use pijama_ast::Location;
 
-use machine::Machine;
+use machine::{arithmetic::OverflowArithmetic, Machine};
 use mir::LowerError;
 use parser::ParsingError;
 use ty::TyError;
@@ -69,7 +69,10 @@ pub fn run(input: &str) -> LangResult<lir::Term> {
     run_with_machine(input, Machine::default())
 }
 
-pub fn run_with_machine<W: Write>(input: &str, mut machine: Machine<W>) -> LangResult<lir::Term> {
+pub fn run_with_machine<W: Write>(
+    input: &str,
+    mut machine: Machine<W, OverflowArithmetic>,
+) -> LangResult<lir::Term> {
     let ast = parser::parse(input)?;
     let mir = mir::Term::from_ast(ast)?;
     let _ty = ty::ty_check(&mir)?;
