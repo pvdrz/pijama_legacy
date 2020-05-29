@@ -9,7 +9,9 @@ use std::{
     io::Write,
 };
 
-pub trait Machine<W: Write> {
+pub trait Machine<W: Write>: Sized {
+    fn with_env(env: LangEnv<W>) -> Self;
+
     fn lang_env(&mut self) -> &mut LangEnv<W>;
 
     fn evaluate(&mut self, mut term: Term) -> Term {

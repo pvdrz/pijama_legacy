@@ -67,7 +67,7 @@ pub fn display_error<'a>(input: &str, path: &str, error: &LangError<'a>) {
 }
 
 pub fn run(input: &str) -> LangResult<lir::Term> {
-    run_with_machine(input, OverflowMachine::default())
+    run_with_machine(input, OverflowMachine::with_env(Default::default()))
 }
 
 pub fn run_with_machine<W: Write>(
