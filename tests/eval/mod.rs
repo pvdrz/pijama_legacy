@@ -2,9 +2,9 @@ use std::{include_str, time::Duration};
 
 use pijama::{
     ast::Literal,
+    eval::{CheckedMachine, LangEnv, Machine},
     lir::Term,
-    machine::{LangEnv, Machine},
-    run, run_with_machine, LangError, LangResult,
+    run_with_machine, LangError, LangResult,
 };
 
 use crate::panic_after;
@@ -12,7 +12,7 @@ use crate::panic_after;
 #[test]
 fn arithmetic() -> LangResult<'static, ()> {
     let input = include_str!("arithmetic.pj");
-    let term = run(input)?;
+    let term = run_with_machine(input, CheckedMachine::default())?;
     assert_eq!(Term::Lit(121), term);
     Ok(())
 }
@@ -20,7 +20,7 @@ fn arithmetic() -> LangResult<'static, ()> {
 #[test]
 fn logic() -> LangResult<'static, ()> {
     let input = include_str!("logic.pj");
-    let term = run(input)?;
+    let term = run_with_machine(input, CheckedMachine::default())?;
     assert_eq!(term, false.into());
     Ok(())
 }
@@ -28,7 +28,7 @@ fn logic() -> LangResult<'static, ()> {
 #[test]
 fn factorial() -> LangResult<'static, ()> {
     let input = include_str!("factorial.pj");
-    let term = run(input)?;
+    let term = run_with_machine(input, CheckedMachine::default())?;
     assert_eq!(Term::Lit(3_628_800), term);
     Ok(())
 }
@@ -36,7 +36,7 @@ fn factorial() -> LangResult<'static, ()> {
 #[test]
 fn factorial_tail() -> LangResult<'static, ()> {
     let input = include_str!("factorial_tail.pj");
-    let term = run(input)?;
+    let term = run_with_machine(input, CheckedMachine::default())?;
     assert_eq!(Term::Lit(3_628_800), term);
     Ok(())
 }
@@ -44,7 +44,7 @@ fn factorial_tail() -> LangResult<'static, ()> {
 #[test]
 fn fancy_max() -> LangResult<'static, ()> {
     let input = include_str!("fancy_max.pj");
-    let term = run(input)?;
+    let term = run_with_machine(input, CheckedMachine::default())?;
     assert_eq!(Term::Lit(10), term);
     Ok(())
 }
@@ -52,7 +52,7 @@ fn fancy_max() -> LangResult<'static, ()> {
 #[test]
 fn fibonacci() -> LangResult<'static, ()> {
     let input = include_str!("fibonacci.pj");
-    let term = run(input)?;
+    let term = run_with_machine(input, CheckedMachine::default())?;
     assert_eq!(Term::Lit(21), term);
     Ok(())
 }
@@ -60,7 +60,7 @@ fn fibonacci() -> LangResult<'static, ()> {
 #[test]
 fn fibonacci_tail() -> LangResult<'static, ()> {
     let input = include_str!("fibonacci_tail.pj");
-    let term = run(input)?;
+    let term = run_with_machine(input, CheckedMachine::default())?;
     assert_eq!(Term::Lit(21), term);
     Ok(())
 }
@@ -68,7 +68,7 @@ fn fibonacci_tail() -> LangResult<'static, ()> {
 #[test]
 fn gcd() -> LangResult<'static, ()> {
     let input = include_str!("gcd.pj");
-    let term = run(input)?;
+    let term = run_with_machine(input, CheckedMachine::default())?;
     assert_eq!(Term::Lit(1), term);
     Ok(())
 }
@@ -76,7 +76,7 @@ fn gcd() -> LangResult<'static, ()> {
 #[test]
 fn ackermann() -> LangResult<'static, ()> {
     let input = include_str!("ackermann.pj");
-    let term = run(input)?;
+    let term = run_with_machine(input, CheckedMachine::default())?;
     assert_eq!(Term::Lit(5), term);
     Ok(())
 }
@@ -84,7 +84,7 @@ fn ackermann() -> LangResult<'static, ()> {
 #[test]
 fn calling() -> LangResult<'static, ()> {
     let input = include_str!("calling.pj");
-    let term = run(input)?;
+    let term = run_with_machine(input, CheckedMachine::default())?;
     assert_eq!(Term::Lit(1), term);
     Ok(())
 }
@@ -92,7 +92,7 @@ fn calling() -> LangResult<'static, ()> {
 #[test]
 fn complex_calling() -> LangResult<'static, ()> {
     let input = include_str!("complex_calling.pj");
-    let term = run(input)?;
+    let term = run_with_machine(input, CheckedMachine::default())?;
     assert_eq!(Term::Lit(1), term);
     Ok(())
 }
@@ -100,7 +100,7 @@ fn complex_calling() -> LangResult<'static, ()> {
 #[test]
 fn step() -> LangResult<'static, ()> {
     let input = include_str!("step.pj");
-    let term = run(input)?;
+    let term = run_with_machine(input, CheckedMachine::default())?;
     assert_eq!(Term::Lit(1), term);
     Ok(())
 }
@@ -108,7 +108,7 @@ fn step() -> LangResult<'static, ()> {
 #[test]
 fn bit_and() -> LangResult<'static, ()> {
     let input = include_str!("bit_and.pj");
-    let term = run(input)?;
+    let term = run_with_machine(input, CheckedMachine::default())?;
     assert_eq!(Term::Lit(64), term);
     Ok(())
 }
@@ -116,7 +116,7 @@ fn bit_and() -> LangResult<'static, ()> {
 #[test]
 fn bit_or() -> LangResult<'static, ()> {
     let input = include_str!("bit_or.pj");
-    let term = run(input)?;
+    let term = run_with_machine(input, CheckedMachine::default())?;
     assert_eq!(Term::Lit(192), term);
     Ok(())
 }
@@ -124,7 +124,7 @@ fn bit_or() -> LangResult<'static, ()> {
 #[test]
 fn bit_xor() -> LangResult<'static, ()> {
     let input = include_str!("bit_xor.pj");
-    let term = run(input)?;
+    let term = run_with_machine(input, CheckedMachine::default())?;
     assert_eq!(Term::Lit(128), term);
     Ok(())
 }
@@ -132,7 +132,7 @@ fn bit_xor() -> LangResult<'static, ()> {
 #[test]
 fn bit_shift_l() -> LangResult<'static, ()> {
     let input = include_str!("bit_shift_l.pj");
-    let term = run(input)?;
+    let term = run_with_machine(input, CheckedMachine::default())?;
     assert_eq!(Term::Lit(128), term);
     Ok(())
 }
@@ -140,7 +140,7 @@ fn bit_shift_l() -> LangResult<'static, ()> {
 #[test]
 fn bit_shift_r() -> LangResult<'static, ()> {
     let input = include_str!("bit_shift_r.pj");
-    let term = run(input)?;
+    let term = run_with_machine(input, CheckedMachine::default())?;
     assert_eq!(Term::Lit(32), term);
     Ok(())
 }
@@ -149,7 +149,7 @@ fn bit_shift_r() -> LangResult<'static, ()> {
 fn or_short_circuit() -> LangResult<'static, ()> {
     panic_after(Duration::from_secs(1), || {
         let input = include_str!("or_short_circuit.pj");
-        let term = run(input)?;
+        let term = run_with_machine(input, CheckedMachine::default())?;
         assert_eq!(term, true.into());
         Ok(())
     })
@@ -159,7 +159,7 @@ fn or_short_circuit() -> LangResult<'static, ()> {
 fn and_short_circuit() -> LangResult<'static, ()> {
     panic_after(Duration::from_secs(1), || {
         let input = include_str!("and_short_circuit.pj");
-        let term = run(input)?;
+        let term = run_with_machine(input, CheckedMachine::default())?;
         assert_eq!(term, false.into());
         Ok(())
     })
@@ -169,12 +169,7 @@ fn and_short_circuit() -> LangResult<'static, ()> {
 fn print_simple() -> LangResult<'static, ()> {
     let input = include_str!("print_simple.pj");
     let mut output = Vec::new();
-    let term = run_with_machine(
-        input,
-        Machine::with_env(LangEnv {
-            stdout: &mut output,
-        }),
-    )?;
+    let term = run_with_machine(input, CheckedMachine::with_env(LangEnv::new(&mut output)))?;
     let output = String::from_utf8_lossy(&output);
     assert_eq!(output, "10\n");
     assert_eq!(term, Literal::Unit.into());
@@ -185,12 +180,7 @@ fn print_simple() -> LangResult<'static, ()> {
 fn print_simple_fn() -> LangResult<'static, ()> {
     let input = include_str!("print_simple_fn.pj");
     let mut output = Vec::new();
-    let term = run_with_machine(
-        input,
-        Machine::with_env(LangEnv {
-            stdout: &mut output,
-        }),
-    )?;
+    let term = run_with_machine(input, CheckedMachine::with_env(LangEnv::new(&mut output)))?;
     let output = String::from_utf8_lossy(&output);
     assert_eq!(output, "((λ. _0) 10)\n");
     assert_eq!(term, Literal::Unit.into());
@@ -201,12 +191,7 @@ fn print_simple_fn() -> LangResult<'static, ()> {
 fn print_complex_fn() -> LangResult<'static, ()> {
     let input = include_str!("print_complex_fn.pj");
     let mut output = Vec::new();
-    let term = run_with_machine(
-        input,
-        Machine::with_env(LangEnv {
-            stdout: &mut output,
-        }),
-    )?;
+    let term = run_with_machine(input, CheckedMachine::with_env(LangEnv::new(&mut output)))?;
     let output = String::from_utf8_lossy(&output);
     assert_eq!(output, "((λ. (if (_0 > 0) then 1 else 0)) 10)\n");
     assert_eq!(term, Literal::Unit.into());
@@ -217,12 +202,7 @@ fn print_complex_fn() -> LangResult<'static, ()> {
 fn print_print() -> LangResult<'static, ()> {
     let input = include_str!("print_print.pj");
     let mut output = Vec::new();
-    let term = run_with_machine(
-        input,
-        Machine::with_env(LangEnv {
-            stdout: &mut output,
-        }),
-    )?;
+    let term = run_with_machine(input, CheckedMachine::with_env(LangEnv::new(&mut output)))?;
     let output = String::from_utf8_lossy(&output);
     assert_eq!(output, "(print 10)\n");
     assert_eq!(term, Literal::Unit.into());
@@ -232,14 +212,14 @@ fn print_print() -> LangResult<'static, ()> {
 #[test]
 fn print_redefine() {
     let input = include_str!("print_redefine.pj");
-    let err = run(input).unwrap_err();
+    let err = run_with_machine(input, CheckedMachine::default()).unwrap_err();
     assert!(matches!(err, LangError::Parse(_)))
 }
 
 #[test]
 fn number_bases_cmp() -> LangResult<'static, ()> {
     let input = include_str!("number_bases_cmp.pj");
-    let term = run(input)?;
+    let term = run_with_machine(input, CheckedMachine::default())?;
     assert_eq!(term, true.into());
     Ok(())
 }
@@ -247,7 +227,7 @@ fn number_bases_cmp() -> LangResult<'static, ()> {
 #[test]
 fn number_bases_arithmetic() -> LangResult<'static, ()> {
     let input = include_str!("number_bases_arithmetic.pj");
-    let term = run(input)?;
+    let term = run_with_machine(input, CheckedMachine::default())?;
     assert_eq!(Term::Lit(567_883 * 4), term);
     Ok(())
 }
