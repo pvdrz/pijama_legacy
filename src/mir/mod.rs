@@ -1,11 +1,11 @@
 use std::fmt::{Display, Formatter, Result};
 
-use pijama_ast::{BinOp, Block, Literal, Located, Name, Primitive, UnOp};
-
-use crate::{
-    ty::{Binding, Ty},
-    LangError, LangResult,
+use pijama_ast::{
+    BinOp, Block, Literal, Located, Name, Primitive, UnOp,
+    ty::{Binding, Ty}
 };
+
+use crate::{LangError, LangResult};
 
 pub use lower::LowerError;
 

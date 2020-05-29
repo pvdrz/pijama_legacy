@@ -1,7 +1,8 @@
 use std::{include_str, time::Duration};
 
+use pijama_ast::Literal;
+
 use pijama::{
-    ast::Literal,
     lir::Term,
     machine::{LangEnv, Machine},
     run, run_with_machine, LangError, LangResult,

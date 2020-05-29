@@ -3,7 +3,7 @@ use criterion::{criterion_group, criterion_main, Criterion};
 use std::include_str;
 
 use pijama::{
-    lir::Term, machine::Machine, mir::Term as MirTerm, parser::parse, ty::ty_check, LangResult,
+    lir::Term, machine::Machine, mir::Term as MirTerm, parser::parse, ty_check::ty_check, LangResult,
 };
 
 fn compile(input: &str) -> LangResult<Term> {

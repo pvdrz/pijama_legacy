@@ -42,15 +42,17 @@ use nom::{
     sequence::{pair, preceded},
 };
 
-use pijama_ast::{Located, Location};
+use pijama_ast::{
+    Located, Location, 
+    ty::{Binding, Ty}
+};
 
 use crate::{
     parser::{
         helpers::{in_brackets, surrounded, with_context},
         name::name,
         IResult, Span,
-    },
-    ty::{Binding, Ty},
+    }
 };
 
 /// Parser for all types.

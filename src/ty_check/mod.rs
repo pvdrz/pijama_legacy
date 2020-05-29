@@ -2,12 +2,12 @@
 //!
 //! This module contains all the functions and types required to do type checking over the MIR of a
 //! program.
-use pijama_ast::{BinOp, Literal, Located, Location, Name, Primitive, UnOp};
-
-use crate::{
-    mir::{LetKind, Term},
-    ty::{Binding, Ty, TyError, TyResult},
+use pijama_ast::{
+    ty::{Binding, Ty, TyResult, TyError},
+    BinOp, Literal, Located, Location, Name, Primitive, UnOp
 };
+
+use crate::mir::{LetKind, Term};
 
 /// Function that type-checks a term and returns its type.
 ///
@@ -34,10 +34,10 @@ pub fn expect_ty(expected: &Ty, found: &Located<Ty>) -> TyResult<()> {
 /// This only uses references to its parameters instead of using them by value.
 macro_rules! ensure_ty {
     ($expected:expr, $found:expr) => {
-        crate::ty::expect_ty(&$expected, &$found)
+        expect_ty(&$expected, &$found)
     };
     ($expected:expr, $found:expr, $( $other:expr ),*) => {
-        crate::ty::expect_ty(&$expected, &$found)$(.and_then(|_| crate::ty::expect_ty(&$expected, &$other)))*
+        expect_ty(&$expected, &$found)$(.and_then(|_| expect_ty(&$expected, &$other)))*
     };
 }
 
@@ -341,3 +341,4 @@ impl<'a> Context<'a> {
         }
     }
 }
+

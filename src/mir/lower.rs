@@ -2,14 +2,12 @@ use std::mem::discriminant;
 
 use thiserror::Error;
 use pijama_ast::{
-    analysis::RecursionChecker, BinOp, Block, Branch, Literal, Located, Location, Name, Node,
-    UnOp,
+    analysis::RecursionChecker, 
+    BinOp, Block, Branch, Literal, Located, Location, Name, Node, UnOp,
+    ty::{Binding, Ty}
 };
 
-use crate::{
-    mir::{LetKind, Term},
-    ty::{Binding, Ty},
-};
+use crate::mir::{LetKind, Term};
 
 pub type LowerResult<T> = Result<T, LowerError>;
 

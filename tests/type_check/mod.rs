@@ -1,4 +1,6 @@
-use pijama::{mir, parser, ty, ty::Ty, LangResult};
+use pijama::{mir, parser, ty_check, LangResult};
+
+use pijama_ast::{ty::Ty};
 
 mod fail;
 mod pass;
@@ -6,7 +8,7 @@ mod pass;
 pub fn type_check(input: &str) -> LangResult<Ty> {
     let ast = parser::parse(input)?;
     let mir = mir::Term::from_ast(ast)?;
-    Ok(ty::ty_check(&mir)?.content)
+    Ok(ty_check::ty_check(&mir)?.content)
 }
 
 /// Create a test with `$name` that type checks a file with `$name`.pj
