@@ -1,4 +1,4 @@
-use std::fmt::{Debug, Display, Formatter, Result};
+use std::fmt::{Debug, Display, Formatter, Result as FmtResult};
 
 pub type Span<'a> = nom_locate::LocatedSpan<&'a str>;
 
@@ -49,22 +49,45 @@ pub struct Located<T: Debug> {
 }
 
 impl<T: Debug> Located<T> {
+    /// Creates a new `Located`.
     pub fn new(content: T, loc: impl Into<Location>) -> Self {
         Located {
             content,
             loc: loc.into(),
         }
     }
+    /// Maps the content of the `Located` leaving its location untouched.
+    pub fn map<U: Debug, F: FnOnce(T) -> U>(self, f: F) -> Located<U> {
+        Located {
+            content: f(self.content),
+            loc: self.loc,
+        }
+    }
+    /// Like `map` but the closure is allowed to return a `Result`.
+    pub fn map_res<U: Debug, E, F: FnOnce(T) -> Result<U, E>>(self, f: F) -> Result<Located<U>, E> {
+        Ok(Located {
+            content: f(self.content)?,
+            loc: self.loc,
+        })
+    }
+    /// Joins two `Located` by adding their locations and joining their contents using a closure.
+    pub fn zip_with<U: Debug, V: Debug, F: FnOnce(T, U) -> V>(self, other: Located<U>, f: F) -> Located<V> {
+        Located {
+            content: f(self.content, other.content),
+            loc: self.loc + other.loc,
+        }
+    }
 }
 
 impl<T: Display + Debug> Display for Located<T> {
-    fn fmt(&self, f: &mut Formatter) -> Result {
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
         write!(f, "{}", self.content)
     }
 }
 
+/// `Located`s are compared by their content only.
 impl<T: Eq + Debug> Eq for Located<T> {}
-
+/// `Located`s are compared by their content only.
 impl<T: PartialEq + Debug> PartialEq for Located<T> {
     fn eq(&self, other: &Self) -> bool {
         self.content == other.content
