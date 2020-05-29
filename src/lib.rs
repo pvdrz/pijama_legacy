@@ -11,7 +11,7 @@ use std::io::Write;
 use thiserror::Error;
 
 use ast::Location;
-use machine::{eval::Machine, OverflowMachine};
+use machine::{eval::Machine, OverflowMachine, CheckedMachine};
 
 use mir::LowerError;
 use parser::ParsingError;
@@ -68,7 +68,11 @@ pub fn display_error<'a>(input: &str, path: &str, error: &LangError<'a>) {
 }
 
 pub fn run<'a>(input: &'a str, options: &Options) -> LangResult<'a, lir::Term> {
-    run_with_machine(input, OverflowMachine::with_env(Default::default()))
+    if options.overflow_check {
+        run_with_machine(input, CheckedMachine::with_env(Default::default()))
+    } else {
+        run_with_machine(input, OverflowMachine::with_env(Default::default()))
+    }
 }
 
 pub fn run_with_machine<W: Write>(
