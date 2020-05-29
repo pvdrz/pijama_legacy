@@ -1,6 +1,6 @@
 pub mod ast;
-pub mod lir;
 pub mod eval;
+pub mod lir;
 pub mod mir;
 pub mod options;
 pub mod parser;
@@ -11,12 +11,12 @@ use std::io::Write;
 use thiserror::Error;
 
 use ast::Location;
-use eval::{machine::Machine, OverflowMachine, CheckedMachine};
+use eval::{machine::Machine, CheckedMachine, OverflowMachine};
 
 use mir::LowerError;
+use options::Options;
 use parser::ParsingError;
 use ty::TyError;
-use options::Options;
 
 pub type LangResult<'a, T> = Result<T, LangError<'a>>;
 
@@ -69,9 +69,9 @@ pub fn display_error<'a>(input: &str, path: &str, error: &LangError<'a>) {
 
 pub fn run<'a>(input: &'a str, options: &Options) -> LangResult<'a, lir::Term> {
     if options.overflow_check {
-        run_with_machine(input, CheckedMachine::with_env(Default::default()))
+        run_with_machine(input, CheckedMachine::default())
     } else {
-        run_with_machine(input, OverflowMachine::with_env(Default::default()))
+        run_with_machine(input, OverflowMachine::default())
     }
 }
 

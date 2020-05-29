@@ -3,11 +3,11 @@ use std::io::Write;
 
 use crate::ast::{BinOp, UnOp};
 
-pub mod machine;
+mod machine;
 mod lang_env;
 
-use machine::Machine;
-use lang_env::LangEnv;
+pub use machine::Machine;
+pub use lang_env::LangEnv;
 
 pub struct OverflowMachine<W: Write> {
     env: LangEnv<W>,
