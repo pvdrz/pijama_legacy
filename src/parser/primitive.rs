@@ -9,7 +9,7 @@ use nom::{
     multi::separated_nonempty_list,
 };
 
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 
 use std::collections::HashMap;
 
@@ -17,14 +17,12 @@ use pijama_ast::{Located, Primitive};
 
 use crate::parser::{IResult, Span};
 
-lazy_static! {
-    /// Words that are primitives.
-    pub static ref PRIMITIVES: HashMap<&'static str, Primitive> = {
-        let mut m = HashMap::new();
-        m.insert("print", Primitive::Print);
-        m
-    };
-}
+/// Words that are primitives.
+pub static PRIMITIVES: Lazy<HashMap<&'static str, Primitive>> = Lazy::new(|| {
+    let mut m = HashMap::new();
+    m.insert("print", Primitive::Print);
+    m
+});
 
 /// Parser for [`Primitive`]s.
 ///
