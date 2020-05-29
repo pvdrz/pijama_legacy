@@ -11,8 +11,12 @@ use std::io::Write;
 
 use pijama_ast::Location;
 
-use machine::{arithmetic::Arithmetic, Machine, MachineBuilder};
+use machine::{
+    arithmetic::{Arithmetic, CheckedArithmetic, OverflowArithmetic},
+    Machine, MachineBuilder,
+};
 use mir::LowerError;
+use options::MachineOptions;
 use parser::ParsingError;
 use ty::TyError;
 
@@ -65,10 +69,6 @@ pub fn display_error<'a>(input: &str, path: &str, error: &LangError<'a>) {
     emit(&mut writer.lock(), &config, &files, &diagnostic).unwrap();
 }
 
-pub fn run(input: &str) -> LangResult<lir::Term> {
-    run_with_machine(input, MachineBuilder::default().build())
-}
-
 pub fn run_with_machine<W: Write, A: Arithmetic>(
     input: &str,
     mut machine: Machine<W, A>,
@@ -79,4 +79,18 @@ pub fn run_with_machine<W: Write, A: Arithmetic>(
     let lir = lir::Term::from_mir(mir);
     let res = machine.evaluate(lir);
     Ok(res)
+}
+
+pub fn run_with_opts(input: &str, machine_opts: MachineOptions) -> LangResult<lir::Term> {
+    if machine_opts.overflow_check {
+        let machine = MachineBuilder::default()
+            .with_arithmetic(CheckedArithmetic)
+            .build();
+        run_with_machine(input, machine)
+    } else {
+        let machine = MachineBuilder::default()
+            .with_arithmetic(OverflowArithmetic)
+            .build();
+        run_with_machine(input, machine)
+    }
 }

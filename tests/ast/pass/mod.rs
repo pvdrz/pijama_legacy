@@ -1,5 +1,5 @@
 use crate::test_type;
-use pijama::ty::Ty;
+use pijama_ast::ty::Ty;
 
 test_type!(
     contained_shadowing_allows_recursion,

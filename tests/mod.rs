@@ -2,10 +2,24 @@ extern crate pijama;
 
 use std::{panic, sync::mpsc, thread, time::Duration};
 
+use pijama::{
+    lir::Term,
+    machine::{arithmetic::CheckedArithmetic, MachineBuilder},
+    run_with_machine, LangResult,
+};
+
+mod ast;
 mod eval;
 mod parse;
 mod type_check;
 mod util;
+
+fn run(input: &str) -> LangResult<Term> {
+    let machine = MachineBuilder::default()
+        .with_arithmetic(CheckedArithmetic)
+        .build();
+    run_with_machine(input, machine)
+}
 
 fn panic_after<T, F>(d: Duration, f: F) -> T
 where

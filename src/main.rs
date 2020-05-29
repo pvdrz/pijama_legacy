@@ -1,6 +1,6 @@
 use std::fs::read_to_string;
 
-use pijama::{display_error, options::Options, run};
+use pijama::{display_error, options::Options, run_with_opts};
 
 use structopt::StructOpt;
 
@@ -15,7 +15,7 @@ fn main() {
         }
     };
 
-    match run(&input) {
+    match run_with_opts(&input, options.machine_opts) {
         Ok(term) => println!("{}", term),
         Err(err) => display_error(&input, &options.path, &err),
     }

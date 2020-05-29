@@ -4,11 +4,11 @@ use pijama_ast::Literal;
 
 use pijama::{
     lir::Term,
-    machine::{env::Env, MachineBuilder},
-    run, run_with_machine, LangError, LangResult,
+    machine::{arithmetic::CheckedArithmetic, env::Env, MachineBuilder},
+    run_with_machine, LangError, LangResult,
 };
 
-use crate::panic_after;
+use crate::{panic_after, run};
 
 #[test]
 fn arithmetic() -> LangResult<'static, ()> {
@@ -174,6 +174,7 @@ fn print_simple() -> LangResult<'static, ()> {
         input,
         MachineBuilder::default()
             .with_env(Env::new(&mut output))
+            .with_arithmetic(CheckedArithmetic)
             .build(),
     )?;
     let output = String::from_utf8_lossy(&output);
@@ -190,6 +191,7 @@ fn print_simple_fn() -> LangResult<'static, ()> {
         input,
         MachineBuilder::default()
             .with_env(Env::new(&mut output))
+            .with_arithmetic(CheckedArithmetic)
             .build(),
     )?;
     let output = String::from_utf8_lossy(&output);
@@ -206,6 +208,7 @@ fn print_complex_fn() -> LangResult<'static, ()> {
         input,
         MachineBuilder::default()
             .with_env(Env::new(&mut output))
+            .with_arithmetic(CheckedArithmetic)
             .build(),
     )?;
     let output = String::from_utf8_lossy(&output);
@@ -222,6 +225,7 @@ fn print_print() -> LangResult<'static, ()> {
         input,
         MachineBuilder::default()
             .with_env(Env::new(&mut output))
+            .with_arithmetic(CheckedArithmetic)
             .build(),
     )?;
     let output = String::from_utf8_lossy(&output);
