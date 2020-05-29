@@ -4,7 +4,7 @@ use pijama_ast::Literal;
 
 use pijama::{
     lir::Term,
-    machine::{env::Env, Machine},
+    machine::{env::Env, MachineBuilder},
     run, run_with_machine, LangError, LangResult,
 };
 
@@ -172,9 +172,11 @@ fn print_simple() -> LangResult<'static, ()> {
     let mut output = Vec::new();
     let term = run_with_machine(
         input,
-        Machine::with_env(Env {
-            stdout: &mut output,
-        }),
+        MachineBuilder::default()
+            .with_env(Env {
+                stdout: &mut output,
+            })
+            .build(),
     )?;
     let output = String::from_utf8_lossy(&output);
     assert_eq!(output, "10\n");
@@ -188,9 +190,11 @@ fn print_simple_fn() -> LangResult<'static, ()> {
     let mut output = Vec::new();
     let term = run_with_machine(
         input,
-        Machine::with_env(Env {
-            stdout: &mut output,
-        }),
+        MachineBuilder::default()
+            .with_env(Env {
+                stdout: &mut output,
+            })
+            .build(),
     )?;
     let output = String::from_utf8_lossy(&output);
     assert_eq!(output, "((λ. _0) 10)\n");
@@ -204,9 +208,11 @@ fn print_complex_fn() -> LangResult<'static, ()> {
     let mut output = Vec::new();
     let term = run_with_machine(
         input,
-        Machine::with_env(Env {
-            stdout: &mut output,
-        }),
+        MachineBuilder::default()
+            .with_env(Env {
+                stdout: &mut output,
+            })
+            .build(),
     )?;
     let output = String::from_utf8_lossy(&output);
     assert_eq!(output, "((λ. (if (_0 > 0) then 1 else 0)) 10)\n");
@@ -220,9 +226,11 @@ fn print_print() -> LangResult<'static, ()> {
     let mut output = Vec::new();
     let term = run_with_machine(
         input,
-        Machine::with_env(Env {
-            stdout: &mut output,
-        }),
+        MachineBuilder::default()
+            .with_env(Env {
+                stdout: &mut output,
+            })
+            .build(),
     )?;
     let output = String::from_utf8_lossy(&output);
     assert_eq!(output, "(print 10)\n");

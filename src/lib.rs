@@ -11,7 +11,7 @@ use std::io::Write;
 
 use pijama_ast::Location;
 
-use machine::{arithmetic::OverflowArithmetic, Machine};
+use machine::{arithmetic::Arithmetic, Machine, MachineBuilder};
 use mir::LowerError;
 use parser::ParsingError;
 use ty::TyError;
@@ -66,12 +66,12 @@ pub fn display_error<'a>(input: &str, path: &str, error: &LangError<'a>) {
 }
 
 pub fn run(input: &str) -> LangResult<lir::Term> {
-    run_with_machine(input, Machine::default())
+    run_with_machine(input, MachineBuilder::default().build())
 }
 
-pub fn run_with_machine<W: Write>(
+pub fn run_with_machine<W: Write, A: Arithmetic>(
     input: &str,
-    mut machine: Machine<W, OverflowArithmetic>,
+    mut machine: Machine<W, A>,
 ) -> LangResult<lir::Term> {
     let ast = parser::parse(input)?;
     let mir = mir::Term::from_ast(ast)?;
