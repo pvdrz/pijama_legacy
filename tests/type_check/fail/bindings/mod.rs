@@ -7,7 +7,7 @@ use pijama::{
 
 test_type!(
     bind_bool_to_int,
-    Err(LangError::Ty(TyError::Unexpected {
+    Err(LangError::Ty(TyError::Mismatch {
         expected: Ty::Int,
         found: Ty::Bool.loc()
     }))

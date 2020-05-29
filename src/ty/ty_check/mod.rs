@@ -149,7 +149,7 @@ impl<'a> Context<'a> {
             .inner
             .iter()
             .find(|bind| bind.name == *name)
-            .ok_or_else(|| TyError::Unbound(Located::new(name.0.to_string(), loc)))?
+            .ok_or_else(|| TyError::Unbounded(Located::new(name.0.to_string(), loc)))?
             .ty
             .clone();
         Ok(Located::new(ty, loc))

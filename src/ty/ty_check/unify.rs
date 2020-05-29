@@ -119,7 +119,7 @@ impl Unifier {
 
                 // Otherwise, this constraint cannot be satisfied and we raise an error.
                 (lhs, rhs) => {
-                    return Err(TyError::Unexpected {
+                    return Err(TyError::Mismatch {
                         expected: lhs,
                         found: Located::new(rhs, loc),
                     });
