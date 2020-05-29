@@ -3,10 +3,10 @@ use std::io::Write;
 
 use crate::ast::{BinOp, UnOp};
 
-pub mod eval;
+pub mod machine;
 mod lang_env;
 
-use eval::Machine;
+use machine::Machine;
 use lang_env::LangEnv;
 
 pub struct OverflowMachine<W: Write> {

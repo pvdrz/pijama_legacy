@@ -1,7 +1,7 @@
 use crate::{
     ast::{BinOp, Literal, Primitive, UnOp},
     lir::Term::{self, *},
-    machine::LangEnv,
+    eval::LangEnv,
 };
 
 use std::{

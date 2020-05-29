@@ -1,6 +1,6 @@
 pub mod ast;
 pub mod lir;
-pub mod machine;
+pub mod eval;
 pub mod mir;
 pub mod options;
 pub mod parser;
@@ -11,7 +11,7 @@ use std::io::Write;
 use thiserror::Error;
 
 use ast::Location;
-use machine::{eval::Machine, OverflowMachine, CheckedMachine};
+use eval::{machine::Machine, OverflowMachine, CheckedMachine};
 
 use mir::LowerError;
 use parser::ParsingError;
