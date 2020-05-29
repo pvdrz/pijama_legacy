@@ -173,9 +173,7 @@ fn print_simple() -> LangResult<'static, ()> {
     let term = run_with_machine(
         input,
         MachineBuilder::default()
-            .with_env(Env {
-                stdout: &mut output,
-            })
+            .with_env(Env::new(&mut output))
             .build(),
     )?;
     let output = String::from_utf8_lossy(&output);
@@ -191,9 +189,7 @@ fn print_simple_fn() -> LangResult<'static, ()> {
     let term = run_with_machine(
         input,
         MachineBuilder::default()
-            .with_env(Env {
-                stdout: &mut output,
-            })
+            .with_env(Env::new(&mut output))
             .build(),
     )?;
     let output = String::from_utf8_lossy(&output);
@@ -209,9 +205,7 @@ fn print_complex_fn() -> LangResult<'static, ()> {
     let term = run_with_machine(
         input,
         MachineBuilder::default()
-            .with_env(Env {
-                stdout: &mut output,
-            })
+            .with_env(Env::new(&mut output))
             .build(),
     )?;
     let output = String::from_utf8_lossy(&output);
@@ -227,9 +221,7 @@ fn print_print() -> LangResult<'static, ()> {
     let term = run_with_machine(
         input,
         MachineBuilder::default()
-            .with_env(Env {
-                stdout: &mut output,
-            })
+            .with_env(Env::new(&mut output))
             .build(),
     )?;
     let output = String::from_utf8_lossy(&output);
