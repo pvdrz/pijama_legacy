@@ -34,10 +34,10 @@ pub fn expect_ty(expected: &Ty, found: &Located<Ty>) -> TyResult<()> {
 /// This only uses references to its parameters instead of using them by value.
 macro_rules! ensure_ty {
     ($expected:expr, $found:expr) => {
-        expect_ty(&$expected, &$found)
+        crate::ty_check::expect_ty(&$expected, &$found)
     };
     ($expected:expr, $found:expr, $( $other:expr ),*) => {
-        expect_ty(&$expected, &$found)$(.and_then(|_| expect_ty(&$expected, &$other)))*
+        crate::ty_check::expect_ty(&$expected, &$found)$(.and_then(|_| crate::ty_check::expect_ty(&$expected, &$other)))*
     };
 }
 
