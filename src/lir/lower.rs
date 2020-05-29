@@ -28,8 +28,8 @@ impl<'a> Context<'a> {
                     .unwrap();
                 Term::Var(index)
             }
-            MirTerm::Abs(bind, body) => {
-                self.inner.push(bind.name);
+            MirTerm::Abs(name, _, body) => {
+                self.inner.push(name);
                 let body = self.remove_names(body.content);
                 self.inner.pop().unwrap();
                 Term::Abs(Box::new(body))

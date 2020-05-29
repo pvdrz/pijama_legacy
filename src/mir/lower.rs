@@ -2,12 +2,13 @@ use std::mem::discriminant;
 
 use pijama_ast::{
     analysis::RecursionChecker,
-    ty::{Binding, Ty},
+    ty::{Ty as TyAST, TyAnnotation},
     BinOp, Block, Branch, Literal, Located, Location, Name, Node, UnOp,
 };
 use thiserror::Error;
 
 use crate::mir::{LetKind, Term};
+use crate::ty::Ty;
 
 pub type LowerResult<T> = Result<T, LowerError>;
 
@@ -148,10 +149,16 @@ fn lower_unary_op(
 fn lower_let_bind<'a>(
     loc: Location,
     name: Located<Name<'a>>,
-    opt_ty: Option<Located<Ty>>,
+    opt_ty: Option<Located<TyAST>>,
     node: Located<Node<'a>>,
 ) -> LowerResult<Located<Term<'a>>> {
     let term = lower_node(node)?;
+
+    let opt_ty = opt_ty.map(|located| {
+        let loc = located.loc;
+        let ty = located.content;
+        Located::new(ty.into(), loc)
+    });
 
     Ok(Located::new(
         Term::Let(
@@ -170,18 +177,19 @@ fn lower_let_bind<'a>(
 fn lower_fn_def<'a>(
     loc: Location,
     opt_name: Option<Located<Name<'a>>>,
-    binds: Vec<Located<Binding<'a>>>,
+    annotations: Vec<Located<TyAnnotation<'a>>>,
     body: Located<Block<'a>>,
-    opt_ty: Option<Located<Ty>>,
+    opt_ty: Option<Located<TyAST>>,
 ) -> LowerResult<Located<Term<'a>>> {
     // if the user added a return type annotation, we transform this type into the type of the
     // function using the bindings.
     let opt_ty = opt_ty.map(|located_ty| {
-        let mut ty = located_ty.content;
+        let mut ty: Ty = located_ty.content.into();
         let ty_loc = located_ty.loc;
 
-        for bind in binds.iter().rev() {
-            ty = Ty::Arrow(Box::new(bind.content.ty.clone()), Box::new(ty));
+        for annotation in annotations.iter().rev() {
+            let ann_ty = annotation.content.ty.clone().into();
+            ty = Ty::Arrow(Box::new(ann_ty), Box::new(ty));
         }
 
         Located::new(ty, ty_loc)
@@ -207,8 +215,15 @@ fn lower_fn_def<'a>(
 
     let mut term = lower_blk(body)?;
 
-    for bind in binds.into_iter().rev() {
-        term = Located::new(Term::Abs(bind.content, Box::new(term)), loc);
+    for annotation in annotations.into_iter().rev() {
+        term = Located::new(
+            Term::Abs(
+                annotation.content.name,
+                annotation.content.ty.into(),
+                Box::new(term),
+            ),
+            loc,
+        );
     }
 
     if let Some(name) = opt_name {

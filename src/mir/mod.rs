@@ -1,11 +1,11 @@
 use std::fmt::{Display, Formatter, Result};
 
-use pijama_ast::{
-    ty::{Binding, Ty},
-    BinOp, Block, Literal, Located, Name, Primitive, UnOp,
-};
+use pijama_ast::{BinOp, Block, Literal, Located, Name, Primitive, UnOp};
 
-use crate::{LangError, LangResult};
+use crate::{
+    ty::Ty,
+    {LangError, LangResult},
+};
 
 pub use lower::LowerError;
 
@@ -20,7 +20,7 @@ pub enum LetKind {
 #[derive(Debug)]
 pub enum Term<'a> {
     Var(Name<'a>),
-    Abs(Binding<'a>, Box<Located<Term<'a>>>),
+    Abs(Name<'a>, Ty, Box<Located<Term<'a>>>),
     UnaryOp(UnOp, Box<Located<Term<'a>>>),
     BinaryOp(BinOp, Box<Located<Term<'a>>>, Box<Located<Term<'a>>>),
     App(Box<Located<Term<'a>>>, Box<Located<Term<'a>>>),
@@ -44,7 +44,7 @@ impl<'a> Display for Term<'a> {
     fn fmt(&self, f: &mut Formatter) -> Result {
         match self {
             Term::Var(var) => write!(f, "{}", var),
-            Term::Abs(Binding { name, ty }, term) => write!(f, "(λ{}:{}. {})", name, ty, term),
+            Term::Abs(name, ty, term) => write!(f, "(λ{}:{}. {})", name, ty, term),
             Term::UnaryOp(op, term) => write!(f, "({}{})", op, term),
             Term::BinaryOp(op, t1, t2) => write!(f, "({} {} {})", t1, op, t2),
             Term::App(t1, t2) => write!(f, "({} {})", t1, t2),
