@@ -1,14 +1,15 @@
 use std::include_str;
 
 use pijama_ast::{
-    self, BinOp::*, Branch, Node::*, UnOp,
-    ty::{Binding, Ty}
+    self,
+    ty::{Binding, Ty},
+    BinOp::*,
+    Branch,
+    Node::*,
+    UnOp,
 };
 
-use pijama::{
-    parser::parse,
-    LangResult,
-};
+use pijama::{parser::parse, LangResult};
 
 use crate::util::DummyLoc;
 
@@ -32,9 +33,7 @@ fn name() -> LangResult<'static, ()> {
 fn single_comment() -> LangResult<'static, ()> {
     let input = include_str!("single_comment.pj");
     let result = parse(input)?.content;
-    let expected = vec![
-        Name(pijama_ast::Name("foo_bar")).loc()
-    ];
+    let expected = vec![Name(pijama_ast::Name("foo_bar")).loc()];
 
     assert_eq!(expected[0], result[0], "snake case");
     Ok(())
@@ -314,11 +313,23 @@ fn cond() -> LangResult<'static, ()> {
         .loc(),
         Cond(
             Branch {
-                cond: vec![Name(pijama_ast::Name("u")).loc(), Name(pijama_ast::Name("v")).loc()].loc(),
-                body: vec![Name(pijama_ast::Name("w")).loc(), Name(pijama_ast::Name("x")).loc()].loc(),
+                cond: vec![
+                    Name(pijama_ast::Name("u")).loc(),
+                    Name(pijama_ast::Name("v")).loc(),
+                ]
+                .loc(),
+                body: vec![
+                    Name(pijama_ast::Name("w")).loc(),
+                    Name(pijama_ast::Name("x")).loc(),
+                ]
+                .loc(),
             },
             vec![],
-            vec![Name(pijama_ast::Name("y")).loc(), Name(pijama_ast::Name("z")).loc()].loc(),
+            vec![
+                Name(pijama_ast::Name("y")).loc(),
+                Name(pijama_ast::Name("z")).loc(),
+            ]
+            .loc(),
         )
         .loc(),
     ];
@@ -347,20 +358,48 @@ fn elif() -> LangResult<'static, ()> {
         .loc(),
         Cond(
             Branch {
-                cond: vec![Name(pijama_ast::Name("u")).loc(), Name(pijama_ast::Name("v")).loc()].loc(),
-                body: vec![Name(pijama_ast::Name("w")).loc(), Name(pijama_ast::Name("x")).loc()].loc(),
+                cond: vec![
+                    Name(pijama_ast::Name("u")).loc(),
+                    Name(pijama_ast::Name("v")).loc(),
+                ]
+                .loc(),
+                body: vec![
+                    Name(pijama_ast::Name("w")).loc(),
+                    Name(pijama_ast::Name("x")).loc(),
+                ]
+                .loc(),
             },
             vec![
                 Branch {
-                    cond: vec![Name(pijama_ast::Name("a")).loc(), Name(pijama_ast::Name("b")).loc()].loc(),
-                    body: vec![Name(pijama_ast::Name("c")).loc(), Name(pijama_ast::Name("d")).loc()].loc(),
+                    cond: vec![
+                        Name(pijama_ast::Name("a")).loc(),
+                        Name(pijama_ast::Name("b")).loc(),
+                    ]
+                    .loc(),
+                    body: vec![
+                        Name(pijama_ast::Name("c")).loc(),
+                        Name(pijama_ast::Name("d")).loc(),
+                    ]
+                    .loc(),
                 },
                 Branch {
-                    cond: vec![Name(pijama_ast::Name("e")).loc(), Name(pijama_ast::Name("f")).loc()].loc(),
-                    body: vec![Name(pijama_ast::Name("g")).loc(), Name(pijama_ast::Name("h")).loc()].loc(),
+                    cond: vec![
+                        Name(pijama_ast::Name("e")).loc(),
+                        Name(pijama_ast::Name("f")).loc(),
+                    ]
+                    .loc(),
+                    body: vec![
+                        Name(pijama_ast::Name("g")).loc(),
+                        Name(pijama_ast::Name("h")).loc(),
+                    ]
+                    .loc(),
                 },
             ],
-            vec![Name(pijama_ast::Name("y")).loc(), Name(pijama_ast::Name("z")).loc()].loc(),
+            vec![
+                Name(pijama_ast::Name("y")).loc(),
+                Name(pijama_ast::Name("z")).loc(),
+            ]
+            .loc(),
         )
         .loc(),
     ];
@@ -382,7 +421,10 @@ fn call() -> LangResult<'static, ()> {
         .loc(),
         Call(
             Box::new(Name(pijama_ast::Name("x")).loc()),
-            vec![Name(pijama_ast::Name("y")).loc(), Name(pijama_ast::Name("z")).loc()],
+            vec![
+                Name(pijama_ast::Name("y")).loc(),
+                Name(pijama_ast::Name("z")).loc(),
+            ],
         )
         .loc(),
         Call(
@@ -411,7 +453,13 @@ fn fn_def() -> LangResult<'static, ()> {
     let input = include_str!("fn_def.pj");
     let result = parse(input)?.content;
     let expected = vec![
-        FnDef(Some(pijama_ast::Name("foo").loc()), vec![], vec![].loc(), None).loc(),
+        FnDef(
+            Some(pijama_ast::Name("foo").loc()),
+            vec![],
+            vec![].loc(),
+            None,
+        )
+        .loc(),
         FnDef(
             Some(pijama_ast::Name("foo").loc()),
             vec![Binding {
@@ -444,7 +492,11 @@ fn fn_def() -> LangResult<'static, ()> {
                 }
                 .loc(),
             ],
-            vec![Name(pijama_ast::Name("x")).loc(), Name(pijama_ast::Name("y")).loc()].loc(),
+            vec![
+                Name(pijama_ast::Name("x")).loc(),
+                Name(pijama_ast::Name("y")).loc(),
+            ]
+            .loc(),
             None,
         )
         .loc(),

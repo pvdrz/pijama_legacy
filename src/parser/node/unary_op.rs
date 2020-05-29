@@ -9,9 +9,7 @@ use nom_locate::position;
 
 use pijama_ast::{Located, Location, Node};
 
-use crate::{
-    parser::{node::node, un_op::un_op, IResult, Span},
-};
+use crate::parser::{node::node, un_op::un_op, IResult, Span};
 
 /// Parses a [`Node::UnaryOp`].
 ///

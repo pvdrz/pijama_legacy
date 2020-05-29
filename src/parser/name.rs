@@ -11,9 +11,7 @@ use nom::{
 
 use pijama_ast::{Located, Name};
 
-use crate::{
-    parser::{primitive::PRIMITIVES, IResult, Span},
-};
+use crate::parser::{primitive::PRIMITIVES, IResult, Span};
 
 /// Words that cannot be names to avoid ambiguities.
 const KEYWORDS: &[&str] = &[

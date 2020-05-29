@@ -12,9 +12,7 @@ use nom_locate::position;
 
 use pijama_ast::{Literal, Located, Location};
 
-use crate::{
-    parser::{helpers::with_context, IResult, Span},
-};
+use crate::parser::{helpers::with_context, IResult, Span};
 
 use std::borrow::Cow;
 

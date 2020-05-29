@@ -3,8 +3,8 @@
 //! This module contains all the functions and types required to do type checking over the MIR of a
 //! program.
 use pijama_ast::{
-    ty::{Binding, Ty, TyResult, TyError},
-    BinOp, Literal, Located, Location, Name, Primitive, UnOp
+    ty::{Binding, Ty, TyError, TyResult},
+    BinOp, Literal, Located, Location, Name, Primitive, UnOp,
 };
 
 use crate::mir::{LetKind, Term};
@@ -341,4 +341,3 @@ impl<'a> Context<'a> {
         }
     }
 }
-

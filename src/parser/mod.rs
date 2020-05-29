@@ -33,10 +33,7 @@ use nom::{
 
 use pijama_ast::{Block, Located, Span};
 
-use crate::{
-    LangError::Parse,
-    LangResult,
-};
+use crate::{LangError::Parse, LangResult};
 
 use block::block0;
 use helpers::surrounded;

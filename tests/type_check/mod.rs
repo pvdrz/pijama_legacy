@@ -1,6 +1,6 @@
 use pijama::{mir, parser, ty_check, LangResult};
 
-use pijama_ast::{ty::Ty};
+use pijama_ast::ty::Ty;
 
 mod fail;
 mod pass;

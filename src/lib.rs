@@ -8,10 +8,7 @@ use std::io::Write;
 
 use thiserror::Error;
 
-use pijama_ast::{
-    Location,
-    ty::TyError,
-};
+use pijama_ast::{ty::TyError, Location};
 
 use machine::Machine;
 use mir::LowerError;

@@ -16,9 +16,7 @@ use nom::{
 
 use pijama_ast::{Located, Node};
 
-use crate::{
-    parser::{helpers::surrounded, name::name, node::node, ty::colon_ty, IResult, Span},
-};
+use crate::parser::{helpers::surrounded, name::name, node::node, ty::colon_ty, IResult, Span};
 
 /// Parses a [`Node::LetBind`].
 ///

@@ -10,14 +10,12 @@ use nom::{branch::alt, character::complete::space0, combinator::map, sequence::s
 
 use pijama_ast::{Located, Node};
 
-use crate::{
-    parser::{
-        helpers::in_brackets,
-        name::name,
-        node::{fn_def::args, node},
-        primitive::primitive,
-        IResult, Span,
-    },
+use crate::parser::{
+    helpers::in_brackets,
+    name::name,
+    node::{fn_def::args, node},
+    primitive::primitive,
+    IResult, Span,
 };
 
 /// Parses a [`Node::Call`].

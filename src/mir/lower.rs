@@ -1,11 +1,11 @@
 use std::mem::discriminant;
 
-use thiserror::Error;
 use pijama_ast::{
-    analysis::RecursionChecker, 
+    analysis::RecursionChecker,
+    ty::{Binding, Ty},
     BinOp, Block, Branch, Literal, Located, Location, Name, Node, UnOp,
-    ty::{Binding, Ty}
 };
+use thiserror::Error;
 
 use crate::mir::{LetKind, Term};
 

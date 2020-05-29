@@ -43,16 +43,14 @@ use nom::{
 };
 
 use pijama_ast::{
-    Located, Location, 
-    ty::{Binding, Ty}
+    ty::{Binding, Ty},
+    Located, Location,
 };
 
-use crate::{
-    parser::{
-        helpers::{in_brackets, surrounded, with_context},
-        name::name,
-        IResult, Span,
-    }
+use crate::parser::{
+    helpers::{in_brackets, surrounded, with_context},
+    name::name,
+    IResult, Span,
 };
 
 /// Parser for all types.

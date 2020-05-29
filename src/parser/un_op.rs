@@ -13,9 +13,7 @@ use nom::{
 
 use pijama_ast::{UnOp, UnOp::*};
 
-use crate::{
-    parser::{helpers::with_context, IResult, Span},
-};
+use crate::parser::{helpers::with_context, IResult, Span};
 
 /// Parser for the unary operators `!` and `-`.
 ///

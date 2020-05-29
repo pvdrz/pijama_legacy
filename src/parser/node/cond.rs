@@ -19,12 +19,10 @@ use nom_locate::position;
 
 use pijama_ast::{Block, Branch, Located, Location, Node};
 
-use crate::{
-    parser::{
-        block::block1,
-        helpers::{keyword, keyword_space},
-        IResult, Span,
-    },
+use crate::parser::{
+    block::block1,
+    helpers::{keyword, keyword_space},
+    IResult, Span,
 };
 
 /// Parses a [`Node::Cond`].

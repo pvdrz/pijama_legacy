@@ -15,9 +15,7 @@ use std::collections::HashMap;
 
 use pijama_ast::{Located, Primitive};
 
-use crate::{
-    parser::{IResult, Span},
-};
+use crate::parser::{IResult, Span};
 
 lazy_static! {
     /// Words that are primitives.
