@@ -4,7 +4,7 @@ use pijama_ast::Literal;
 
 use pijama::{
     lir::Term,
-    machine::{LangEnv, Machine},
+    machine::{env::Env, Machine},
     run, run_with_machine, LangError, LangResult,
 };
 
@@ -172,7 +172,7 @@ fn print_simple() -> LangResult<'static, ()> {
     let mut output = Vec::new();
     let term = run_with_machine(
         input,
-        Machine::with_env(LangEnv {
+        Machine::with_env(Env {
             stdout: &mut output,
         }),
     )?;
@@ -188,7 +188,7 @@ fn print_simple_fn() -> LangResult<'static, ()> {
     let mut output = Vec::new();
     let term = run_with_machine(
         input,
-        Machine::with_env(LangEnv {
+        Machine::with_env(Env {
             stdout: &mut output,
         }),
     )?;
@@ -204,7 +204,7 @@ fn print_complex_fn() -> LangResult<'static, ()> {
     let mut output = Vec::new();
     let term = run_with_machine(
         input,
-        Machine::with_env(LangEnv {
+        Machine::with_env(Env {
             stdout: &mut output,
         }),
     )?;
@@ -220,7 +220,7 @@ fn print_print() -> LangResult<'static, ()> {
     let mut output = Vec::new();
     let term = run_with_machine(
         input,
-        Machine::with_env(LangEnv {
+        Machine::with_env(Env {
             stdout: &mut output,
         }),
     )?;

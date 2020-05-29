@@ -1,39 +1,33 @@
+use std::io::{Stdout, Write};
+
 use crate::{
     lir::Term,
-    machine::arithmetic::{Arithmetic, OverflowArithmetic},
+    machine::{
+        arithmetic::{Arithmetic, OverflowArithmetic},
+        env::Env,
+    },
 };
 
-use std::io::{stdout, Stdout, Write};
-
 pub mod arithmetic;
+pub mod env;
 mod eval;
 
-pub struct LangEnv<W: Write> {
-    pub stdout: W,
-}
-
-impl Default for LangEnv<Stdout> {
-    fn default() -> Self {
-        LangEnv { stdout: stdout() }
-    }
-}
-
 pub struct Machine<W: Write, A: Arithmetic> {
-    env: LangEnv<W>,
+    env: Env<W>,
     arithmetic: A,
 }
 
 impl Default for Machine<Stdout, OverflowArithmetic> {
     fn default() -> Self {
         Machine {
-            env: LangEnv::default(),
+            env: Env::default(),
             arithmetic: OverflowArithmetic,
         }
     }
 }
 
 impl<W: Write> Machine<W, OverflowArithmetic> {
-    pub fn with_env(env: LangEnv<W>) -> Self {
+    pub fn with_env(env: Env<W>) -> Self {
         Machine {
             env,
             arithmetic: OverflowArithmetic,
