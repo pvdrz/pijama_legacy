@@ -1,7 +1,7 @@
 use crate::{
     ast::{BinOp, Literal, Primitive, UnOp},
     lir::Term::{self, *},
-    machine::Machine,
+    machine::LangEnv,
 };
 
 use std::{
@@ -9,8 +9,19 @@ use std::{
     io::Write,
 };
 
-impl<W: Write> Machine<W> {
-    pub(super) fn step(&mut self, term: Term) -> (bool, Term) {
+pub trait Machine<W: Write> {
+    fn lang_env(&mut self) -> &mut LangEnv<W>;
+
+    fn evaluate(&mut self, mut term: Term) -> Term {
+        while {
+            let (eval, new_term) = self.step(term);
+            term = new_term;
+            eval
+        } {}
+        term
+    }
+
+    fn step(&mut self, term: Term) -> (bool, Term) {
         match term {
             // Dispatch step for binary operations
             BinaryOp(op, t1, t2) => self.step_bin_op(op, t1, t2),
@@ -72,7 +83,7 @@ impl<W: Write> Machine<W> {
             // If op is || and t1 is true evaluate to true
             (Or, Lit(1), _) => (true, true.into()),
             // If both are literals evaluate with native operation
-            (_, Lit(l1), Lit(l2)) => (true, Lit(native_bin_op(op, *l1, *l2))),
+            (_, Lit(l1), Lit(l2)) => (true, Lit(Self::native_bin_op(op, *l1, *l2))),
             // If t2 is not a literal, evaluate it.
             (_, Lit(_), _) => (self.step_in_place(b.borrow_mut()), Term::BinaryOp(op, a, b)),
             // If t1 is not a literal, evaluate it.
@@ -84,7 +95,7 @@ impl<W: Write> Machine<W> {
     fn step_un_op(&mut self, op: UnOp, mut t1: Box<Term>) -> (bool, Term) {
         // If t1 is a literal, do the operation.
         if let Term::Lit(lit) = t1.borrow() {
-            (true, Term::Lit(native_un_op(op, *lit)))
+            (true, Term::Lit(Self::native_un_op(op, *lit)))
         // If t1 is not a literal, evaluate it.
         } else {
             (self.step_in_place(&mut t1), Term::UnaryOp(op, t1))
@@ -121,41 +132,41 @@ impl<W: Write> Machine<W> {
     fn step_primitive_app(&mut self, prim: Primitive, arg: Box<Term>) -> (bool, Term) {
         match prim {
             Primitive::Print => {
-                writeln!(self.env.stdout, "{}", arg).expect("Primitive print failed");
+                writeln!(self.lang_env().stdout, "{}", arg).expect("Primitive print failed");
                 (true, Literal::Unit.into())
             }
         }
     }
-}
 
-fn native_bin_op(op: BinOp, n1: i64, n2: i64) -> i64 {
-    use BinOp::*;
+    fn native_bin_op(op: BinOp, n1: i64, n2: i64) -> i64 {
+        use BinOp::*;
 
-    match op {
-        Add => n1 + n2,
-        Sub => n1 - n2,
-        Mul => n1 * n2,
-        Div => n1 / n2,
-        Rem => n1 % n2,
-        Lt => (n1 < n2).into(),
-        Lte => (n1 <= n2).into(),
-        Gt => (n1 > n2).into(),
-        Gte => (n1 >= n2).into(),
-        Eq => (n1 == n2).into(),
-        Neq => (n1 != n2).into(),
-        BitAnd | And => n1 & n2,
-        BitOr | Or => n1 | n2,
-        BitXor => n1 ^ n2,
-        Shr => n1 >> n2,
-        Shl => n1 << n2,
+        match op {
+            Add => n1 + n2,
+            Sub => n1 - n2,
+            Mul => n1 * n2,
+            Div => n1 / n2,
+            Rem => n1 % n2,
+            Lt => (n1 < n2).into(),
+            Lte => (n1 <= n2).into(),
+            Gt => (n1 > n2).into(),
+            Gte => (n1 >= n2).into(),
+            Eq => (n1 == n2).into(),
+            Neq => (n1 != n2).into(),
+            BitAnd | And => n1 & n2,
+            BitOr | Or => n1 | n2,
+            BitXor => n1 ^ n2,
+            Shr => n1 >> n2,
+            Shl => n1 << n2,
+        }
     }
-}
 
-fn native_un_op(op: UnOp, n: i64) -> i64 {
-    use UnOp::*;
+    fn native_un_op(op: UnOp, n: i64) -> i64 {
+        use UnOp::*;
 
-    match op {
-        Neg => -n,
-        Not => !n,
+        match op {
+            Neg => -n,
+            Not => !n,
+        }
     }
 }

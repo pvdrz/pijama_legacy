@@ -2,7 +2,9 @@ use crate::lir::Term;
 
 use std::io::{stdout, Stdout, Write};
 
-mod eval;
+pub mod eval;
+
+use eval::Machine;
 
 pub struct LangEnv<W: Write> {
     pub stdout: W,
@@ -14,31 +16,30 @@ impl Default for LangEnv<Stdout> {
     }
 }
 
-pub struct Machine<W: Write> {
+pub struct OverflowMachine<W: Write> {
     env: LangEnv<W>,
 }
 
-impl Default for Machine<Stdout> {
+impl Default for OverflowMachine<Stdout> {
     fn default() -> Self {
-        Machine {
+        OverflowMachine {
             env: LangEnv::default(),
         }
     }
 }
 
-impl<W: Write> Machine<W> {
-    pub fn with_env(env: LangEnv<W>) -> Self {
-        Machine { env }
+impl<W: Write> Machine<W> for OverflowMachine<W> {
+    fn lang_env(&mut self) -> &mut LangEnv<W> {
+        &mut self.env
     }
 }
 
-impl<W: Write> Machine<W> {
-    pub fn evaluate(&mut self, mut term: Term) -> Term {
-        while {
-            let (eval, new_term) = self.step(term);
-            term = new_term;
-            eval
-        } {}
-        term
+impl<W: Write> OverflowMachine<W> {
+    pub fn with_env(env: LangEnv<W>) -> Self {
+        OverflowMachine { env }
+    }
+
+    pub fn evaluate(&mut self, term: Term) -> Term {
+        Machine::evaluate(self, term)
     }
 }
