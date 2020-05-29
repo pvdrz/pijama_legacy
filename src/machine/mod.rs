@@ -14,7 +14,7 @@ pub use builder::MachineBuilder;
 
 pub struct Machine<W: Write, A: Arithmetic> {
     env: Env<W>,
-    arithmetic: A,
+    _arithmetic: A,
 }
 
 impl<W: Write, A: Arithmetic> Machine<W, A> {

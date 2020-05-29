@@ -11,7 +11,7 @@ fn main() {
         Ok(input) => input,
         Err(err) => {
             eprintln!("{}", err);
-            return ();
+            return;
         }
     };
 

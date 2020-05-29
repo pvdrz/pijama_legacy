@@ -24,7 +24,7 @@ impl<W: Write, A: Arithmetic> MachineBuilder<W, A> {
     pub fn build(self) -> Machine<W, A> {
         Machine {
             env: self.env,
-            arithmetic: self.arithmetic,
+            _arithmetic: self.arithmetic,
         }
     }
 

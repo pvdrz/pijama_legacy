@@ -1,6 +1,6 @@
 extern crate pijama;
 
-use std::{panic, sync::mpsc, thread, time::Duration, io::Stdout};
+use std::{io::Stdout, panic, sync::mpsc, thread, time::Duration};
 
 use pijama::{
     lir::Term,

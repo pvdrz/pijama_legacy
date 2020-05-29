@@ -92,6 +92,6 @@ impl Arithmetic for CheckedArithmetic {
 fn try_into_u32_or_panic(n: i64) -> u32 {
     match u32::try_from(n) {
         Ok(n) => n,
-        Err(_) => panic!("Operand `{}` is negative", n),
+        _ => panic!("Operand `{}` is negative", n),
     }
 }
