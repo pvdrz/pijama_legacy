@@ -75,20 +75,17 @@ impl<'a> NodeVisitor<'a> for RecursionChecker<'a> {
 
     fn visit_fn_def(
         &mut self,
-        opt_name: &Option<Located<Name<'a>>>,
+        name: &Located<Name<'a>>,
         args: &[TyAnnotation<Name<'a>>],
         body: &TyAnnotation<Block<'a>>,
     ) {
         // If the function definition binds the target name, the latter is being shadowed in the
         // current scope.
-        match opt_name {
-            Some(name) if name.content == self.name => {
-                self.is_shadowed = true;
-            }
-            _ => {}
-        };
+        if name.content == self.name {
+            self.is_shadowed = true;
+        }
         // Keep visiting
-        self.super_fn_def(opt_name, args, body);
+        self.super_fn_def(name, args, body);
     }
 
     fn visit_block(&mut self, block: &Block<'a>) {

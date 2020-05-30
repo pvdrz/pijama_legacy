@@ -41,7 +41,8 @@ pub trait NodeVisitor<'a> {
             Node::UnaryOp(op, node) => self.visit_unary_op(*op, node.as_ref()),
             Node::LetBind(annotation, node) => self.visit_let_bind(annotation, node.as_ref()),
             Node::Cond(if_branch, branches, el_blk) => self.visit_cond(if_branch, branches, el_blk),
-            Node::FnDef(opt_name, args, body) => self.visit_fn_def(opt_name, args, body),
+            Node::FnDef(name, args, body) => self.visit_fn_def(name, args, body),
+            Node::AnonFn(args, body) => self.visit_anon_fn(args, body),
             Node::Call(func, args) => self.visit_call(func.as_ref(), &args),
             Node::Literal(literal) => self.visit_literal(literal),
             Node::Name(name) => self.visit_name(name),
@@ -99,14 +100,16 @@ pub trait NodeVisitor<'a> {
     /// Visits a Node with a Function Definition.
     fn super_fn_def(
         &mut self,
-        opt_name: &Option<Located<Name<'a>>>,
+        name: &Located<Name<'a>>,
         _args: &[TyAnnotation<Name<'a>>],
         body: &TyAnnotation<Block<'a>>,
     ) {
-        if let Some(name) = opt_name {
-            self.visit_name(&name.content);
-        }
+        self.visit_name(&name.content);
+        self.visit_block(&body.item.content);
+    }
 
+    /// Visits a Node with an Anonymous Function.
+    fn super_anon_fn(&mut self, _args: &[TyAnnotation<Name<'a>>], body: &TyAnnotation<Block<'a>>) {
         self.visit_block(&body.item.content);
     }
 
@@ -168,11 +171,16 @@ pub trait NodeVisitor<'a> {
     /// Specifies how Function Definitions should be visited.
     fn visit_fn_def(
         &mut self,
-        opt_name: &Option<Located<Name<'a>>>,
+        name: &Located<Name<'a>>,
         args: &[TyAnnotation<Name<'a>>],
         body: &TyAnnotation<Block<'a>>,
     ) {
-        self.super_fn_def(opt_name, args, body);
+        self.super_fn_def(name, args, body);
+    }
+
+    /// Specifies how Anonymous Functions should be visited.
+    fn visit_anon_fn(&mut self, args: &[TyAnnotation<Name<'a>>], body: &TyAnnotation<Block<'a>>) {
+        self.super_anon_fn(args, body);
     }
 
     /// Specifies how Function Calls should be visited.

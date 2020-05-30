@@ -191,10 +191,12 @@ pub enum Node<'a> {
     Cond(Branch<'a>, Vec<Branch<'a>>, Located<Block<'a>>),
     /// Statement containing a Function Definition.
     FnDef(
-        Option<Located<Name<'a>>>,
+        Located<Name<'a>>,
         Vec<TyAnnotation<Name<'a>>>,
         TyAnnotation<Block<'a>>,
     ),
+    /// Expression containing an Anonymous Function.
+    AnonFn(Vec<TyAnnotation<Name<'a>>>, TyAnnotation<Block<'a>>),
     /// Expression containing a Function Call.
     Call(Box<Located<Node<'a>>>, Block<'a>),
     /// Expression containing a Literal.

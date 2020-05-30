@@ -280,8 +280,7 @@ fn let_bind() -> LangResult<'static, ()> {
                 ty: Ty::Missing.loc(),
             },
             Box::new(
-                FnDef(
-                    None,
+                AnonFn(
                     vec![TyAnnotation {
                         item: pijama_ast::Name("x").loc(),
                         ty: Ty::Int.loc(),
@@ -518,7 +517,7 @@ fn fn_def() -> LangResult<'static, ()> {
     let result = parse(input)?.content;
     let expected = vec![
         FnDef(
-            Some(pijama_ast::Name("foo").loc()),
+            pijama_ast::Name("foo").loc(),
             vec![],
             TyAnnotation {
                 item: vec![].into_iter().collect::<Block<'_>>().loc(),
@@ -527,7 +526,7 @@ fn fn_def() -> LangResult<'static, ()> {
         )
         .loc(),
         FnDef(
-            Some(pijama_ast::Name("foo").loc()),
+            pijama_ast::Name("foo").loc(),
             vec![TyAnnotation {
                 item: pijama_ast::Name("x").loc(),
                 ty: Ty::Int.loc(),
@@ -542,7 +541,7 @@ fn fn_def() -> LangResult<'static, ()> {
         )
         .loc(),
         FnDef(
-            Some(pijama_ast::Name("foo").loc()),
+            pijama_ast::Name("foo").loc(),
             vec![],
             TyAnnotation {
                 item: vec![Call(
@@ -558,7 +557,7 @@ fn fn_def() -> LangResult<'static, ()> {
         )
         .loc(),
         FnDef(
-            Some(pijama_ast::Name("foo").loc()),
+            pijama_ast::Name("foo").loc(),
             vec![
                 TyAnnotation {
                     item: pijama_ast::Name("x").loc(),
@@ -581,8 +580,7 @@ fn fn_def() -> LangResult<'static, ()> {
             },
         )
         .loc(),
-        FnDef(
-            None,
+        AnonFn(
             vec![TyAnnotation {
                 item: pijama_ast::Name("x").loc(),
                 ty: Ty::Int.loc(),
@@ -596,8 +594,7 @@ fn fn_def() -> LangResult<'static, ()> {
             },
         )
         .loc(),
-        FnDef(
-            None,
+        AnonFn(
             vec![TyAnnotation {
                 item: pijama_ast::Name("x").loc(),
                 ty: Ty::Int.loc(),
