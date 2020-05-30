@@ -44,7 +44,7 @@ use nom::{
 
 use pijama_ast::{
     ty::{Ty, TyAnnotation},
-    Located, Location,
+    Located,
 };
 
 use crate::parser::{
@@ -69,10 +69,7 @@ pub fn ty(input: Span) -> IResult<Located<Ty>> {
     if let (rem, Some(t2)) = opt(preceded(surrounded(tag("->"), space0), ty))(rem)? {
         Ok((
             rem,
-            Located::new(
-                Ty::Arrow(Box::new(t1.content), Box::new(t2.content)),
-                Location::new(t1.loc.start, t2.loc.end),
-            ),
+            t1.zip_with(t2, |t1, t2| Ty::Arrow(Box::new(t1), Box::new(t2))),
         ))
     } else {
         Ok((rem, t1))
@@ -84,19 +81,9 @@ pub fn ty(input: Span) -> IResult<Located<Ty>> {
 /// This parser returns a [`TyAnnotation`], there can be any number of spaces surrounding the `:`,
 /// including no spaces at all.
 pub fn ty_annotation(input: Span) -> IResult<Located<TyAnnotation>> {
-    map(
-        pair(name, colon_ty),
-        |(
-            Located {
-                content: name,
-                loc: loc1,
-            },
-            Located {
-                content: ty,
-                loc: loc2,
-            },
-        )| { Located::new(TyAnnotation { name, ty }, loc1 + loc2) },
-    )(input)
+    map(pair(name, colon_ty), |(name, ty)| {
+        name.zip_with(ty, |name, ty| TyAnnotation { name, ty })
+    })(input)
 }
 
 /// Parses types preceded by a colon.

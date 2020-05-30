@@ -41,10 +41,7 @@ pub fn in_brackets<'a, O: std::fmt::Debug, E: ParseError<Span<'a>>>(
             surrounded(content, multispace0),
             preceded(char(')'), position),
         )),
-        |(sp1, content, sp2)| {
-            let loc = Location::new(sp1.location_offset(), sp2.location_offset() + 1);
-            Located::new(content, loc)
-        },
+        |(sp1, content, sp2)| (Location::from(sp1) + Location::from(sp2)).with_content(content),
     )
 }
 

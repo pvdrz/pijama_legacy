@@ -52,20 +52,21 @@ pub fn lower_blk<'a>(blk: Located<Block<'a>>) -> LowerResult<Located<Term<'a>>> 
             } else {
                 Term::Seq(Box::new(prev_term), next_term)
             };
-            term = Located::new(content, loc);
+            term = loc.with_content(content);
         }
         Ok(term)
     } else {
-        Ok(Located::new(Term::Lit(Literal::Unit), blk.loc))
+        Ok(blk.loc.with_content(Term::Lit(Literal::Unit)))
     }
 }
 
 fn lower_node(node: Located<Node<'_>>) -> LowerResult<Located<Term<'_>>> {
     let loc = node.loc;
     match node.content {
-        Node::Name(name) => Ok(Located::new(Term::Var(name), loc)),
+        Node::Name(name) => Ok(loc.with_content(Term::Var(name))),
+        Node::Literal(lit) => Ok(loc.with_content(Term::Lit(lit))),
+        Node::PrimFn(prim) => Ok(loc.with_content(Term::PrimFn(prim))),
         Node::Cond(if_branch, branches, el_blk) => lower_cond(loc, if_branch, branches, el_blk),
-        Node::Literal(lit) => Ok(Located::new(Term::Lit(lit), loc)),
         Node::Call(node, args) => lower_call(loc, *node, args),
         Node::BinaryOp(bin_op, node1, node2) => lower_binary_op(loc, bin_op, *node1, *node2),
         Node::UnaryOp(un_op, node) => lower_unary_op(loc, un_op, *node),
@@ -73,7 +74,6 @@ fn lower_node(node: Located<Node<'_>>) -> LowerResult<Located<Term<'_>>> {
         Node::FnDef(opt_name, binds, body, opt_ty) => {
             lower_fn_def(loc, opt_name, binds, body, opt_ty)
         }
-        Node::PrimFn(prim) => Ok(Located::new(Term::PrimFn(prim), loc)),
     }
 }
 
@@ -86,27 +86,21 @@ fn lower_cond<'a>(
     let mut el_term = Box::new(lower_blk(el_blk)?);
 
     for branch in branches.into_iter().rev() {
-        el_term = Box::new(Located::new(
-            Term::Cond(
-                Box::new(lower_blk(branch.cond)?),
-                Box::new(lower_blk(branch.body)?),
-                el_term,
-            ),
-            loc,
-        ));
+        el_term = Box::new(loc.with_content(Term::Cond(
+            Box::new(lower_blk(branch.cond)?),
+            Box::new(lower_blk(branch.body)?),
+            el_term,
+        )));
     }
 
     let if_blk = if_branch.cond;
     let do_blk = if_branch.body;
 
-    Ok(Located::new(
-        Term::Cond(
-            Box::new(lower_blk(if_blk)?),
-            Box::new(lower_blk(do_blk)?),
-            el_term,
-        ),
-        loc,
-    ))
+    Ok(loc.with_content(Term::Cond(
+        Box::new(lower_blk(if_blk)?),
+        Box::new(lower_blk(do_blk)?),
+        el_term,
+    )))
 }
 
 fn lower_call<'a>(
@@ -116,7 +110,7 @@ fn lower_call<'a>(
 ) -> LowerResult<Located<Term<'a>>> {
     let mut term = lower_node(node)?;
     for node in args {
-        term = Located::new(Term::App(Box::new(term), Box::new(lower_node(node)?)), loc);
+        term = loc.with_content(Term::App(Box::new(term), Box::new(lower_node(node)?)));
     }
     Ok(term)
 }
@@ -127,14 +121,11 @@ fn lower_binary_op<'a>(
     node1: Located<Node<'a>>,
     node2: Located<Node<'a>>,
 ) -> LowerResult<Located<Term<'a>>> {
-    Ok(Located::new(
-        Term::BinaryOp(
-            bin_op,
-            Box::new(lower_node(node1)?),
-            Box::new(lower_node(node2)?),
-        ),
-        loc,
-    ))
+    Ok(loc.with_content(Term::BinaryOp(
+        bin_op,
+        Box::new(lower_node(node1)?),
+        Box::new(lower_node(node2)?),
+    )))
 }
 
 fn lower_unary_op(
@@ -142,10 +133,7 @@ fn lower_unary_op(
     un_op: UnOp,
     node: Located<Node<'_>>,
 ) -> LowerResult<Located<Term<'_>>> {
-    Ok(Located::new(
-        Term::UnaryOp(un_op, Box::new(lower_node(node)?)),
-        loc,
-    ))
+    Ok(loc.with_content(Term::UnaryOp(un_op, Box::new(lower_node(node)?))))
 }
 
 fn lower_let_bind<'a>(
@@ -156,24 +144,14 @@ fn lower_let_bind<'a>(
 ) -> LowerResult<Located<Term<'a>>> {
     let term = lower_node(node)?;
 
-    let opt_ty = opt_ty.map(|located| {
-        let loc = located.loc;
-        let ty = located.content;
-        Located::new(ty.into(), loc)
-    });
+    let opt_ty = opt_ty.map(|located_ty| located_ty.map(Ty::from));
 
-    Ok(Located::new(
-        Term::Let(
-            LetKind::NonRec(opt_ty),
-            name,
-            Box::new(term),
-            Box::new(Located::new(
-                Term::Lit(Literal::Unit),
-                Location::new(loc.end, loc.end),
-            )),
-        ),
-        loc,
-    ))
+    Ok(loc.with_content(Term::Let(
+        LetKind::NonRec(opt_ty),
+        name,
+        Box::new(term),
+        Box::new(Location::new(loc.end, loc.end).with_content(Term::Lit(Literal::Unit))),
+    )))
 }
 
 fn lower_fn_def<'a>(
@@ -193,8 +171,7 @@ fn lower_fn_def<'a>(
             let ann_ty = annotation.content.ty.clone().into();
             ty = Ty::Arrow(Box::new(ann_ty), Box::new(ty));
         }
-
-        Located::new(ty, ty_loc)
+        ty_loc.with_content(ty)
     });
 
     // we need to decide if the function is recursive or not
@@ -218,29 +195,21 @@ fn lower_fn_def<'a>(
     let mut term = lower_blk(body)?;
 
     for annotation in annotations.into_iter().rev() {
-        term = Located::new(
-            Term::Abs(
-                annotation.content.name,
-                annotation.content.ty.into(),
-                Box::new(term),
-            ),
-            loc,
-        );
+        let annotation = annotation.content;
+        term = loc.with_content(Term::Abs(
+            annotation.name,
+            annotation.ty.into(),
+            Box::new(term),
+        ));
     }
 
     if let Some(name) = opt_name {
-        term = Located::new(
-            Term::Let(
-                kind,
-                name,
-                Box::new(term),
-                Box::new(Located::new(
-                    Term::Lit(Literal::Unit),
-                    Location::new(loc.end, loc.end),
-                )),
-            ),
-            loc,
-        );
+        term = loc.with_content(Term::Let(
+            kind,
+            name,
+            Box::new(term),
+            Box::new(Location::new(loc.end, loc.end).with_content(Term::Lit(Literal::Unit))),
+        ));
     }
 
     Ok(term)

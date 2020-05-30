@@ -27,16 +27,12 @@ pub fn literal(input: Span) -> IResult<Located<Literal>> {
     with_context(
         "Expected literal (true, false, unit) or number",
         alt((
-            map(tag("true"), |span: Span| {
-                Located::new(Literal::Bool(true), span)
-            }),
-            map(tag("false"), |span: Span| {
+            map(tag("true"), |span| Located::new(Literal::Bool(true), span)),
+            map(tag("false"), |span| {
                 Located::new(Literal::Bool(false), span)
             }),
-            map(tag("unit"), |span: Span| Located::new(Literal::Unit, span)),
-            map(number, |Located { content, loc }| {
-                Located::new(Literal::Number(content), loc)
-            }),
+            map(tag("unit"), |span| Located::new(Literal::Unit, span)),
+            map(number, |located_num| located_num.map(Literal::Number)),
         )),
     )(input)
 }
@@ -83,7 +79,7 @@ fn number(input: Span) -> IResult<Located<i64>> {
             let number = i64::from_str_radix(&number, radix).ok()?;
             let loc = Location::from(position) + digits_span.into();
 
-            Some(Located::new(number, loc))
+            Some(loc.with_content(number))
         },
     )(input)
 }
