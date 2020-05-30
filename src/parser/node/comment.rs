@@ -9,7 +9,9 @@ use nom::{
     sequence::delimited,
 };
 
-use crate::parser::{IResult, Span};
+use pijama_ast::Span;
+
+use crate::parser::IResult;
 
 /// Parses a comment, returning () if it finds one.
 pub fn comment(input: Span) -> IResult<()> {

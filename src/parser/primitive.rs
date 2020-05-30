@@ -13,9 +13,9 @@ use once_cell::sync::Lazy;
 
 use std::collections::HashMap;
 
-use pijama_ast::{Located, Primitive};
+use pijama_ast::{Located, Primitive, Span};
 
-use crate::parser::{IResult, Span};
+use crate::parser::IResult;
 
 /// Words that are primitives.
 pub static PRIMITIVES: Lazy<HashMap<&'static str, Primitive>> = Lazy::new(|| {

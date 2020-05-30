@@ -16,11 +16,11 @@ use nom::{
     sequence::terminated,
 };
 
-use pijama_ast::{BinOp, BinOp::*};
+use pijama_ast::{BinOp, BinOp::*, Span};
 
 use crate::parser::{
     helpers::{surrounded, with_context},
-    IResult, Span,
+    IResult,
 };
 
 /// Parser for the binary operators with precedence level 1.

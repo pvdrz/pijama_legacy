@@ -22,7 +22,7 @@ use nom::{
     sequence::pair,
 };
 
-use pijama_ast::{Located, Node};
+use pijama_ast::{Located, Node, Span};
 
 use crate::parser::{
     helpers::{in_brackets, lookahead},
@@ -30,7 +30,7 @@ use crate::parser::{
     name::name,
     primitive::primitive,
     un_op::un_op,
-    IResult, Span,
+    IResult,
 };
 
 /// Parser for [`Node`]s.
