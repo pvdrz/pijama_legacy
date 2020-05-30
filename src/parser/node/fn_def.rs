@@ -49,12 +49,9 @@ pub fn fn_def(input: Span) -> IResult<Located<Node>> {
             fn_body,
         )),
         |(name, args, opt_ty, body)| {
-            let loc1 = name.loc;
-            let loc2 = body.loc;
-            Located::new(
-                Node::FnDef(name.content, args.content, body.content, opt_ty),
-                loc1 + loc2,
-            )
+            name.zip_with(body, move |name, body| {
+                Node::FnDef(name, args.content, body, opt_ty)
+            })
         },
     )(input)
 }

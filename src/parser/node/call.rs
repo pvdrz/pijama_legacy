@@ -28,12 +28,8 @@ use crate::parser::{
 /// the `=`.
 pub fn call(input: Span) -> IResult<Located<Node>> {
     let func = alt((
-        map(name, |Located { content, loc }| {
-            Located::new(Node::Name(content), loc)
-        }),
-        map(primitive, |Located { content, loc }| {
-            Located::new(Node::PrimFn(content), loc)
-        }),
+        map(name, |located_name| located_name.map(Node::Name)),
+        map(primitive, |located_prim| located_prim.map(Node::PrimFn)),
         map(in_brackets(node), |Located { mut content, loc }| {
             content.loc = loc;
             content

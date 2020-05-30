@@ -34,9 +34,7 @@ pub fn literal(input: Span) -> IResult<Located<Literal>> {
                 Located::new(Literal::Bool(false), span)
             }),
             map(tag("unit"), |span: Span| Located::new(Literal::Unit, span)),
-            map(number, |Located { content, loc }| {
-                Located::new(Literal::Number(content), loc)
-            }),
+            map(number, |located_num| located_num.map(Literal::Number)),
         )),
     )(input)
 }
