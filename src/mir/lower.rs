@@ -1,9 +1,8 @@
 use std::mem::discriminant;
 
 use pijama_ast::{
-    analysis::RecursionChecker,
-    ty::{Ty as TyAST, TyAnnotation},
-    BinOp, Block, Branch, Literal, Located, Location, Name, Node, UnOp,
+    analysis::RecursionChecker, ty::TyAnnotation, BinOp, Block, Branch, Literal, Located, Location,
+    Name, Node, UnOp,
 };
 use thiserror::Error;
 
@@ -71,7 +70,7 @@ fn lower_node(node: Located<Node<'_>>) -> LowerResult<Located<Term<'_>>> {
         Node::BinaryOp(bin_op, node1, node2) => lower_binary_op(loc, bin_op, *node1, *node2),
         Node::UnaryOp(un_op, node) => lower_unary_op(loc, un_op, *node),
         Node::LetBind(annotation, body) => lower_let_bind(loc, annotation, *body),
-        Node::FnDef(opt_name, binds, body, ty) => lower_fn_def(loc, opt_name, binds, body, ty),
+        Node::FnDef(opt_name, binds, body) => lower_fn_def(loc, opt_name, binds, body),
     }
 }
 
@@ -159,13 +158,12 @@ fn lower_fn_def<'a>(
     loc: Location,
     opt_name: Option<Located<Name<'a>>>,
     annotations: Vec<TyAnnotation<Name<'a>>>,
-    body: Located<Block<'a>>,
-    ty: Located<TyAST>,
+    body: TyAnnotation<Block<'a>>,
 ) -> LowerResult<Located<Term<'a>>> {
     // if the user added a return type annotation, we transform this type into the type of the
     // function using the bindings.
-    let ty_loc = ty.loc;
-    let opt_ty = if let Some(mut ty) = Ty::from_ast(ty.content) {
+    let ty_loc = body.ty.loc;
+    let opt_ty = if let Some(mut ty) = Ty::from_ast(body.ty.content) {
         for annotation in annotations.iter().rev() {
             // FIXME: There could be missing types here!
             let ann_ty = Ty::from_ast(annotation.ty.content.clone()).unwrap();
@@ -179,7 +177,7 @@ fn lower_fn_def<'a>(
     // we need to decide if the function is recursive or not
     let kind = match opt_name.as_ref() {
         // functions can only be recursive if they have a name.
-        Some(name) if RecursionChecker::run(name.content, &body.content) => {
+        Some(name) if RecursionChecker::run(name.content, &body.item.content) => {
             // if the function is recursive, we need the return type.
             opt_ty
                 .map(LetKind::Rec)
@@ -194,7 +192,7 @@ fn lower_fn_def<'a>(
         _ => LetKind::NonRec(opt_ty),
     };
 
-    let mut term = lower_blk(body)?;
+    let mut term = lower_blk(body.item)?;
 
     for annotation in annotations.into_iter().rev() {
         term = loc.with_content(Term::Abs(

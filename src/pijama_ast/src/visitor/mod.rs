@@ -1,7 +1,6 @@
 //! Trait to traverse the AST.
 use crate::{
-    ty::{Ty, TyAnnotation},
-    BinOp, Block, Branch, Literal, Located, Name, Node, Primitive, UnOp,
+    ty::TyAnnotation, BinOp, Block, Branch, Literal, Located, Name, Node, Primitive, UnOp,
 };
 
 /// Helper type alias to traverse references to `Block`s as slices.
@@ -12,9 +11,9 @@ pub type BlockRef<'a, 'b> = &'b [Located<Node<'a>>];
 /// particular elements of it or you do not want to write the code necessary to traverse the AST
 /// yourself.
 ///
-/// There are two kinds of methods: 
+/// There are two kinds of methods:
 /// - The `visit_<foo>` methods: where the code specific to
-/// your visiting resides.  
+/// your visiting resides.
 /// - The `super_<foo>` methods: that destructure each component and take
 /// care of the actual visiting.
 ///
@@ -44,9 +43,7 @@ pub trait NodeVisitor<'a> {
             Node::UnaryOp(op, node) => self.visit_unary_op(*op, node.as_ref()),
             Node::LetBind(annotation, node) => self.visit_let_bind(annotation, node.as_ref()),
             Node::Cond(if_branch, branches, el_blk) => self.visit_cond(if_branch, branches, el_blk),
-            Node::FnDef(opt_name, args, body, ty) => {
-                self.visit_fn_def(opt_name, args, body, ty)
-            }
+            Node::FnDef(opt_name, args, body) => self.visit_fn_def(opt_name, args, body),
             Node::Call(func, args) => self.visit_call(func.as_ref(), &args),
             Node::Literal(literal) => self.visit_literal(literal),
             Node::Name(name) => self.visit_name(name),
@@ -71,11 +68,7 @@ pub trait NodeVisitor<'a> {
     }
 
     /// Visits a Node with a Let binding.
-    fn super_let_bind(
-        &mut self,
-        annotation: &TyAnnotation<Name<'a>>,
-        node: &Located<Node<'a>>,
-    ) {
+    fn super_let_bind(&mut self, annotation: &TyAnnotation<Name<'a>>, node: &Located<Node<'a>>) {
         self.visit_name(&annotation.item.content);
         self.visit_node(node);
     }
@@ -110,14 +103,13 @@ pub trait NodeVisitor<'a> {
         &mut self,
         opt_name: &Option<Located<Name<'a>>>,
         _args: &[TyAnnotation<Name<'a>>],
-        body: &Located<Block<'a>>,
-        _ty: &Located<Ty>,
+        body: &TyAnnotation<Block<'a>>,
     ) {
         if let Some(name) = opt_name {
             self.visit_name(&name.content);
         }
 
-        self.visit_block(&body.content);
+        self.visit_block(&body.item.content);
     }
 
     /// Visits a Node with a Function Call.
@@ -156,11 +148,7 @@ pub trait NodeVisitor<'a> {
     }
 
     /// Specifies how Let bindings should be visited.
-    fn visit_let_bind(
-        &mut self,
-        annotation: &TyAnnotation<Name<'a>>,
-        node: &Located<Node<'a>>,
-    ) {
+    fn visit_let_bind(&mut self, annotation: &TyAnnotation<Name<'a>>, node: &Located<Node<'a>>) {
         self.super_let_bind(annotation, node);
     }
 
@@ -184,10 +172,9 @@ pub trait NodeVisitor<'a> {
         &mut self,
         opt_name: &Option<Located<Name<'a>>>,
         args: &[TyAnnotation<Name<'a>>],
-        body: &Located<Block<'a>>,
-        ty: &Located<Ty>,
+        body: &TyAnnotation<Block<'a>>,
     ) {
-        self.super_fn_def(opt_name, args, body, ty);
+        self.super_fn_def(opt_name, args, body);
     }
 
     /// Specifies how Function Calls should be visited.

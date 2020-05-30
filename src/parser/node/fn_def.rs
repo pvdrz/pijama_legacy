@@ -21,7 +21,7 @@ use nom::{
 };
 use nom_locate::position;
 
-use pijama_ast::{Block, Located, Location, Name, Node, Span};
+use pijama_ast::{ty::TyAnnotation, Block, Located, Location, Name, Node, Span};
 
 use crate::parser::{
     block::block0,
@@ -50,7 +50,7 @@ pub fn fn_def(input: Span) -> IResult<Located<Node>> {
         )),
         |(name, args, ty, body)| {
             name.zip_with(body, move |name, body| {
-                Node::FnDef(name, args.content, body, ty)
+                Node::FnDef(name, args.content, TyAnnotation { item: body, ty })
             })
         },
     )(input)

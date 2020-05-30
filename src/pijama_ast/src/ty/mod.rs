@@ -1,7 +1,7 @@
 //! The AST representation of types.
 use std::fmt::Debug;
 
-use crate::{Located};
+use crate::Located;
 
 /// A type in the AST.
 ///
@@ -18,15 +18,15 @@ pub enum Ty {
     /// The type of functions between two types.
     Arrow(Box<Ty>, Box<Ty>),
     /// A missing type. Used when an item in the AST did not have a type annotation.
-    Missing
+    Missing,
 }
 
 /// A type annotation.
 ///
 /// This represents an annotation of an AST item with a type and is used to represent any type
 /// annotations written by the user.
-#[derive(Debug, Clone, Eq, PartialEq)]
-pub struct TyAnnotation<I: Debug + Clone + Eq + PartialEq> {
+#[derive(Debug, Eq, PartialEq)]
+pub struct TyAnnotation<I: Debug + Eq + PartialEq> {
     /// The annotated item.
     pub item: Located<I>,
     /// The type specified by the annotation.

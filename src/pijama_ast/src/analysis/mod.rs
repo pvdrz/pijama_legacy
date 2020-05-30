@@ -1,6 +1,6 @@
 //! An assortment of checks that are done before lowering.
 use crate::{
-    ty::{Ty, TyAnnotation},
+    ty::TyAnnotation,
     visitor::{BlockRef, NodeVisitor},
     Block, Located, Name, Node,
 };
@@ -68,11 +68,7 @@ impl<'a> NodeVisitor<'a> for RecursionChecker<'a> {
         self.super_name(name);
     }
 
-    fn visit_let_bind(
-        &mut self,
-        annotation: &TyAnnotation<Name<'a>>,
-        body: &Located<Node<'a>>,
-    ) {
+    fn visit_let_bind(&mut self, annotation: &TyAnnotation<Name<'a>>, body: &Located<Node<'a>>) {
         // If the binding binds the target name, the latter is being shadowed in the current scope.
         if annotation.item.content == self.name {
             self.is_shadowed = true;
@@ -85,8 +81,7 @@ impl<'a> NodeVisitor<'a> for RecursionChecker<'a> {
         &mut self,
         opt_name: &Option<Located<Name<'a>>>,
         args: &[TyAnnotation<Name<'a>>],
-        body: &Located<Block<'a>>,
-        ty: &Located<Ty>,
+        body: &TyAnnotation<Block<'a>>,
     ) {
         // If the function definition binds the target name, the latter is being shadowed in the
         // current scope.
@@ -97,7 +92,7 @@ impl<'a> NodeVisitor<'a> for RecursionChecker<'a> {
             _ => {}
         };
         // Keep visiting
-        self.super_fn_def(opt_name, args, body, ty);
+        self.super_fn_def(opt_name, args, body);
     }
 
     fn visit_block(&mut self, block: BlockRef<'a, '_>) {
