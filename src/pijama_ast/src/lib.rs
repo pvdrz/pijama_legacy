@@ -117,11 +117,11 @@ impl<'a> Display for UnOp {
 /// The literal types that Pijama's syntax supports.
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum Literal {
-    /// Boolean literal.
+    /// Boolean Literal.
     Bool(bool),
-    /// Unit literal.
+    /// Unit Literal.
     Unit,
-    /// Numeric literal.
+    /// Numeric Literal.
     Number(i64),
 }
 
@@ -151,7 +151,7 @@ impl<'a> Display for Literal {
 /// The primitives that Pijama's syntax supports.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Primitive {
-    /// Built-In Print primitive.
+    /// Built-in Print primitive.
     Print,
 }
 
@@ -169,9 +169,9 @@ impl<'a> Display for Primitive {
 /// form "if `cond` then `body`".
 #[derive(Debug, Eq, PartialEq)]
 pub struct Branch<'a> {
-    /// The conditional part of the branch that is checked for truthiness.
+    /// The conditional part of the Branch that is checked for truthiness.
     pub cond: Located<Block<'a>>,
-    /// The body of the branch that is executed if `cond` is truthy.
+    /// The body of the Branch that is executed if `cond` is truthy.
     pub body: Located<Block<'a>>,
 }
 

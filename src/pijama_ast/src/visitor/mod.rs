@@ -7,7 +7,6 @@ use crate::{
 /// Helper type alias to traverse references to `Block`s as slices.
 pub type BlockRef<'a, 'b> = &'b [Located<Node<'a>>];
 
-
 ///
 /// This trait should be used when you need to traverse the AST and you are only interested in
 /// particular elements of it or you do not want to write the code necessary to traverse the AST
@@ -55,7 +54,7 @@ pub trait NodeVisitor<'a> {
         }
     }
 
-    /// Visits a Node with a Binary Operation.
+    /// Visits a Node with a Binary operation.
     fn super_binary_op(
         &mut self,
         _op: BinOp,
@@ -66,7 +65,7 @@ pub trait NodeVisitor<'a> {
         self.visit_node(node2);
     }
 
-    /// Visits a Node with a Unary Operation.
+    /// Visits a Node with a Unary operation.
     fn super_unary_op(&mut self, _op: UnOp, node: &Located<Node<'a>>) {
         self.visit_node(node);
     }
@@ -134,7 +133,7 @@ pub trait NodeVisitor<'a> {
     /// Vishts a Node with a Name.
     fn super_name(&mut self, _name: &Name<'a>) {}
 
-    /// Visits a Node with a Primitive Function.
+    /// Visits a Node with a Primitive function.
     fn super_prim_fn(&mut self, _prim_fn: Primitive) {}
 
     /// Specifies how Blocks should be visited.
@@ -147,17 +146,17 @@ pub trait NodeVisitor<'a> {
         self.super_node(node)
     }
 
-    /// Specifies how Binary Operations should be visited.
+    /// Specifies how Binary operations should be visited.
     fn visit_binary_op(&mut self, op: BinOp, node1: &Located<Node<'a>>, node2: &Located<Node<'a>>) {
         self.super_binary_op(op, node1, node2);
     }
 
-    /// Specifies how Unary Operations should be visited.
+    /// Specifies how Unary operations should be visited.
     fn visit_unary_op(&mut self, op: UnOp, node: &Located<Node<'a>>) {
         self.super_unary_op(op, node);
     }
 
-    /// Specifies how Let Bindings should be visited.
+    /// Specifies how Let bindings should be visited.
     fn visit_let_bind(
         &mut self,
         name: &Located<Name<'a>>,
