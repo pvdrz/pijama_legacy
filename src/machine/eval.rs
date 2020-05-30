@@ -17,12 +17,15 @@ impl<W: Write, A: Arithmetic> Machine<W, A> {
             BinaryOp(op, t1, t2) => self.step_bin_op(op, t1, t2),
             // Dispatch step for unary operations
             UnaryOp(op, t1) => self.step_un_op(op, t1),
-            // Dispatch step for beta reduction
-            // Application with unevaluated first term (t1 t2)
-            // Evaluate t1.
-            App(mut t1, arg) => match *t1 {
+            App(mut t1, mut arg) => match *t1 {
+                // Dispatch step for beta reduction
                 Abs(body) => self.step_beta_reduction(*body, arg),
-                PrimFn(prim) => self.step_primitive_app(prim, arg),
+                // Dispatch step for primitive application if argument is evaluated
+                PrimFn(prim) if arg.is_value() => self.step_primitive_app(prim, arg),
+                // Evaluate argument if that's not the case.
+                PrimFn(_) => (self.step_in_place(arg.borrow_mut()), App(t1, arg)),
+                // Application with unevaluated first term (t1 t2)
+                // Evaluate t1.
                 _ => (self.step_in_place(t1.borrow_mut()), App(t1, arg)),
             },
             // Dispatch step for conditionals

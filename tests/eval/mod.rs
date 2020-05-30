@@ -185,7 +185,7 @@ fn print_simple_fn() -> LangResult<'static, ()> {
         machine_builder().with_env(Env::new(&mut output)).build(),
     )?;
     let output = String::from_utf8_lossy(&output);
-    assert_eq!(output, "((λ. _0) 10)\n");
+    assert_eq!(output, "(λ. _0)\n");
     assert_eq!(term, Literal::Unit.into());
     Ok(())
 }
@@ -199,7 +199,7 @@ fn print_complex_fn() -> LangResult<'static, ()> {
         machine_builder().with_env(Env::new(&mut output)).build(),
     )?;
     let output = String::from_utf8_lossy(&output);
-    assert_eq!(output, "((λ. (if (_0 > 0) then 1 else 0)) 10)\n");
+    assert_eq!(output, "1\n");
     assert_eq!(term, Literal::Unit.into());
     Ok(())
 }
@@ -213,7 +213,7 @@ fn print_print() -> LangResult<'static, ()> {
         machine_builder().with_env(Env::new(&mut output)).build(),
     )?;
     let output = String::from_utf8_lossy(&output);
-    assert_eq!(output, "(print 10)\n");
+    assert_eq!(output, "10\n0\n");
     assert_eq!(term, Literal::Unit.into());
     Ok(())
 }

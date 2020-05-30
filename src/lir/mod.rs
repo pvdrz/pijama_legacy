@@ -1,6 +1,6 @@
 use std::fmt;
 
-use pijama_ast::*;
+use pijama_ast::{BinOp, Literal, Located, Primitive, UnOp};
 
 use Term::*;
 
@@ -78,6 +78,10 @@ impl fmt::Display for Term {
 impl Term {
     pub fn from_mir(mir: Located<crate::mir::Term>) -> Self {
         lower::remove_names(mir)
+    }
+
+    pub fn is_value(&self) -> bool {
+        matches!(self, Lit(_) | Abs(_) | PrimFn(_))
     }
 
     pub(crate) fn shift(&mut self, up: bool, cutoff: usize) {
