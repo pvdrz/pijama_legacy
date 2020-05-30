@@ -73,7 +73,7 @@ impl<W: Write, A: Arithmetic> Machine<W, A> {
             // If op is || and t1 is true evaluate to true
             (Or, Lit(1), _) => (true, true.into()),
             // If both are literals evaluate with native operation
-            (_, Lit(l1), Lit(l2)) => (true, Lit(A::native_bin_op(op, *l1, *l2))),
+            (_, Lit(l1), Lit(l2)) => (true, Lit(A::binary_operation(op, *l1, *l2))),
             // If t2 is not a literal, evaluate it.
             (_, Lit(_), _) => (self.step_in_place(b.borrow_mut()), Term::BinaryOp(op, a, b)),
             // If t1 is not a literal, evaluate it.
@@ -85,7 +85,7 @@ impl<W: Write, A: Arithmetic> Machine<W, A> {
     fn step_un_op(&mut self, op: UnOp, mut t1: Box<Term>) -> (bool, Term) {
         // If t1 is a literal, do the operation.
         if let Term::Lit(lit) = t1.borrow() {
-            (true, Term::Lit(A::native_un_op(op, *lit)))
+            (true, Term::Lit(A::unary_operation(op, *lit)))
         // If t1 is not a literal, evaluate it.
         } else {
             (self.step_in_place(&mut t1), Term::UnaryOp(op, t1))

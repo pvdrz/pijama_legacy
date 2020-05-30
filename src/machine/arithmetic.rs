@@ -4,15 +4,15 @@ use pijama_ast::{BinOp, BinOp::*, UnOp, UnOp::*};
 
 /// Trait determining how arithmetic operations should be handled.
 pub trait Arithmetic {
-    fn native_bin_op(op: BinOp, n1: i64, n2: i64) -> i64;
-    fn native_un_op(op: UnOp, n: i64) -> i64;
+    fn binary_operation(op: BinOp, n1: i64, n2: i64) -> i64;
+    fn unary_operation(op: UnOp, n: i64) -> i64;
 }
 
 /// Regular arithmetic that is allowed to overflow or panic when dividing by zero.
 pub struct OverflowArithmetic;
 
 impl Arithmetic for OverflowArithmetic {
-    fn native_bin_op(op: BinOp, n1: i64, n2: i64) -> i64 {
+    fn binary_operation(op: BinOp, n1: i64, n2: i64) -> i64 {
         match op {
             Add => n1 + n2,
             Sub => n1 - n2,
@@ -33,7 +33,7 @@ impl Arithmetic for OverflowArithmetic {
         }
     }
 
-    fn native_un_op(op: UnOp, n: i64) -> i64 {
+    fn unary_operation(op: UnOp, n: i64) -> i64 {
         match op {
             Neg => -n,
             Not => !n,
@@ -45,7 +45,7 @@ impl Arithmetic for OverflowArithmetic {
 pub struct CheckedArithmetic;
 
 impl Arithmetic for CheckedArithmetic {
-    fn native_bin_op(op: BinOp, n1: i64, n2: i64) -> i64 {
+    fn binary_operation(op: BinOp, n1: i64, n2: i64) -> i64 {
         let (result, overflowed) = match op {
             Add => n1.overflowing_add(n2),
             Sub => n1.overflowing_sub(n2),
@@ -75,7 +75,7 @@ impl Arithmetic for CheckedArithmetic {
         result
     }
 
-    fn native_un_op(op: UnOp, n: i64) -> i64 {
+    fn unary_operation(op: UnOp, n: i64) -> i64 {
         let (result, overflowed) = match op {
             Neg => n.overflowing_neg(),
             Not => (!n, false),
