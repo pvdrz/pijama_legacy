@@ -1,9 +1,5 @@
 //! An assortment of checks that are done before lowering.
-use crate::{
-    ty::TyAnnotation,
-    visitor::{BlockRef, NodeVisitor},
-    Block, Located, Name, Node,
-};
+use crate::{ty::TyAnnotation, visitor::NodeVisitor, Block, Located, Name, Node};
 
 /// Checks if a function is recursive or not.
 pub struct RecursionChecker<'a> {
@@ -20,7 +16,7 @@ pub struct RecursionChecker<'a> {
 
 impl<'a> RecursionChecker<'a> {
     /// Runs the recursion check with the target function's name and body.
-    pub fn run(name: Name<'a>, body: BlockRef<'a, '_>) -> bool {
+    pub fn run(name: Name<'a>, body: &Block<'a>) -> bool {
         let mut this = RecursionChecker {
             name,
             is_rec: false,
@@ -95,7 +91,7 @@ impl<'a> NodeVisitor<'a> for RecursionChecker<'a> {
         self.super_fn_def(opt_name, args, body);
     }
 
-    fn visit_block(&mut self, block: BlockRef<'a, '_>) {
+    fn visit_block(&mut self, block: &Block<'a>) {
         // Entering a block means that we need to push a new scope into the stack because the
         // bindings done inside the block can only exist in that block.
         self.push_scope();

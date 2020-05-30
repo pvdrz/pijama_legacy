@@ -34,7 +34,9 @@ pub fn block0(input: Span) -> IResult<Located<Block>> {
             separated_list(line_ending, preceded(multispace0, node)),
             position,
         )),
-        |(sp1, content, sp2)| (Location::from(sp1) + Location::from(sp2)).with_content(content),
+        |(sp1, block, sp2)| {
+            (Location::from(sp1) + Location::from(sp2)).with_content(block.into_iter().collect())
+        },
     )(input)
 }
 
@@ -53,6 +55,8 @@ pub fn block1(input: Span) -> IResult<Located<Block>> {
             separated_nonempty_list(line_ending, preceded(multispace0, node)),
             position,
         )),
-        |(sp1, content, sp2)| (Location::from(sp1) + Location::from(sp2)).with_content(content),
+        |(sp1, block, sp2)| {
+            (Location::from(sp1) + Location::from(sp2)).with_content(block.into_iter().collect())
+        },
     )(input)
 }

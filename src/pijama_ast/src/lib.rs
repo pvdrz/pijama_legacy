@@ -6,14 +6,17 @@ pub mod location;
 pub mod ty;
 pub mod visitor;
 
-use std::fmt::{Debug, Display, Formatter, Result};
+use std::{
+    collections::VecDeque,
+    fmt::{Debug, Display, Formatter, Result},
+};
 
 use crate::ty::TyAnnotation;
 
 pub use location::*;
 
 /// A [`Block`] constitutes a collection of [`Node`]s.
-pub type Block<'a> = Vec<Located<Node<'a>>>;
+pub type Block<'a> = VecDeque<Located<Node<'a>>>;
 
 /// Represents the name of a variable or non-primitive
 /// function in the AST.

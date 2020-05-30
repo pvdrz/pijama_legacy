@@ -37,6 +37,9 @@ pub fn call(input: Span) -> IResult<Located<Node>> {
     ));
     map(separated_pair(func, space0, args(node)), |(func, args)| {
         let loc = func.loc + args.loc;
-        loc.with_content(Node::Call(Box::new(func), args.content))
+        loc.with_content(Node::Call(
+            Box::new(func),
+            args.content.into_iter().collect(),
+        ))
     })(input)
 }

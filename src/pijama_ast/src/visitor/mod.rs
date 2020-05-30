@@ -3,9 +3,7 @@ use crate::{
     ty::TyAnnotation, BinOp, Block, Branch, Literal, Located, Name, Node, Primitive, UnOp,
 };
 
-/// Helper type alias to traverse references to `Block`s as slices.
-pub type BlockRef<'a, 'b> = &'b [Located<Node<'a>>];
-
+/// Trait for the node visitor pattern.
 ///
 /// This trait should be used when you need to traverse the AST and you are only interested in
 /// particular elements of it or you do not want to write the code necessary to traverse the AST
@@ -28,7 +26,7 @@ pub type BlockRef<'a, 'b> = &'b [Located<Node<'a>>];
 /// breaking all the processes that use this trait to traverse the AST.
 pub trait NodeVisitor<'a> {
     /// Visits a Block.
-    fn super_block(&mut self, block: BlockRef<'a, '_>) {
+    fn super_block(&mut self, block: &Block<'a>) {
         for node in block {
             self.visit_node(&node);
         }
@@ -113,7 +111,7 @@ pub trait NodeVisitor<'a> {
     }
 
     /// Visits a Node with a Function Call.
-    fn super_call(&mut self, func: &Located<Node<'a>>, args: BlockRef<'a, '_>) {
+    fn super_call(&mut self, func: &Located<Node<'a>>, args: &Block<'a>) {
         self.visit_node(func);
         self.visit_block(args);
     }
@@ -128,7 +126,7 @@ pub trait NodeVisitor<'a> {
     fn super_prim_fn(&mut self, _prim_fn: Primitive) {}
 
     /// Specifies how Blocks should be visited.
-    fn visit_block(&mut self, block: BlockRef<'a, '_>) {
+    fn visit_block(&mut self, block: &Block<'a>) {
         self.super_block(block);
     }
 
@@ -178,7 +176,7 @@ pub trait NodeVisitor<'a> {
     }
 
     /// Specifies how Function Calls should be visited.
-    fn visit_call(&mut self, func: &Located<Node<'a>>, args: BlockRef<'a, '_>) {
+    fn visit_call(&mut self, func: &Located<Node<'a>>, args: &Block<'a>) {
         self.super_call(func, args)
     }
 

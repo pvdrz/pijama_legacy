@@ -4,7 +4,7 @@ use pijama_ast::{
     self,
     ty::{Ty, TyAnnotation},
     BinOp::*,
-    Branch,
+    Block, Branch,
     Node::*,
     UnOp,
 };
@@ -58,11 +58,9 @@ fn literal() -> LangResult<'static, ()> {
 
     assert_eq!(expected[0], result[0], "integer");
     assert_eq!(expected[1], result[1], "negative integer");
-    assert_eq!(
-        expected[2..7],
-        result[2..7],
-        "large integer in different bases"
-    );
+    for i in 2..7 {
+        assert_eq!(expected[i], result[i], "large integer in different bases");
+    }
     assert_eq!(expected[7], result[7], "true");
     assert_eq!(expected[8], result[8], "false");
     assert_eq!(expected[9], result[9], "unit");
@@ -289,7 +287,10 @@ fn let_bind() -> LangResult<'static, ()> {
                         ty: Ty::Int.loc(),
                     }],
                     TyAnnotation {
-                        item: vec![Name(pijama_ast::Name("x")).loc()].loc(),
+                        item: vec![Name(pijama_ast::Name("x")).loc()]
+                            .into_iter()
+                            .collect::<Block<'_>>()
+                            .loc(),
                         ty: Ty::Missing.loc(),
                     },
                 )
@@ -313,11 +314,20 @@ fn cond() -> LangResult<'static, ()> {
     let expected = vec![
         Cond(
             Branch {
-                cond: vec![Name(pijama_ast::Name("x")).loc()].loc(),
-                body: vec![Name(pijama_ast::Name("y")).loc()].loc(),
+                cond: vec![Name(pijama_ast::Name("x")).loc()]
+                    .into_iter()
+                    .collect::<Block<'_>>()
+                    .loc(),
+                body: vec![Name(pijama_ast::Name("y")).loc()]
+                    .into_iter()
+                    .collect::<Block<'_>>()
+                    .loc(),
             },
             vec![],
-            vec![Name(pijama_ast::Name("z")).loc()].loc(),
+            vec![Name(pijama_ast::Name("z")).loc()]
+                .into_iter()
+                .collect::<Block<'_>>()
+                .loc(),
         )
         .loc(),
         Cond(
@@ -326,11 +336,15 @@ fn cond() -> LangResult<'static, ()> {
                     Name(pijama_ast::Name("u")).loc(),
                     Name(pijama_ast::Name("v")).loc(),
                 ]
+                .into_iter()
+                .collect::<Block<'_>>()
                 .loc(),
                 body: vec![
                     Name(pijama_ast::Name("w")).loc(),
                     Name(pijama_ast::Name("x")).loc(),
                 ]
+                .into_iter()
+                .collect::<Block<'_>>()
                 .loc(),
             },
             vec![],
@@ -338,6 +352,8 @@ fn cond() -> LangResult<'static, ()> {
                 Name(pijama_ast::Name("y")).loc(),
                 Name(pijama_ast::Name("z")).loc(),
             ]
+            .into_iter()
+            .collect::<Block<'_>>()
             .loc(),
         )
         .loc(),
@@ -355,14 +371,29 @@ fn elif() -> LangResult<'static, ()> {
     let expected = vec![
         Cond(
             Branch {
-                cond: vec![Name(pijama_ast::Name("x")).loc()].loc(),
-                body: vec![Name(pijama_ast::Name("y")).loc()].loc(),
+                cond: vec![Name(pijama_ast::Name("x")).loc()]
+                    .into_iter()
+                    .collect::<Block<'_>>()
+                    .loc(),
+                body: vec![Name(pijama_ast::Name("y")).loc()]
+                    .into_iter()
+                    .collect::<Block<'_>>()
+                    .loc(),
             },
             vec![Branch {
-                cond: vec![Name(pijama_ast::Name("a")).loc()].loc(),
-                body: vec![Name(pijama_ast::Name("b")).loc()].loc(),
+                cond: vec![Name(pijama_ast::Name("a")).loc()]
+                    .into_iter()
+                    .collect::<Block<'_>>()
+                    .loc(),
+                body: vec![Name(pijama_ast::Name("b")).loc()]
+                    .into_iter()
+                    .collect::<Block<'_>>()
+                    .loc(),
             }],
-            vec![Name(pijama_ast::Name("z")).loc()].loc(),
+            vec![Name(pijama_ast::Name("z")).loc()]
+                .into_iter()
+                .collect::<Block<'_>>()
+                .loc(),
         )
         .loc(),
         Cond(
@@ -371,11 +402,15 @@ fn elif() -> LangResult<'static, ()> {
                     Name(pijama_ast::Name("u")).loc(),
                     Name(pijama_ast::Name("v")).loc(),
                 ]
+                .into_iter()
+                .collect::<Block<'_>>()
                 .loc(),
                 body: vec![
                     Name(pijama_ast::Name("w")).loc(),
                     Name(pijama_ast::Name("x")).loc(),
                 ]
+                .into_iter()
+                .collect::<Block<'_>>()
                 .loc(),
             },
             vec![
@@ -384,11 +419,15 @@ fn elif() -> LangResult<'static, ()> {
                         Name(pijama_ast::Name("a")).loc(),
                         Name(pijama_ast::Name("b")).loc(),
                     ]
+                    .into_iter()
+                    .collect::<Block<'_>>()
                     .loc(),
                     body: vec![
                         Name(pijama_ast::Name("c")).loc(),
                         Name(pijama_ast::Name("d")).loc(),
                     ]
+                    .into_iter()
+                    .collect::<Block<'_>>()
                     .loc(),
                 },
                 Branch {
@@ -396,11 +435,15 @@ fn elif() -> LangResult<'static, ()> {
                         Name(pijama_ast::Name("e")).loc(),
                         Name(pijama_ast::Name("f")).loc(),
                     ]
+                    .into_iter()
+                    .collect::<Block<'_>>()
                     .loc(),
                     body: vec![
                         Name(pijama_ast::Name("g")).loc(),
                         Name(pijama_ast::Name("h")).loc(),
                     ]
+                    .into_iter()
+                    .collect::<Block<'_>>()
                     .loc(),
                 },
             ],
@@ -408,6 +451,8 @@ fn elif() -> LangResult<'static, ()> {
                 Name(pijama_ast::Name("y")).loc(),
                 Name(pijama_ast::Name("z")).loc(),
             ]
+            .into_iter()
+            .collect::<Block<'_>>()
             .loc(),
         )
         .loc(),
@@ -422,10 +467,16 @@ fn call() -> LangResult<'static, ()> {
     let input = include_str!("call.pj");
     let result = parse(input)?.content;
     let expected = vec![
-        Call(Box::new(Name(pijama_ast::Name("x")).loc()), vec![]).loc(),
         Call(
             Box::new(Name(pijama_ast::Name("x")).loc()),
-            vec![Name(pijama_ast::Name("y")).loc()],
+            vec![].into_iter().collect::<Block<'_>>(),
+        )
+        .loc(),
+        Call(
+            Box::new(Name(pijama_ast::Name("x")).loc()),
+            vec![Name(pijama_ast::Name("y")).loc()]
+                .into_iter()
+                .collect::<Block<'_>>(),
         )
         .loc(),
         Call(
@@ -433,7 +484,9 @@ fn call() -> LangResult<'static, ()> {
             vec![
                 Name(pijama_ast::Name("y")).loc(),
                 Name(pijama_ast::Name("z")).loc(),
-            ],
+            ]
+            .into_iter()
+            .collect::<Block<'_>>(),
         )
         .loc(),
         Call(
@@ -445,7 +498,9 @@ fn call() -> LangResult<'static, ()> {
                 )
                 .loc(),
             ),
-            vec![Name(pijama_ast::Name("z")).loc()],
+            vec![Name(pijama_ast::Name("z")).loc()]
+                .into_iter()
+                .collect::<Block<'_>>(),
         )
         .loc(),
     ];
@@ -466,7 +521,7 @@ fn fn_def() -> LangResult<'static, ()> {
             Some(pijama_ast::Name("foo").loc()),
             vec![],
             TyAnnotation {
-                item: vec![].loc(),
+                item: vec![].into_iter().collect::<Block<'_>>().loc(),
                 ty: Ty::Missing.loc(),
             },
         )
@@ -478,7 +533,10 @@ fn fn_def() -> LangResult<'static, ()> {
                 ty: Ty::Int.loc(),
             }],
             TyAnnotation {
-                item: vec![Name(pijama_ast::Name("x")).loc()].loc(),
+                item: vec![Name(pijama_ast::Name("x")).loc()]
+                    .into_iter()
+                    .collect::<Block<'_>>()
+                    .loc(),
                 ty: Ty::Missing.loc(),
             },
         )
@@ -487,7 +545,14 @@ fn fn_def() -> LangResult<'static, ()> {
             Some(pijama_ast::Name("foo").loc()),
             vec![],
             TyAnnotation {
-                item: vec![Call(Box::new(Name(pijama_ast::Name("foo")).loc()), vec![]).loc()].loc(),
+                item: vec![Call(
+                    Box::new(Name(pijama_ast::Name("foo")).loc()),
+                    vec![].into_iter().collect::<Block<'_>>(),
+                )
+                .loc()]
+                .into_iter()
+                .collect::<Block<'_>>()
+                .loc(),
                 ty: Ty::Unit.loc(),
             },
         )
@@ -509,6 +574,8 @@ fn fn_def() -> LangResult<'static, ()> {
                     Name(pijama_ast::Name("x")).loc(),
                     Name(pijama_ast::Name("y")).loc(),
                 ]
+                .into_iter()
+                .collect::<Block<'_>>()
                 .loc(),
                 ty: Ty::Missing.loc(),
             },
@@ -521,7 +588,10 @@ fn fn_def() -> LangResult<'static, ()> {
                 ty: Ty::Int.loc(),
             }],
             TyAnnotation {
-                item: vec![Name(pijama_ast::Name("x")).loc()].loc(),
+                item: vec![Name(pijama_ast::Name("x")).loc()]
+                    .into_iter()
+                    .collect::<Block<'_>>()
+                    .loc(),
                 ty: Ty::Missing.loc(),
             },
         )
@@ -533,7 +603,10 @@ fn fn_def() -> LangResult<'static, ()> {
                 ty: Ty::Int.loc(),
             }],
             TyAnnotation {
-                item: vec![Name(pijama_ast::Name("x")).loc()].loc(),
+                item: vec![Name(pijama_ast::Name("x")).loc()]
+                    .into_iter()
+                    .collect::<Block<'_>>()
+                    .loc(),
                 ty: Ty::Missing.loc(),
             },
         )
