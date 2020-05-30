@@ -1,8 +1,12 @@
+//! Utilities for capturing and representing the location
+//! of tokens in the source code file.
 use std::fmt::{Debug, Display, Formatter, Result as FmtResult};
 
+/// Type representing a length of tokens.
 pub type Span<'a> = nom_locate::LocatedSpan<&'a str>;
 
 impl<'a> From<Span<'a>> for Location {
+    /// Creates a `Location` instance from a `Span`.
     fn from(span: Span<'a>) -> Self {
         let start = span.location_offset();
         let end = start + 1;
@@ -15,9 +19,9 @@ impl<'a> From<Span<'a>> for Location {
 /// Both the start and end correspond to locations reported by `nom_locate`.
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct Location {
-    /// Start of the location
+    /// Start of the location.
     pub start: usize,
-    /// End of the location
+    /// End of the location.
     pub end: usize,
 }
 

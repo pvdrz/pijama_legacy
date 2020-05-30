@@ -1,19 +1,22 @@
+//! Trait to traverse the AST.
 use crate::{
     ty::{Ty, TyAnnotation},
     BinOp, Block, Branch, Literal, Located, Name, Node, Primitive, UnOp,
 };
 
-/// Helper type alias to traverse references to blocks as slices.
+/// Helper type alias to traverse references to `Block`s as slices.
 pub type BlockRef<'a, 'b> = &'b [Located<Node<'a>>];
 
-/// Trait to traverse the AST.
+
 ///
 /// This trait should be used when you need to traverse the AST and you are only interested in
-/// particular elements of it or do not want to write the code necessary to traverse the AST by
+/// particular elements of it or you do not want to write the code necessary to traverse the AST
 /// yourself.
 ///
-/// There are two kinds of methods here: - The `visit_<foo>` methods: where the code specific to
-/// your visiting resides.  - The `super_<foo>` methods: that destructure each component and take
+/// There are two kinds of methods: 
+/// - The `visit_<foo>` methods: where the code specific to
+/// your visiting resides.  
+/// - The `super_<foo>` methods: that destructure each component and take
 /// care of the actual visiting.
 ///
 /// The `visit_<foo>` methods are the ones that should be modified. You should always call the

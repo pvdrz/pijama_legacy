@@ -1,3 +1,5 @@
+//! Crate encapsulating Pijama's AST and 
+//! associated types.
 pub mod analysis;
 pub mod location;
 pub mod ty;
@@ -9,8 +11,11 @@ use crate::ty::{Ty, TyAnnotation};
 
 pub use location::*;
 
+/// A [`Block`] constitutes a collection of [`Node`]s.
 pub type Block<'a> = Vec<Located<Node<'a>>>;
 
+/// Represents the name of a variable or non-primitive
+/// function in the AST.
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub struct Name<'a>(pub &'a str);
 
@@ -20,6 +25,8 @@ impl<'a> Display for Name<'a> {
     }
 }
 
+/// The different binary operaitons that Pijama's 
+/// syntax supports.
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum BinOp {
     Add,
@@ -68,6 +75,7 @@ impl<'a> Display for BinOp {
     }
 }
 
+/// The unary operations that Pijama's syntax supports.
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum UnOp {
     Neg,
@@ -84,6 +92,7 @@ impl<'a> Display for UnOp {
     }
 }
 
+/// The literal types that Pijama's syntax supports.
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum Literal {
     Bool(bool),
@@ -114,6 +123,7 @@ impl<'a> Display for Literal {
     }
 }
 
+/// The primitives that Pijama's syntax supports.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Primitive {
     Print,
@@ -129,13 +139,16 @@ impl<'a> Display for Primitive {
     }
 }
 
-/// Encapsulates a conditional where "if `cond` then `body`"
+/// Encapsulates a conditional statement in Pijama's syntax of the 
+/// form "if `cond` then `body`".
 #[derive(Debug, Eq, PartialEq)]
 pub struct Branch<'a> {
     pub cond: Located<Block<'a>>,
     pub body: Located<Block<'a>>,
 }
 
+/// A [`Node`] in the AST that encapsulates the different
+/// expressions and statements that Pijama's syntax supports.
 #[derive(Debug, Eq, PartialEq)]
 pub enum Node<'a> {
     BinaryOp(BinOp, Box<Located<Node<'a>>>, Box<Located<Node<'a>>>),
