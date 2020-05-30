@@ -1,3 +1,5 @@
+#![deny(missing_docs)]
+
 //! Crate encapsulating Pijama's AST and 
 //! associated types.
 pub mod analysis;
@@ -29,23 +31,41 @@ impl<'a> Display for Name<'a> {
 /// syntax supports.
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum BinOp {
+    /// Add operation.
     Add,
+    /// Subtract operation.
     Sub,
+    /// Multiply operation.
     Mul,
+    /// Divide operation.
     Div,
+    /// Remainder/Modulo operation.
     Rem,
+    /// Logical And operation.
     And,
+    /// Logical Or operation.
     Or,
+    /// Bit-wise And operation.
     BitAnd,
+    /// Bit-wise Or operation.
     BitOr,
+    /// Bit-wise Xor operation.
     BitXor,
+    /// Right shift operation.
     Shr,
+    /// Left shift operation.
     Shl,
+    /// Equality operation.
     Eq,
+    /// Not Equal operation.
     Neq,
+    /// Less Than operation.
     Lt,
+    /// Greater Than operation.
     Gt,
+    /// Less Than Or Equal operation.
     Lte,
+    /// Greater Than Or Equal operation.
     Gte,
 }
 
@@ -78,7 +98,9 @@ impl<'a> Display for BinOp {
 /// The unary operations that Pijama's syntax supports.
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum UnOp {
+    /// Numeric Negation operation.
     Neg,
+    /// Logical Negation operation 
     Not,
 }
 
@@ -95,8 +117,11 @@ impl<'a> Display for UnOp {
 /// The literal types that Pijama's syntax supports.
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum Literal {
+    /// Boolean literal.
     Bool(bool),
+    /// Unit literal.
     Unit,
+    /// Numeric literal.
     Number(i64),
 }
 
@@ -126,6 +151,7 @@ impl<'a> Display for Literal {
 /// The primitives that Pijama's syntax supports.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Primitive {
+    /// Built-In Print primitive.
     Print,
 }
 
@@ -143,7 +169,9 @@ impl<'a> Display for Primitive {
 /// form "if `cond` then `body`".
 #[derive(Debug, Eq, PartialEq)]
 pub struct Branch<'a> {
+    /// The conditional part of the branch that is checked for truthiness.
     pub cond: Located<Block<'a>>,
+    /// The body of the branch that is executed if `cond` is truthy.
     pub body: Located<Block<'a>>,
 }
 
@@ -151,22 +179,31 @@ pub struct Branch<'a> {
 /// expressions and statements that Pijama's syntax supports.
 #[derive(Debug, Eq, PartialEq)]
 pub enum Node<'a> {
+    /// Binary operation statement/expression.
     BinaryOp(BinOp, Box<Located<Node<'a>>>, Box<Located<Node<'a>>>),
+    /// Unary operation statement/expression.
     UnaryOp(UnOp, Box<Located<Node<'a>>>),
+    /// Let statement/expression.
     LetBind(
         Located<Name<'a>>,
         Option<Located<Ty>>,
         Box<Located<Node<'a>>>,
     ),
+    /// Conditional statement/expression.
     Cond(Branch<'a>, Vec<Branch<'a>>, Located<Block<'a>>),
+    /// Function definition statement/expression.
     FnDef(
         Option<Located<Name<'a>>>,
         Vec<Located<TyAnnotation<'a>>>,
         Located<Block<'a>>,
         Option<Located<Ty>>,
     ),
+    /// Function call statement/expression.
     Call(Box<Located<Node<'a>>>, Block<'a>),
+    /// Statement/expression with a Literal.
     Literal(Literal),
+    /// Statement/expression containing a Name.
     Name(Name<'a>),
+    /// Statement/expression containing a Primitive function.
     PrimFn(Primitive),
 }

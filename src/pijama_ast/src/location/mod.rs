@@ -26,6 +26,7 @@ pub struct Location {
 }
 
 impl Location {
+    /// Initializes a new `Location` instance.
     pub const fn new(start: usize, end: usize) -> Self {
         Location { start, end }
     }

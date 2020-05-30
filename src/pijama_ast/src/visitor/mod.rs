@@ -29,12 +29,14 @@ pub type BlockRef<'a, 'b> = &'b [Located<Node<'a>>];
 /// Every update to the `Node` type should be reflected here too. Otherwise, it might end up
 /// breaking all the processes that use this trait to traverse the AST.
 pub trait NodeVisitor<'a> {
+    /// Visits a Block.
     fn super_block(&mut self, block: BlockRef<'a, '_>) {
         for node in block {
             self.visit_node(&node);
         }
     }
 
+    /// Visits a Node.
     fn super_node(&mut self, node: &Located<Node<'a>>) {
         match &node.content {
             Node::BinaryOp(op, node1, node2) => {
@@ -53,6 +55,7 @@ pub trait NodeVisitor<'a> {
         }
     }
 
+    /// Visits a Node with a Binary Operation.
     fn super_binary_op(
         &mut self,
         _op: BinOp,
@@ -63,10 +66,12 @@ pub trait NodeVisitor<'a> {
         self.visit_node(node2);
     }
 
+    /// Visits a Node with a Unary Operation.
     fn super_unary_op(&mut self, _op: UnOp, node: &Located<Node<'a>>) {
         self.visit_node(node);
     }
 
+    /// Visits a Node with a Let binding.
     fn super_let_bind(
         &mut self,
         name: &Located<Name<'a>>,
@@ -77,6 +82,7 @@ pub trait NodeVisitor<'a> {
         self.visit_node(node);
     }
 
+    /// Visits a Node with a Conditional.
     fn super_cond(
         &mut self,
         if_branch: &Branch<'a>,
@@ -92,6 +98,7 @@ pub trait NodeVisitor<'a> {
         self.visit_block(&el_blk.content);
     }
 
+    /// Visits a Node with a single Branch.
     fn super_branch(&mut self, branch: &Branch<'a>) {
         let cond = &branch.cond;
         let body = &branch.body;
@@ -100,6 +107,7 @@ pub trait NodeVisitor<'a> {
         self.visit_block(&body.content);
     }
 
+    /// Visits a Node with a Function Definition.
     fn super_fn_def(
         &mut self,
         opt_name: &Option<Located<Name<'a>>>,
@@ -114,33 +122,42 @@ pub trait NodeVisitor<'a> {
         self.visit_block(&body.content);
     }
 
+    /// Visits a Node with a Function Call.
     fn super_call(&mut self, func: &Located<Node<'a>>, args: BlockRef<'a, '_>) {
         self.visit_node(func);
         self.visit_block(args);
     }
 
+    /// Visits a Node with a Literal.
     fn super_literal(&mut self, _literal: &Literal) {}
 
+    /// Vishts a Node with a Name.
     fn super_name(&mut self, _name: &Name<'a>) {}
 
+    /// Visits a Node with a Primitive Function.
     fn super_prim_fn(&mut self, _prim_fn: Primitive) {}
 
+    /// Specifies how Blocks should be visited.
     fn visit_block(&mut self, block: BlockRef<'a, '_>) {
         self.super_block(block);
     }
 
+    /// Specifies how Nodes should be visited.
     fn visit_node(&mut self, node: &Located<Node<'a>>) {
         self.super_node(node)
     }
 
+    /// Specifies how Binary Operations should be visited.
     fn visit_binary_op(&mut self, op: BinOp, node1: &Located<Node<'a>>, node2: &Located<Node<'a>>) {
         self.super_binary_op(op, node1, node2);
     }
 
+    /// Specifies how Unary Operations should be visited.
     fn visit_unary_op(&mut self, op: UnOp, node: &Located<Node<'a>>) {
         self.super_unary_op(op, node);
     }
 
+    /// Specifies how Let Bindings should be visited.
     fn visit_let_bind(
         &mut self,
         name: &Located<Name<'a>>,
@@ -150,6 +167,7 @@ pub trait NodeVisitor<'a> {
         self.super_let_bind(name, opt_ty, node);
     }
 
+    /// Specifies how Conditionals should be visited.
     fn visit_cond(
         &mut self,
         if_branch: &Branch<'a>,
@@ -159,10 +177,12 @@ pub trait NodeVisitor<'a> {
         self.super_cond(if_branch, branches, el_blk);
     }
 
+    /// Specifies how Branches should be visited.
     fn visit_branch(&mut self, branch: &Branch<'a>) {
         self.super_branch(branch);
     }
 
+    /// Specifies how Function Definitions should be visited.
     fn visit_fn_def(
         &mut self,
         opt_name: &Option<Located<Name<'a>>>,
@@ -173,18 +193,22 @@ pub trait NodeVisitor<'a> {
         self.super_fn_def(opt_name, args, body, opt_ty);
     }
 
+    /// Specifies how Function Calls should be visited.
     fn visit_call(&mut self, func: &Located<Node<'a>>, args: BlockRef<'a, '_>) {
         self.super_call(func, args)
     }
 
+    /// Specifies how Literals should be visited.
     fn visit_literal(&mut self, literal: &Literal) {
         self.super_literal(literal);
     }
 
+    /// Specifies how Names should be visited.
     fn visit_name(&mut self, name: &Name<'a>) {
         self.super_name(name);
     }
 
+    /// Specifies how Pimitive Functions should be visited.
     fn visit_prim_fn(&mut self, prim_fn: Primitive) {
         self.super_prim_fn(prim_fn);
     }

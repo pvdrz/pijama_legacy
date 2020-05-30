@@ -23,6 +23,8 @@ pub enum Ty {
 /// annotations written by the user.
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct TyAnnotation<'a> {
+    /// The name of the annotation.
     pub name: Name<'a>,
+    /// The type specified by the annotation.
     pub ty: Ty,
 }
