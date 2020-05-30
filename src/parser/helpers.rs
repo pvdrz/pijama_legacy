@@ -10,9 +10,9 @@ use nom::{
 };
 use nom_locate::position;
 
-use pijama_ast::{Located, Location};
+use pijama_ast::{Located, Location, Span};
 
-use crate::parser::{ParsingError, Span};
+use crate::parser::ParsingError;
 
 use std::fmt::Display;
 

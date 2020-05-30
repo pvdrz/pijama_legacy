@@ -1,11 +1,11 @@
-pub mod ty;
 pub mod analysis;
 pub mod location;
+pub mod ty;
 pub mod visitor;
 
 use std::fmt::{Debug, Display, Formatter, Result};
 
-use crate::ty::{TyAnnotation, Ty};
+use crate::ty::{Ty, TyAnnotation};
 
 pub use location::*;
 

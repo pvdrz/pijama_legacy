@@ -44,13 +44,13 @@ use nom::{
 
 use pijama_ast::{
     ty::{Ty, TyAnnotation},
-    Located,
+    Located, Span,
 };
 
 use crate::parser::{
     helpers::{in_brackets, surrounded, with_context},
     name::name,
-    IResult, Span,
+    IResult,
 };
 
 /// Parser for all types.

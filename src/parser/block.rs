@@ -12,11 +12,11 @@ use nom::{
 
 use nom_locate::position;
 
-use pijama_ast::{Block, Located, Location};
+use pijama_ast::{Block, Located, Location, Span};
 
 use crate::parser::{
     node::{comment, node},
-    IResult, Span,
+    IResult,
 };
 
 /// Parser for [`Block`]s which may or may not be empty.

@@ -1,6 +1,6 @@
 use crate::{
+    ty::{Ty, TyAnnotation},
     BinOp, Block, Branch, Literal, Located, Name, Node, Primitive, UnOp,
-    ty::{TyAnnotation, Ty},
 };
 
 /// Helper type alias to traverse references to blocks as slices.

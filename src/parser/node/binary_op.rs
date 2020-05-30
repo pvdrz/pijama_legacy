@@ -47,9 +47,9 @@ use nom::{
     sequence::pair,
 };
 
-use pijama_ast::{Located, Node};
+use pijama_ast::{Located, Node, Span};
 
-use crate::parser::{bin_op::*, node::base_node, IResult, Span};
+use crate::parser::{bin_op::*, node::base_node, IResult};
 
 /// Parses a [`Node::BinaryOp`].
 pub fn binary_op(input: Span) -> IResult<Located<Node>> {

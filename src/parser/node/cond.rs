@@ -17,12 +17,12 @@ use nom::{
 };
 use nom_locate::position;
 
-use pijama_ast::{Block, Branch, Located, Location, Node};
+use pijama_ast::{Block, Branch, Located, Location, Node, Span};
 
 use crate::parser::{
     block::block1,
     helpers::{keyword, keyword_space},
-    IResult, Span,
+    IResult,
 };
 
 /// Parses a [`Node::Cond`].

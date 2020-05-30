@@ -11,9 +11,9 @@ use nom::{
     sequence::terminated,
 };
 
-use pijama_ast::{UnOp, UnOp::*};
+use pijama_ast::{Span, UnOp, UnOp::*};
 
-use crate::parser::{helpers::with_context, IResult, Span};
+use crate::parser::{helpers::with_context, IResult};
 
 /// Parser for the unary operators `!` and `-`.
 ///

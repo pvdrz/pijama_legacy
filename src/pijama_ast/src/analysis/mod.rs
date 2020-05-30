@@ -1,8 +1,8 @@
 //! Diverse checks that need to be done before lowering.
 use crate::{
+    ty::{Ty, TyAnnotation},
     visitor::{BlockRef, NodeVisitor},
     Block, Located, Name, Node,
-    ty::{TyAnnotation, Ty},
 };
 
 /// Checks if a function is recursive or not.
