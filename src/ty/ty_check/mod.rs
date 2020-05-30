@@ -133,7 +133,7 @@ impl<'a> Context<'a> {
             Literal::Bool(_) => Ty::Bool,
             Literal::Number(_) => Ty::Int,
         };
-        Ok(Located::new(ty, loc))
+        Ok(loc.with_content(ty))
     }
 
     /// Returns the type of a variable.
@@ -149,10 +149,10 @@ impl<'a> Context<'a> {
             .inner
             .iter()
             .find(|bind| bind.name == *name)
-            .ok_or_else(|| TyError::Unbounded(Located::new(name.0.to_string(), loc)))?
+            .ok_or_else(|| TyError::Unbounded(loc.with_content(name.0.to_string())))?
             .ty
             .clone();
-        Ok(Located::new(ty, loc))
+        Ok(loc.with_content(ty))
     }
 
     /// Returns the type of an abstraction.
@@ -176,17 +176,14 @@ impl<'a> Context<'a> {
         ty: &Ty,
         body: &Located<Term<'a>>,
     ) -> TyResult<Located<Ty>> {
-        let bind = TyBinding {
+        self.inner.push(TyBinding {
             name,
             ty: ty.clone(),
-        };
-
-        self.inner.push(bind);
+        });
         let ty = self.type_of(body)?;
-        let ty_loc = ty.loc;
         let bind = self.inner.pop().unwrap();
-        let ty = Ty::Arrow(Box::new(bind.ty), Box::new(ty.content));
-        Ok(Located::new(ty, ty_loc))
+
+        Ok(ty.map(|ty| Ty::Arrow(Box::new(bind.ty), Box::new(ty))))
     }
 
     /// Returns the type of an unary operation.
@@ -209,7 +206,7 @@ impl<'a> Context<'a> {
             UnOp::Not => Ty::Bool,
         };
         self.add_constraint(expected, ty.clone(), loc);
-        Ok(Located::new(ty, loc))
+        Ok(loc.with_content(ty))
     }
 
     /// Returns the type of an binary operation.
@@ -261,7 +258,7 @@ impl<'a> Context<'a> {
                 Ty::Bool
             }
         };
-        Ok(Located::new(ty, loc))
+        Ok(loc.with_content(ty))
     }
     /// Returns the type of an application.
     ///
@@ -286,7 +283,7 @@ impl<'a> Context<'a> {
             ty2.loc,
         );
 
-        Ok(Located::new(ty, loc))
+        Ok(loc.with_content(ty))
     }
 
     /// Returns the type of a let binding.
@@ -363,7 +360,7 @@ impl<'a> Context<'a> {
         self.add_constraint(Ty::Bool, ty1.content, ty1.loc);
         self.add_constraint(ty2.clone(), ty3.content, ty3.loc);
 
-        Ok(Located::new(ty2, loc))
+        Ok(loc.with_content(ty2))
     }
 
     /// Returns the type of a sequence.
@@ -397,6 +394,6 @@ impl<'a> Context<'a> {
                 Ty::Arrow(Box::new(ty), Box::new(Ty::Unit))
             }
         };
-        Ok(Located::new(ty, loc))
+        Ok(loc.with_content(ty))
     }
 }

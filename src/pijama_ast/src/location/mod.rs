@@ -25,6 +25,10 @@ impl Location {
     pub const fn new(start: usize, end: usize) -> Self {
         Location { start, end }
     }
+    /// Creates a new `Located` consuming this `Location`.
+    pub fn with_content<T: Debug>(self, content: T) -> Located<T> {
+        Located::new(content, self)
+    }
 }
 
 /// Adding two locations `l1` and `l2` returns a location starting in `l1.start` and ending in
@@ -70,8 +74,12 @@ impl<T: Debug> Located<T> {
             loc: self.loc,
         })
     }
-    /// Joins two `Located` by adding their locations and joining their contents using a closure.
-    pub fn zip_with<U: Debug, V: Debug, F: FnOnce(T, U) -> V>(self, other: Located<U>, f: F) -> Located<V> {
+    /// Joins two `Located`s by adding their locations and joining their contents using a closure.
+    pub fn zip_with<U: Debug, V: Debug, F: FnOnce(T, U) -> V>(
+        self,
+        other: Located<U>,
+        f: F,
+    ) -> Located<V> {
         Located {
             content: f(self.content, other.content),
             loc: self.loc + other.loc,
