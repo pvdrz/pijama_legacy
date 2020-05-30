@@ -37,23 +37,24 @@ impl PartialEq for LowerError {
 
 impl Eq for LowerError {}
 
-pub fn lower_blk<'a>(blk: Located<Block<'a>>) -> LowerResult<Located<Term<'a>>> {
-    let mut terms = blk.content.into_iter().rev().map(lower_node);
-    if let Some(term) = terms.next() {
-        let mut term = term?;
-        for prev_term in terms {
-            let prev_term = prev_term?;
-            let next_term = Box::new(term);
-
-            let loc = prev_term.loc;
-            let content = if let Term::Let(kind, name, value, _) = prev_term.content {
-                Term::Let(kind, name, value, next_term)
-            } else {
-                Term::Seq(Box::new(prev_term), next_term)
-            };
-            term = loc.with_content(content);
+pub fn lower_blk<'a>(mut blk: Located<Block<'a>>) -> LowerResult<Located<Term<'a>>> {
+    if let Some(node) = blk.content.pop_front() {
+        match node.content {
+            Node::LetBind(annotation, body) => lower_let_bind(node.loc, annotation, *body, blk),
+            Node::FnDef(name, annotations, body) => {
+                lower_fn_def(node.loc, name, annotations, body, blk)
+            }
+            _ => {
+                if blk.content.is_empty() {
+                    lower_node(node)
+                } else {
+                    let head = lower_node(node)?;
+                    let tail = lower_blk(blk)?;
+                    let loc = head.loc + tail.loc;
+                    Ok(loc.with_content(Term::Seq(Box::new(head), Box::new(tail))))
+                }
+            }
         }
-        Ok(term)
     } else {
         Ok(blk.loc.with_content(Term::Lit(Literal::Unit)))
     }
@@ -76,7 +77,9 @@ fn lower_node(node: Located<Node<'_>>) -> LowerResult<Located<Term<'_>>> {
                 Node::LetBind(annotation, body) => {
                     lower_let_bind(loc, annotation, *body, empty_blk)
                 }
-                Node::FnDef(name, binds, body) => lower_fn_def(loc, name, binds, body, empty_blk),
+                Node::FnDef(name, annotations, body) => {
+                    lower_fn_def(loc, name, annotations, body, empty_blk)
+                }
                 _ => unreachable!(),
             }
         }
