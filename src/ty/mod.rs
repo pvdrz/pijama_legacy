@@ -60,13 +60,19 @@ impl fmt::Display for Ty {
     }
 }
 
-impl From<TyAST> for Ty {
-    fn from(ty_ast: TyAST) -> Self {
+impl Ty {
+    pub fn from_ast(ty_ast: TyAST) -> Option<Self> {
         match ty_ast {
-            TyAST::Bool => Ty::Bool,
-            TyAST::Int => Ty::Int,
-            TyAST::Unit => Ty::Unit,
-            TyAST::Arrow(t1, t2) => Ty::Arrow(Box::new(Ty::from(*t1)), Box::new(Ty::from(*t2))),
+            // FIXME: In general we should translate missing types into type variables inside
+            // `ty_check::Context`.
+            TyAST::Missing => None,
+            TyAST::Bool => Some(Ty::Bool),
+            TyAST::Int => Some(Ty::Int),
+            TyAST::Unit => Some(Ty::Unit),
+            TyAST::Arrow(t1, t2) => Some(Ty::Arrow(
+                Box::new(Ty::from_ast(*t1)?),
+                Box::new(Ty::from_ast(*t2)?),
+            )),
         }
     }
 }

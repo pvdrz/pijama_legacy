@@ -42,10 +42,10 @@ pub trait NodeVisitor<'a> {
                 self.visit_binary_op(*op, node1.as_ref(), node2.as_ref())
             }
             Node::UnaryOp(op, node) => self.visit_unary_op(*op, node.as_ref()),
-            Node::LetBind(name, opt_ty, node) => self.visit_let_bind(name, opt_ty, node.as_ref()),
+            Node::LetBind(annotation, node) => self.visit_let_bind(annotation, node.as_ref()),
             Node::Cond(if_branch, branches, el_blk) => self.visit_cond(if_branch, branches, el_blk),
-            Node::FnDef(opt_name, args, body, opt_ty) => {
-                self.visit_fn_def(opt_name, args, body, opt_ty)
+            Node::FnDef(opt_name, args, body, ty) => {
+                self.visit_fn_def(opt_name, args, body, ty)
             }
             Node::Call(func, args) => self.visit_call(func.as_ref(), &args),
             Node::Literal(literal) => self.visit_literal(literal),
@@ -73,11 +73,10 @@ pub trait NodeVisitor<'a> {
     /// Visits a Node with a Let binding.
     fn super_let_bind(
         &mut self,
-        name: &Located<Name<'a>>,
-        _opt_ty: &Option<Located<Ty>>,
+        annotation: &TyAnnotation<'a>,
         node: &Located<Node<'a>>,
     ) {
-        self.visit_name(&name.content);
+        self.visit_name(&annotation.name.content);
         self.visit_node(node);
     }
 
@@ -110,9 +109,9 @@ pub trait NodeVisitor<'a> {
     fn super_fn_def(
         &mut self,
         opt_name: &Option<Located<Name<'a>>>,
-        _args: &[Located<TyAnnotation<'a>>],
+        _args: &[TyAnnotation<'a>],
         body: &Located<Block<'a>>,
-        _opt_ty: &Option<Located<Ty>>,
+        _ty: &Located<Ty>,
     ) {
         if let Some(name) = opt_name {
             self.visit_name(&name.content);
@@ -159,11 +158,10 @@ pub trait NodeVisitor<'a> {
     /// Specifies how Let bindings should be visited.
     fn visit_let_bind(
         &mut self,
-        name: &Located<Name<'a>>,
-        opt_ty: &Option<Located<Ty>>,
+        annotation: &TyAnnotation<'a>,
         node: &Located<Node<'a>>,
     ) {
-        self.super_let_bind(name, opt_ty, node);
+        self.super_let_bind(annotation, node);
     }
 
     /// Specifies how Conditionals should be visited.
@@ -185,11 +183,11 @@ pub trait NodeVisitor<'a> {
     fn visit_fn_def(
         &mut self,
         opt_name: &Option<Located<Name<'a>>>,
-        args: &[Located<TyAnnotation<'a>>],
+        args: &[TyAnnotation<'a>],
         body: &Located<Block<'a>>,
-        opt_ty: &Option<Located<Ty>>,
+        ty: &Located<Ty>,
     ) {
-        self.super_fn_def(opt_name, args, body, opt_ty);
+        self.super_fn_def(opt_name, args, body, ty);
     }
 
     /// Specifies how Function Calls should be visited.

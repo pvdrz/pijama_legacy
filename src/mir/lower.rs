@@ -70,10 +70,8 @@ fn lower_node(node: Located<Node<'_>>) -> LowerResult<Located<Term<'_>>> {
         Node::Call(node, args) => lower_call(loc, *node, args),
         Node::BinaryOp(bin_op, node1, node2) => lower_binary_op(loc, bin_op, *node1, *node2),
         Node::UnaryOp(un_op, node) => lower_unary_op(loc, un_op, *node),
-        Node::LetBind(name, opt_ty, node) => lower_let_bind(loc, name, opt_ty, *node),
-        Node::FnDef(opt_name, binds, body, opt_ty) => {
-            lower_fn_def(loc, opt_name, binds, body, opt_ty)
-        }
+        Node::LetBind(annotation, body) => lower_let_bind(loc, annotation, *body),
+        Node::FnDef(opt_name, binds, body, ty) => lower_fn_def(loc, opt_name, binds, body, ty),
     }
 }
 
@@ -138,18 +136,21 @@ fn lower_unary_op(
 
 fn lower_let_bind<'a>(
     loc: Location,
-    name: Located<Name<'a>>,
-    opt_ty: Option<Located<TyAST>>,
-    node: Located<Node<'a>>,
+    annotation: TyAnnotation<'a>,
+    body: Located<Node<'a>>,
 ) -> LowerResult<Located<Term<'a>>> {
-    let term = lower_node(node)?;
+    let body = lower_node(body)?;
 
-    let opt_ty = opt_ty.map(|located_ty| located_ty.map(Ty::from));
+    let opt_ty = if let Some(ty) = Ty::from_ast(annotation.ty.content) {
+        Some(annotation.ty.loc.with_content(ty))
+    } else {
+        None
+    };
 
     Ok(loc.with_content(Term::Let(
         LetKind::NonRec(opt_ty),
-        name,
-        Box::new(term),
+        annotation.name,
+        Box::new(body),
         Box::new(Location::new(loc.end, loc.end).with_content(Term::Lit(Literal::Unit))),
     )))
 }
@@ -157,22 +158,23 @@ fn lower_let_bind<'a>(
 fn lower_fn_def<'a>(
     loc: Location,
     opt_name: Option<Located<Name<'a>>>,
-    annotations: Vec<Located<TyAnnotation<'a>>>,
+    annotations: Vec<TyAnnotation<'a>>,
     body: Located<Block<'a>>,
-    opt_ty: Option<Located<TyAST>>,
+    ty: Located<TyAST>,
 ) -> LowerResult<Located<Term<'a>>> {
     // if the user added a return type annotation, we transform this type into the type of the
     // function using the bindings.
-    let opt_ty = opt_ty.map(|located_ty| {
-        let mut ty: Ty = located_ty.content.into();
-        let ty_loc = located_ty.loc;
-
+    let ty_loc = ty.loc;
+    let opt_ty = if let Some(mut ty) = Ty::from_ast(ty.content) {
         for annotation in annotations.iter().rev() {
-            let ann_ty = annotation.content.ty.clone().into();
+            // FIXME: There could be missing types here!
+            let ann_ty = Ty::from_ast(annotation.ty.content.clone()).unwrap();
             ty = Ty::Arrow(Box::new(ann_ty), Box::new(ty));
         }
-        ty_loc.with_content(ty)
-    });
+        Some(ty_loc.with_content(ty))
+    } else {
+        None
+    };
 
     // we need to decide if the function is recursive or not
     let kind = match opt_name.as_ref() {
@@ -195,10 +197,9 @@ fn lower_fn_def<'a>(
     let mut term = lower_blk(body)?;
 
     for annotation in annotations.into_iter().rev() {
-        let annotation = annotation.content;
         term = loc.with_content(Term::Abs(
-            annotation.name,
-            annotation.ty.into(),
+            annotation.name.content,
+            Ty::from_ast(annotation.ty.content).unwrap(),
             Box::new(term),
         ));
     }

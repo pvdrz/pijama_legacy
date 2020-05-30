@@ -1,5 +1,5 @@
 //! The AST representation of types.
-use crate::Name;
+use crate::{Located, Name};
 
 /// A type in the AST.
 ///
@@ -15,6 +15,8 @@ pub enum Ty {
     Unit,
     /// The type of functions between two types.
     Arrow(Box<Ty>, Box<Ty>),
+    /// A missing type. Used when an item in the AST did not have a type annotation.
+    Missing
 }
 
 /// A type annotation.
@@ -24,7 +26,7 @@ pub enum Ty {
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct TyAnnotation<'a> {
     /// The name of the annotation.
-    pub name: Name<'a>,
+    pub name: Located<Name<'a>>,
     /// The type specified by the annotation.
-    pub ty: Ty,
+    pub ty: Located<Ty>,
 }

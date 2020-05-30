@@ -70,24 +70,23 @@ impl<'a> NodeVisitor<'a> for RecursionChecker<'a> {
 
     fn visit_let_bind(
         &mut self,
-        name: &Located<Name<'a>>,
-        opt_ty: &Option<Located<Ty>>,
+        annotation: &TyAnnotation<'a>,
         body: &Located<Node<'a>>,
     ) {
         // If the binding binds the target name, the latter is being shadowed in the current scope.
-        if name.content == self.name {
+        if annotation.name.content == self.name {
             self.is_shadowed = true;
         }
         // Keep visiting
-        self.super_let_bind(name, opt_ty, body);
+        self.super_let_bind(annotation, body);
     }
 
     fn visit_fn_def(
         &mut self,
         opt_name: &Option<Located<Name<'a>>>,
-        args: &[Located<TyAnnotation<'a>>],
+        args: &[TyAnnotation<'a>],
         body: &Located<Block<'a>>,
-        opt_ty: &Option<Located<Ty>>,
+        ty: &Located<Ty>,
     ) {
         // If the function definition binds the target name, the latter is being shadowed in the
         // current scope.
@@ -98,7 +97,7 @@ impl<'a> NodeVisitor<'a> for RecursionChecker<'a> {
             _ => {}
         };
         // Keep visiting
-        self.super_fn_def(opt_name, args, body, opt_ty);
+        self.super_fn_def(opt_name, args, body, ty);
     }
 
     fn visit_block(&mut self, block: BlockRef<'a, '_>) {

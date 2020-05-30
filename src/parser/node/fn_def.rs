@@ -45,12 +45,12 @@ pub fn fn_def(input: Span) -> IResult<Located<Node>> {
         tuple((
             fn_name,
             surrounded(args(ty_annotation), space0),
-            terminated(opt(colon_ty), multispace0),
+            terminated(colon_ty, multispace0),
             fn_body,
         )),
-        |(name, args, opt_ty, body)| {
+        |(name, args, ty, body)| {
             name.zip_with(body, move |name, body| {
-                Node::FnDef(name, args.content, body, opt_ty)
+                Node::FnDef(name, args.content, body, ty)
             })
         },
     )(input)

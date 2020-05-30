@@ -246,14 +246,18 @@ fn let_bind() -> LangResult<'static, ()> {
     let result = parse(input)?.content;
     let expected = vec![
         LetBind(
-            pijama_ast::Name("x").loc(),
-            None,
+            TyAnnotation {
+                name: pijama_ast::Name("x").loc(),
+                ty: Ty::Missing.loc(),
+            },
             Box::new(Name(pijama_ast::Name("y")).loc()),
         )
         .loc(),
         LetBind(
-            pijama_ast::Name("x").loc(),
-            None,
+            TyAnnotation {
+                name: pijama_ast::Name("x").loc(),
+                ty: Ty::Missing.loc(),
+            },
             Box::new(
                 BinaryOp(
                     Add,
@@ -265,24 +269,27 @@ fn let_bind() -> LangResult<'static, ()> {
         )
         .loc(),
         LetBind(
-            pijama_ast::Name("x").loc(),
-            Some(Ty::Int.loc()),
+            TyAnnotation {
+                name: pijama_ast::Name("x").loc(),
+                ty: Ty::Int.loc(),
+            },
             Box::new(Name(pijama_ast::Name("y")).loc()),
         )
         .loc(),
         LetBind(
-            pijama_ast::Name("foo").loc(),
-            None,
+            TyAnnotation {
+                name: pijama_ast::Name("foo").loc(),
+                ty: Ty::Missing.loc(),
+            },
             Box::new(
                 FnDef(
                     None,
                     vec![TyAnnotation {
-                        name: pijama_ast::Name("x"),
-                        ty: Ty::Int,
-                    }
-                    .loc()],
+                        name: pijama_ast::Name("x").loc(),
+                        ty: Ty::Int.loc(),
+                    }],
                     vec![Name(pijama_ast::Name("x")).loc()].loc(),
-                    None,
+                    Ty::Missing.loc(),
                 )
                 .loc(),
             ),
@@ -457,69 +464,64 @@ fn fn_def() -> LangResult<'static, ()> {
             Some(pijama_ast::Name("foo").loc()),
             vec![],
             vec![].loc(),
-            None,
+            Ty::Missing.loc(),
         )
         .loc(),
         FnDef(
             Some(pijama_ast::Name("foo").loc()),
             vec![TyAnnotation {
-                name: pijama_ast::Name("x"),
-                ty: Ty::Int,
-            }
-            .loc()],
+                name: pijama_ast::Name("x").loc(),
+                ty: Ty::Int.loc(),
+            }],
             vec![Name(pijama_ast::Name("x")).loc()].loc(),
-            None,
+            Ty::Missing.loc(),
         )
         .loc(),
         FnDef(
             Some(pijama_ast::Name("foo").loc()),
             vec![],
             vec![Call(Box::new(Name(pijama_ast::Name("foo")).loc()), vec![]).loc()].loc(),
-            Some(Ty::Unit.loc()),
+            Ty::Unit.loc(),
         )
         .loc(),
         FnDef(
             Some(pijama_ast::Name("foo").loc()),
             vec![
                 TyAnnotation {
-                    name: pijama_ast::Name("x"),
-                    ty: Ty::Int,
-                }
-                .loc(),
+                    name: pijama_ast::Name("x").loc(),
+                    ty: Ty::Int.loc(),
+                },
                 TyAnnotation {
-                    name: pijama_ast::Name("y"),
-                    ty: Ty::Int,
-                }
-                .loc(),
+                    name: pijama_ast::Name("y").loc(),
+                    ty: Ty::Int.loc(),
+                },
             ],
             vec![
                 Name(pijama_ast::Name("x")).loc(),
                 Name(pijama_ast::Name("y")).loc(),
             ]
             .loc(),
-            None,
+            Ty::Missing.loc(),
         )
         .loc(),
         FnDef(
             None,
             vec![TyAnnotation {
-                name: pijama_ast::Name("x"),
-                ty: Ty::Int,
-            }
-            .loc()],
+                name: pijama_ast::Name("x").loc(),
+                ty: Ty::Int.loc(),
+            }],
             vec![Name(pijama_ast::Name("x")).loc()].loc(),
-            None,
+            Ty::Missing.loc(),
         )
         .loc(),
         FnDef(
             None,
             vec![TyAnnotation {
-                name: pijama_ast::Name("x"),
-                ty: Ty::Int,
-            }
-            .loc()],
+                name: pijama_ast::Name("x").loc(),
+                ty: Ty::Int.loc(),
+            }],
             vec![Name(pijama_ast::Name("x")).loc()].loc(),
-            None,
+            Ty::Missing.loc(),
         )
         .loc(),
     ];

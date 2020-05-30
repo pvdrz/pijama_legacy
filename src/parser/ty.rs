@@ -39,12 +39,14 @@ use nom::{
     bytes::complete::tag,
     character::complete::{char, space0},
     combinator::{map, opt},
-    sequence::{pair, preceded},
+    sequence::{pair, preceded, separated_pair},
 };
+
+use nom_locate::position;
 
 use pijama_ast::{
     ty::{Ty, TyAnnotation},
-    Located, Span,
+    Located, Location, Span,
 };
 
 use crate::parser::{
@@ -80,21 +82,27 @@ pub fn ty(input: Span) -> IResult<Located<Ty>> {
 ///
 /// This parser returns a [`TyAnnotation`], there can be any number of spaces surrounding the `:`,
 /// including no spaces at all.
-pub fn ty_annotation(input: Span) -> IResult<Located<TyAnnotation>> {
-    map(pair(name, colon_ty), |(name, ty)| {
-        name.zip_with(ty, |name, ty| TyAnnotation { name, ty })
-    })(input)
+pub fn ty_annotation(input: Span) -> IResult<TyAnnotation> {
+    map(
+        separated_pair(name, surrounded(char(':'), space0), ty),
+        |(name, ty)| TyAnnotation { name, ty },
+    )(input)
 }
 
-/// Parses types preceded by a colon.
+/// Parses a type preceded by a colon if it exists.
 ///
-/// This parser returns a [`Ty`] and there can be any number of spaces surrounding the colon.
+/// This parser returns a [`Ty`] and there can be any number of spaces surrounding the colon. If
+/// there is no colon and [`Ty`] it returns `Ty::Missing` located where the parsing started.
 ///
 /// This parser exists with the sole purpose of being reutilized for type annotations that are not
 /// stored in [`TyAnnotation`]s such as the return type of functions or the optional type
 /// annotation for let bindings.
 pub fn colon_ty(input: Span) -> IResult<Located<Ty>> {
-    preceded(surrounded(char(':'), space0), ty)(input)
+    map(
+        pair(position, opt(preceded(surrounded(char(':'), space0), ty))),
+        // Maybe this allows to write `:` with no types at all?
+        |(span, opt_ty)| opt_ty.unwrap_or_else(|| Location::from(span).with_content(Ty::Missing)),
+    )(input)
 }
 
 /// Parser for base types and types in brackets.
