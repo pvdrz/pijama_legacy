@@ -2,13 +2,9 @@ use std::{include_str, time::Duration};
 
 use pijama_ast::Literal;
 
-use pijama::{
-    lir::Term,
-    machine::{LangEnv, Machine},
-    run, run_with_machine, LangError, LangResult,
-};
+use pijama::{lir::Term, machine::env::Env, run_with_machine, LangError, LangResult};
 
-use crate::panic_after;
+use crate::{machine_builder, panic_after, run};
 
 #[test]
 fn arithmetic() -> LangResult<'static, ()> {
@@ -172,9 +168,7 @@ fn print_simple() -> LangResult<'static, ()> {
     let mut output = Vec::new();
     let term = run_with_machine(
         input,
-        Machine::with_env(LangEnv {
-            stdout: &mut output,
-        }),
+        machine_builder().with_env(Env::new(&mut output)).build(),
     )?;
     let output = String::from_utf8_lossy(&output);
     assert_eq!(output, "10\n");
@@ -188,9 +182,7 @@ fn print_simple_fn() -> LangResult<'static, ()> {
     let mut output = Vec::new();
     let term = run_with_machine(
         input,
-        Machine::with_env(LangEnv {
-            stdout: &mut output,
-        }),
+        machine_builder().with_env(Env::new(&mut output)).build(),
     )?;
     let output = String::from_utf8_lossy(&output);
     assert_eq!(output, "((λ. _0) 10)\n");
@@ -204,9 +196,7 @@ fn print_complex_fn() -> LangResult<'static, ()> {
     let mut output = Vec::new();
     let term = run_with_machine(
         input,
-        Machine::with_env(LangEnv {
-            stdout: &mut output,
-        }),
+        machine_builder().with_env(Env::new(&mut output)).build(),
     )?;
     let output = String::from_utf8_lossy(&output);
     assert_eq!(output, "((λ. (if (_0 > 0) then 1 else 0)) 10)\n");
@@ -220,9 +210,7 @@ fn print_print() -> LangResult<'static, ()> {
     let mut output = Vec::new();
     let term = run_with_machine(
         input,
-        Machine::with_env(LangEnv {
-            stdout: &mut output,
-        }),
+        machine_builder().with_env(Env::new(&mut output)).build(),
     )?;
     let output = String::from_utf8_lossy(&output);
     assert_eq!(output, "(print 10)\n");
@@ -251,4 +239,18 @@ fn number_bases_arithmetic() -> LangResult<'static, ()> {
     let term = run(input)?;
     assert_eq!(Term::Lit(567_883 * 4), term);
     Ok(())
+}
+
+#[test]
+#[should_panic]
+fn add_overflow_panics() {
+    let input = include_str!("add_overflow_panics.pj");
+    run(input).ok();
+}
+
+#[test]
+#[should_panic]
+fn neg_overflow_panics() {
+    let input = include_str!("neg_overflow_panics.pj");
+    run(input).ok();
 }

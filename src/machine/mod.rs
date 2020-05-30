@@ -1,38 +1,23 @@
-use crate::lir::Term;
+use std::io::Write;
 
-use std::io::{stdout, Stdout, Write};
+use crate::{
+    lir::Term,
+    machine::{arithmetic::Arithmetic, env::Env},
+};
 
+pub mod arithmetic;
+mod builder;
+pub mod env;
 mod eval;
 
-pub struct LangEnv<W: Write> {
-    pub stdout: W,
+pub use builder::MachineBuilder;
+
+pub struct Machine<W: Write, A: Arithmetic> {
+    env: Env<W>,
+    _arithmetic: A,
 }
 
-impl Default for LangEnv<Stdout> {
-    fn default() -> Self {
-        LangEnv { stdout: stdout() }
-    }
-}
-
-pub struct Machine<W: Write> {
-    env: LangEnv<W>,
-}
-
-impl Default for Machine<Stdout> {
-    fn default() -> Self {
-        Machine {
-            env: LangEnv::default(),
-        }
-    }
-}
-
-impl<W: Write> Machine<W> {
-    pub fn with_env(env: LangEnv<W>) -> Self {
-        Machine { env }
-    }
-}
-
-impl<W: Write> Machine<W> {
+impl<W: Write, A: Arithmetic> Machine<W, A> {
     pub fn evaluate(&mut self, mut term: Term) -> Term {
         while {
             let (eval, new_term) = self.step(term);

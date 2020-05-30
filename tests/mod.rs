@@ -1,11 +1,26 @@
 extern crate pijama;
 
-use std::{panic, sync::mpsc, thread, time::Duration};
+use std::{io::Stdout, panic, sync::mpsc, thread, time::Duration};
 
+use pijama::{
+    lir::Term,
+    machine::{arithmetic::CheckedArithmetic, MachineBuilder},
+    run_with_machine, LangResult,
+};
+
+mod ast;
 mod eval;
 mod parse;
 mod type_check;
 mod util;
+
+fn machine_builder() -> MachineBuilder<Stdout, CheckedArithmetic> {
+    MachineBuilder::default().with_arithmetic(CheckedArithmetic)
+}
+
+fn run(input: &str) -> LangResult<Term> {
+    run_with_machine(input, machine_builder().build())
+}
 
 fn panic_after<T, F>(d: Duration, f: F) -> T
 where

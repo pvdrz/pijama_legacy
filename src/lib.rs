@@ -5,14 +5,18 @@ pub mod options;
 pub mod parser;
 pub mod ty;
 
-use std::io::Write;
-
 use thiserror::Error;
+
+use std::io::Write;
 
 use pijama_ast::Location;
 
-use machine::Machine;
+use machine::{
+    arithmetic::{Arithmetic, CheckedArithmetic, OverflowArithmetic},
+    Machine, MachineBuilder,
+};
 use mir::LowerError;
+use options::MachineOptions;
 use parser::ParsingError;
 use ty::TyError;
 
@@ -65,15 +69,28 @@ pub fn display_error<'a>(input: &str, path: &str, error: &LangError<'a>) {
     emit(&mut writer.lock(), &config, &files, &diagnostic).unwrap();
 }
 
-pub fn run(input: &str) -> LangResult<lir::Term> {
-    run_with_machine(input, Machine::default())
-}
-
-pub fn run_with_machine<W: Write>(input: &str, mut machine: Machine<W>) -> LangResult<lir::Term> {
+pub fn run_with_machine<W: Write, A: Arithmetic>(
+    input: &str,
+    mut machine: Machine<W, A>,
+) -> LangResult<lir::Term> {
     let ast = parser::parse(input)?;
     let mir = mir::Term::from_ast(ast)?;
     let _ty = ty::ty_check(&mir)?;
     let lir = lir::Term::from_mir(mir);
     let res = machine.evaluate(lir);
     Ok(res)
+}
+
+pub fn run_with_opts(input: &str, machine_opts: MachineOptions) -> LangResult<lir::Term> {
+    if machine_opts.overflow_check {
+        let machine = MachineBuilder::default()
+            .with_arithmetic(CheckedArithmetic)
+            .build();
+        run_with_machine(input, machine)
+    } else {
+        let machine = MachineBuilder::default()
+            .with_arithmetic(OverflowArithmetic)
+            .build();
+        run_with_machine(input, machine)
+    }
 }

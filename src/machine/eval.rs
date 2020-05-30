@@ -2,7 +2,7 @@ use pijama_ast::{BinOp, Literal, Primitive, UnOp};
 
 use crate::{
     lir::Term::{self, *},
-    machine::Machine,
+    machine::{arithmetic::Arithmetic, Machine},
 };
 
 use std::{
@@ -10,7 +10,7 @@ use std::{
     io::Write,
 };
 
-impl<W: Write> Machine<W> {
+impl<W: Write, A: Arithmetic> Machine<W, A> {
     pub(super) fn step(&mut self, term: Term) -> (bool, Term) {
         match term {
             // Dispatch step for binary operations
@@ -73,7 +73,7 @@ impl<W: Write> Machine<W> {
             // If op is || and t1 is true evaluate to true
             (Or, Lit(1), _) => (true, true.into()),
             // If both are literals evaluate with native operation
-            (_, Lit(l1), Lit(l2)) => (true, Lit(native_bin_op(op, *l1, *l2))),
+            (_, Lit(l1), Lit(l2)) => (true, Lit(A::binary_operation(op, *l1, *l2))),
             // If t2 is not a literal, evaluate it.
             (_, Lit(_), _) => (self.step_in_place(b.borrow_mut()), Term::BinaryOp(op, a, b)),
             // If t1 is not a literal, evaluate it.
@@ -85,7 +85,7 @@ impl<W: Write> Machine<W> {
     fn step_un_op(&mut self, op: UnOp, mut t1: Box<Term>) -> (bool, Term) {
         // If t1 is a literal, do the operation.
         if let Term::Lit(lit) = t1.borrow() {
-            (true, Term::Lit(native_un_op(op, *lit)))
+            (true, Term::Lit(A::unary_operation(op, *lit)))
         // If t1 is not a literal, evaluate it.
         } else {
             (self.step_in_place(&mut t1), Term::UnaryOp(op, t1))
@@ -122,41 +122,9 @@ impl<W: Write> Machine<W> {
     fn step_primitive_app(&mut self, prim: Primitive, arg: Box<Term>) -> (bool, Term) {
         match prim {
             Primitive::Print => {
-                writeln!(self.env.stdout, "{}", arg).expect("Primitive print failed");
+                writeln!(self.env.stdout(), "{}", arg).expect("Primitive print failed");
                 (true, Literal::Unit.into())
             }
         }
-    }
-}
-
-fn native_bin_op(op: BinOp, n1: i64, n2: i64) -> i64 {
-    use BinOp::*;
-
-    match op {
-        Add => n1 + n2,
-        Sub => n1 - n2,
-        Mul => n1 * n2,
-        Div => n1 / n2,
-        Rem => n1 % n2,
-        Lt => (n1 < n2).into(),
-        Lte => (n1 <= n2).into(),
-        Gt => (n1 > n2).into(),
-        Gte => (n1 >= n2).into(),
-        Eq => (n1 == n2).into(),
-        Neq => (n1 != n2).into(),
-        BitAnd | And => n1 & n2,
-        BitOr | Or => n1 | n2,
-        BitXor => n1 ^ n2,
-        Shr => n1 >> n2,
-        Shl => n1 << n2,
-    }
-}
-
-fn native_un_op(op: UnOp, n: i64) -> i64 {
-    use UnOp::*;
-
-    match op {
-        Neg => -n,
-        Not => !n,
     }
 }
