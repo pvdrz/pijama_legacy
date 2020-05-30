@@ -69,9 +69,17 @@ fn lower_node(node: Located<Node<'_>>) -> LowerResult<Located<Term<'_>>> {
         Node::Call(node, args) => lower_call(loc, *node, args),
         Node::BinaryOp(bin_op, node1, node2) => lower_binary_op(loc, bin_op, *node1, *node2),
         Node::UnaryOp(un_op, node) => lower_unary_op(loc, un_op, *node),
-        Node::LetBind(annotation, body) => lower_let_bind(loc, annotation, *body),
-        Node::FnDef(name, binds, body) => lower_fn_def(loc, name, binds, body),
         Node::AnonFn(binds, body) => lower_anon_fn(loc, binds, body),
+        node @ Node::LetBind(_, _) | node @ Node::FnDef(_, _, _) => {
+            let empty_blk = Location::new(loc.end, loc.end).with_content(Block::default());
+            match node {
+                Node::LetBind(annotation, body) => {
+                    lower_let_bind(loc, annotation, *body, empty_blk)
+                }
+                Node::FnDef(name, binds, body) => lower_fn_def(loc, name, binds, body, empty_blk),
+                _ => unreachable!(),
+            }
+        }
     }
 }
 
@@ -138,6 +146,7 @@ fn lower_let_bind<'a>(
     loc: Location,
     annotation: TyAnnotation<Name<'a>>,
     body: Located<Node<'a>>,
+    tail: Located<Block<'a>>,
 ) -> LowerResult<Located<Term<'a>>> {
     let body = lower_node(body)?;
 
@@ -147,11 +156,13 @@ fn lower_let_bind<'a>(
         None
     };
 
+    let tail = lower_blk(tail)?;
+
     Ok(loc.with_content(Term::Let(
         LetKind::NonRec(opt_ty),
         annotation.item,
         Box::new(body),
-        Box::new(Location::new(loc.end, loc.end).with_content(Term::Lit(Literal::Unit))),
+        Box::new(tail),
     )))
 }
 
@@ -160,6 +171,7 @@ fn lower_fn_def<'a>(
     name: Located<Name<'a>>,
     annotations: Vec<TyAnnotation<Name<'a>>>,
     body: TyAnnotation<Block<'a>>,
+    tail: Located<Block<'a>>,
 ) -> LowerResult<Located<Term<'a>>> {
     // if the user added a return type annotation, we transform this type into the type of the
     // function using the bindings.
@@ -195,12 +207,9 @@ fn lower_fn_def<'a>(
         ));
     }
 
-    term = loc.with_content(Term::Let(
-        kind,
-        name,
-        Box::new(term),
-        Box::new(Location::new(loc.end, loc.end).with_content(Term::Lit(Literal::Unit))),
-    ));
+    let tail = lower_blk(tail)?;
+
+    term = loc.with_content(Term::Let(kind, name, Box::new(term), Box::new(tail)));
 
     Ok(term)
 }
