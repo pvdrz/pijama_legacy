@@ -1,5 +1,7 @@
 //! The AST representation of types.
-use crate::{Located, Name};
+use std::fmt::Debug;
+
+use crate::{Located};
 
 /// A type in the AST.
 ///
@@ -21,12 +23,12 @@ pub enum Ty {
 
 /// A type annotation.
 ///
-/// This represents an annotation of a `Name` with a type and is used to represent any type
+/// This represents an annotation of an AST item with a type and is used to represent any type
 /// annotations written by the user.
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct TyAnnotation<'a> {
-    /// The name of the annotation.
-    pub name: Located<Name<'a>>,
+pub struct TyAnnotation<I: Debug + Clone + Eq + PartialEq> {
+    /// The annotated item.
+    pub item: Located<I>,
     /// The type specified by the annotation.
     pub ty: Located<Ty>,
 }

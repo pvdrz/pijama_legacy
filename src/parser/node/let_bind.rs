@@ -33,7 +33,7 @@ pub fn let_bind(input: Span) -> IResult<Located<Node>> {
         )),
         |(name, ty, node)| {
             let loc = name.loc + node.loc;
-            let annotation = TyAnnotation { name, ty };
+            let annotation = TyAnnotation { item: name, ty };
             Located::new(Node::LetBind(annotation, Box::new(node)), loc)
         },
     )(input)

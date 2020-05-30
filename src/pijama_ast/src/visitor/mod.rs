@@ -73,10 +73,10 @@ pub trait NodeVisitor<'a> {
     /// Visits a Node with a Let binding.
     fn super_let_bind(
         &mut self,
-        annotation: &TyAnnotation<'a>,
+        annotation: &TyAnnotation<Name<'a>>,
         node: &Located<Node<'a>>,
     ) {
-        self.visit_name(&annotation.name.content);
+        self.visit_name(&annotation.item.content);
         self.visit_node(node);
     }
 
@@ -109,7 +109,7 @@ pub trait NodeVisitor<'a> {
     fn super_fn_def(
         &mut self,
         opt_name: &Option<Located<Name<'a>>>,
-        _args: &[TyAnnotation<'a>],
+        _args: &[TyAnnotation<Name<'a>>],
         body: &Located<Block<'a>>,
         _ty: &Located<Ty>,
     ) {
@@ -158,7 +158,7 @@ pub trait NodeVisitor<'a> {
     /// Specifies how Let bindings should be visited.
     fn visit_let_bind(
         &mut self,
-        annotation: &TyAnnotation<'a>,
+        annotation: &TyAnnotation<Name<'a>>,
         node: &Located<Node<'a>>,
     ) {
         self.super_let_bind(annotation, node);
@@ -183,7 +183,7 @@ pub trait NodeVisitor<'a> {
     fn visit_fn_def(
         &mut self,
         opt_name: &Option<Located<Name<'a>>>,
-        args: &[TyAnnotation<'a>],
+        args: &[TyAnnotation<Name<'a>>],
         body: &Located<Block<'a>>,
         ty: &Located<Ty>,
     ) {

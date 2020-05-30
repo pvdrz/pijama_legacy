@@ -46,7 +46,7 @@ use nom_locate::position;
 
 use pijama_ast::{
     ty::{Ty, TyAnnotation},
-    Located, Location, Span,
+    Located, Location, Name, Span,
 };
 
 use crate::parser::{
@@ -78,14 +78,14 @@ pub fn ty(input: Span) -> IResult<Located<Ty>> {
     }
 }
 
-/// Parser for type annotations.
+/// Parser for name type annotations.
 ///
-/// This parser returns a [`TyAnnotation`], there can be any number of spaces surrounding the `:`,
+/// This parser returns a [`TyAnnotation<Name>`], there can be any number of spaces surrounding the `:`,
 /// including no spaces at all.
-pub fn ty_annotation(input: Span) -> IResult<TyAnnotation> {
+pub fn ty_annotation(input: Span) -> IResult<TyAnnotation<Name<'_>>> {
     map(
         separated_pair(name, surrounded(char(':'), space0), ty),
-        |(name, ty)| TyAnnotation { name, ty },
+        |(name, ty)| TyAnnotation { item: name, ty },
     )(input)
 }
 

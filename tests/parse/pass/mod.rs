@@ -247,7 +247,7 @@ fn let_bind() -> LangResult<'static, ()> {
     let expected = vec![
         LetBind(
             TyAnnotation {
-                name: pijama_ast::Name("x").loc(),
+                item: pijama_ast::Name("x").loc(),
                 ty: Ty::Missing.loc(),
             },
             Box::new(Name(pijama_ast::Name("y")).loc()),
@@ -255,7 +255,7 @@ fn let_bind() -> LangResult<'static, ()> {
         .loc(),
         LetBind(
             TyAnnotation {
-                name: pijama_ast::Name("x").loc(),
+                item: pijama_ast::Name("x").loc(),
                 ty: Ty::Missing.loc(),
             },
             Box::new(
@@ -270,7 +270,7 @@ fn let_bind() -> LangResult<'static, ()> {
         .loc(),
         LetBind(
             TyAnnotation {
-                name: pijama_ast::Name("x").loc(),
+                item: pijama_ast::Name("x").loc(),
                 ty: Ty::Int.loc(),
             },
             Box::new(Name(pijama_ast::Name("y")).loc()),
@@ -278,14 +278,14 @@ fn let_bind() -> LangResult<'static, ()> {
         .loc(),
         LetBind(
             TyAnnotation {
-                name: pijama_ast::Name("foo").loc(),
+                item: pijama_ast::Name("foo").loc(),
                 ty: Ty::Missing.loc(),
             },
             Box::new(
                 FnDef(
                     None,
                     vec![TyAnnotation {
-                        name: pijama_ast::Name("x").loc(),
+                        item: pijama_ast::Name("x").loc(),
                         ty: Ty::Int.loc(),
                     }],
                     vec![Name(pijama_ast::Name("x")).loc()].loc(),
@@ -470,7 +470,7 @@ fn fn_def() -> LangResult<'static, ()> {
         FnDef(
             Some(pijama_ast::Name("foo").loc()),
             vec![TyAnnotation {
-                name: pijama_ast::Name("x").loc(),
+                item: pijama_ast::Name("x").loc(),
                 ty: Ty::Int.loc(),
             }],
             vec![Name(pijama_ast::Name("x")).loc()].loc(),
@@ -488,11 +488,11 @@ fn fn_def() -> LangResult<'static, ()> {
             Some(pijama_ast::Name("foo").loc()),
             vec![
                 TyAnnotation {
-                    name: pijama_ast::Name("x").loc(),
+                    item: pijama_ast::Name("x").loc(),
                     ty: Ty::Int.loc(),
                 },
                 TyAnnotation {
-                    name: pijama_ast::Name("y").loc(),
+                    item: pijama_ast::Name("y").loc(),
                     ty: Ty::Int.loc(),
                 },
             ],
@@ -507,7 +507,7 @@ fn fn_def() -> LangResult<'static, ()> {
         FnDef(
             None,
             vec![TyAnnotation {
-                name: pijama_ast::Name("x").loc(),
+                item: pijama_ast::Name("x").loc(),
                 ty: Ty::Int.loc(),
             }],
             vec![Name(pijama_ast::Name("x")).loc()].loc(),
@@ -517,7 +517,7 @@ fn fn_def() -> LangResult<'static, ()> {
         FnDef(
             None,
             vec![TyAnnotation {
-                name: pijama_ast::Name("x").loc(),
+                item: pijama_ast::Name("x").loc(),
                 ty: Ty::Int.loc(),
             }],
             vec![Name(pijama_ast::Name("x")).loc()].loc(),

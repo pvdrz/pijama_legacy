@@ -185,7 +185,7 @@ pub enum Node<'a> {
     UnaryOp(UnOp, Box<Located<Node<'a>>>),
     /// Statement containing a Let binding.
     LetBind(
-        TyAnnotation<'a>,
+        TyAnnotation<Name<'a>>,
         Box<Located<Node<'a>>>,
     ),
     /// Expression containing a conditional.
@@ -193,7 +193,7 @@ pub enum Node<'a> {
     /// Statement containing a Function Definition.
     FnDef(
         Option<Located<Name<'a>>>,
-        Vec<TyAnnotation<'a>>,
+        Vec<TyAnnotation<Name<'a>>>,
         Located<Block<'a>>,
         Located<Ty>,
     ),

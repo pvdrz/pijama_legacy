@@ -136,7 +136,7 @@ fn lower_unary_op(
 
 fn lower_let_bind<'a>(
     loc: Location,
-    annotation: TyAnnotation<'a>,
+    annotation: TyAnnotation<Name<'a>>,
     body: Located<Node<'a>>,
 ) -> LowerResult<Located<Term<'a>>> {
     let body = lower_node(body)?;
@@ -149,7 +149,7 @@ fn lower_let_bind<'a>(
 
     Ok(loc.with_content(Term::Let(
         LetKind::NonRec(opt_ty),
-        annotation.name,
+        annotation.item,
         Box::new(body),
         Box::new(Location::new(loc.end, loc.end).with_content(Term::Lit(Literal::Unit))),
     )))
@@ -158,7 +158,7 @@ fn lower_let_bind<'a>(
 fn lower_fn_def<'a>(
     loc: Location,
     opt_name: Option<Located<Name<'a>>>,
-    annotations: Vec<TyAnnotation<'a>>,
+    annotations: Vec<TyAnnotation<Name<'a>>>,
     body: Located<Block<'a>>,
     ty: Located<TyAST>,
 ) -> LowerResult<Located<Term<'a>>> {
@@ -198,7 +198,7 @@ fn lower_fn_def<'a>(
 
     for annotation in annotations.into_iter().rev() {
         term = loc.with_content(Term::Abs(
-            annotation.name.content,
+            annotation.item.content,
             Ty::from_ast(annotation.ty.content).unwrap(),
             Box::new(term),
         ));

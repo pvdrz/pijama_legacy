@@ -70,11 +70,11 @@ impl<'a> NodeVisitor<'a> for RecursionChecker<'a> {
 
     fn visit_let_bind(
         &mut self,
-        annotation: &TyAnnotation<'a>,
+        annotation: &TyAnnotation<Name<'a>>,
         body: &Located<Node<'a>>,
     ) {
         // If the binding binds the target name, the latter is being shadowed in the current scope.
-        if annotation.name.content == self.name {
+        if annotation.item.content == self.name {
             self.is_shadowed = true;
         }
         // Keep visiting
@@ -84,7 +84,7 @@ impl<'a> NodeVisitor<'a> for RecursionChecker<'a> {
     fn visit_fn_def(
         &mut self,
         opt_name: &Option<Located<Name<'a>>>,
-        args: &[TyAnnotation<'a>],
+        args: &[TyAnnotation<Name<'a>>],
         body: &Located<Block<'a>>,
         ty: &Located<Ty>,
     ) {
