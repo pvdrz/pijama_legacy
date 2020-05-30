@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1590802674787,
+  "lastUpdate": 1590851033940,
   "repoUrl": "https://github.com/christianpoveda/pijama",
   "entries": {
     "Rust Benchmark": [
@@ -2207,6 +2207,102 @@ window.BENCHMARK_DATA = {
             "name": "step",
             "value": 1443,
             "range": "± 42",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "31802960+christianpoveda@users.noreply.github.com",
+            "name": "Christian Poveda",
+            "username": "christianpoveda"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ec9723c6fc52d4164f08717aa365676a11f1667d",
+          "message": "Merge pull request #104 from DarkDrek/move-span\n\nMove Span use to correct crate",
+          "timestamp": "2020-05-30T09:57:22-05:00",
+          "tree_id": "85d4e92a95d9002b0da0efede31cfcace98b38d8",
+          "url": "https://github.com/christianpoveda/pijama/commit/ec9723c6fc52d4164f08717aa365676a11f1667d"
+        },
+        "date": 1590851033399,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "arithmetic",
+            "value": 25483,
+            "range": "± 1173",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "logic",
+            "value": 51653,
+            "range": "± 3043",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "factorial",
+            "value": 69112,
+            "range": "± 5293",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "factorial_tail",
+            "value": 119274,
+            "range": "± 8574",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fibonacci",
+            "value": 524911,
+            "range": "± 26014",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fibonacci_tail",
+            "value": 103799,
+            "range": "± 7974",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "gcd",
+            "value": 777491,
+            "range": "± 35936",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "ackermann",
+            "value": 424672,
+            "range": "± 30738",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "calling",
+            "value": 167593,
+            "range": "± 8515",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "complex_calling",
+            "value": 177637,
+            "range": "± 7656",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fancy_max",
+            "value": 1809,
+            "range": "± 74",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "step",
+            "value": 1470,
+            "range": "± 93",
             "unit": "ns/iter"
           }
         ]
