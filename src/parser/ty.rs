@@ -37,9 +37,9 @@
 use nom::{
     branch::alt,
     bytes::complete::tag,
-    character::complete::{char, space0},
-    combinator::{map, opt},
-    sequence::{pair, preceded, separated_pair},
+    character::complete::{char, space0, space1},
+    combinator::{cut, map, opt},
+    sequence::{pair, preceded, separated_pair, terminated},
 };
 
 use nom_locate::position;
@@ -99,8 +99,13 @@ pub fn ty_annotation(input: Span) -> IResult<TyAnnotation<Name<'_>>> {
 /// annotation for let bindings.
 pub fn colon_ty(input: Span) -> IResult<Located<Ty>> {
     map(
-        pair(position, opt(preceded(surrounded(char(':'), space0), ty))),
-        // Maybe this allows to write `:` with no types at all?
+        pair(
+            position,
+            opt(preceded(
+                surrounded(char(':'), space0),
+                cut(terminated(ty, space1)),
+            )),
+        ),
         |(span, opt_ty)| opt_ty.unwrap_or_else(|| Location::from(span).with_content(Ty::Missing)),
     )(input)
 }
