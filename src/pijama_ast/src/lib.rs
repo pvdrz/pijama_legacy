@@ -27,7 +27,7 @@ impl<'a> Display for Name<'a> {
     }
 }
 
-/// The different binary operaitons that Pijama's 
+/// The different binary operations that Pijama's 
 /// syntax supports.
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum BinOp {
@@ -95,7 +95,7 @@ impl<'a> Display for BinOp {
     }
 }
 
-/// The unary operations that Pijama's syntax supports.
+/// The unary operators that Pijama's syntax supports.
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum UnOp {
     /// Numeric Negation operation.
@@ -171,7 +171,7 @@ impl<'a> Display for Primitive {
 pub struct Branch<'a> {
     /// The conditional part of the Branch that is checked for truthiness.
     pub cond: Located<Block<'a>>,
-    /// The body of the Branch that is executed if `cond` is truthy.
+    /// The body of the Branch that is executed if `cond` is true.
     pub body: Located<Block<'a>>,
 }
 
@@ -179,31 +179,31 @@ pub struct Branch<'a> {
 /// expressions and statements that Pijama's syntax supports.
 #[derive(Debug, Eq, PartialEq)]
 pub enum Node<'a> {
-    /// Binary operation statement/expression.
+    /// Expression containing a binary operation.
     BinaryOp(BinOp, Box<Located<Node<'a>>>, Box<Located<Node<'a>>>),
-    /// Unary operation statement/expression.
+    /// Expression containing a unary operator.
     UnaryOp(UnOp, Box<Located<Node<'a>>>),
-    /// Let statement/expression.
+    /// Statement containing a Let binding.
     LetBind(
         Located<Name<'a>>,
         Option<Located<Ty>>,
         Box<Located<Node<'a>>>,
     ),
-    /// Conditional statement/expression.
+    /// Expression containing a conditional.
     Cond(Branch<'a>, Vec<Branch<'a>>, Located<Block<'a>>),
-    /// Function definition statement/expression.
+    /// Statement containing a Function Definition.
     FnDef(
         Option<Located<Name<'a>>>,
         Vec<Located<TyAnnotation<'a>>>,
         Located<Block<'a>>,
         Option<Located<Ty>>,
     ),
-    /// Function call statement/expression.
+    /// Expression containing a Function Call.
     Call(Box<Located<Node<'a>>>, Block<'a>),
-    /// Statement/expression with a Literal.
+    /// Expression containing a Literal.
     Literal(Literal),
-    /// Statement/expression containing a Name.
+    /// Expression containing a Name.
     Name(Name<'a>),
-    /// Statement/expression containing a Primitive function.
+    /// Expression containing a Primitive function.
     PrimFn(Primitive),
 }

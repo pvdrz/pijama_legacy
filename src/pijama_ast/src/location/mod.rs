@@ -2,7 +2,8 @@
 //! of tokens in the source code file.
 use std::fmt::{Debug, Display, Formatter, Result as FmtResult};
 
-/// Type representing a length of tokens.
+/// Type representing a length of tokens and their location
+/// in the source code file.
 pub type Span<'a> = nom_locate::LocatedSpan<&'a str>;
 
 impl<'a> From<Span<'a>> for Location {
@@ -26,7 +27,7 @@ pub struct Location {
 }
 
 impl Location {
-    /// Initializes a new `Location` instance.
+    /// Constructs a new `Location` instance.
     pub const fn new(start: usize, end: usize) -> Self {
         Location { start, end }
     }
