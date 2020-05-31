@@ -1,9 +1,8 @@
 use std::mem::discriminant;
 
 use pijama_ast::{
-    analysis::RecursionChecker,
-    ty::{Ty as TyAST, TyAnnotation},
-    BinOp, Block, Branch, Literal, Located, Location, Name, Node, UnOp,
+    analysis::RecursionChecker, ty::TyAnnotation, BinOp, Block, Branch, Literal, Located, Location,
+    Name, Node, UnOp,
 };
 use thiserror::Error;
 
@@ -38,23 +37,24 @@ impl PartialEq for LowerError {
 
 impl Eq for LowerError {}
 
-pub fn lower_blk<'a>(blk: Located<Block<'a>>) -> LowerResult<Located<Term<'a>>> {
-    let mut terms = blk.content.into_iter().rev().map(lower_node);
-    if let Some(term) = terms.next() {
-        let mut term = term?;
-        for prev_term in terms {
-            let prev_term = prev_term?;
-            let next_term = Box::new(term);
-
-            let loc = prev_term.loc;
-            let content = if let Term::Let(kind, name, value, _) = prev_term.content {
-                Term::Let(kind, name, value, next_term)
-            } else {
-                Term::Seq(Box::new(prev_term), next_term)
-            };
-            term = loc.with_content(content);
+pub fn lower_blk<'a>(mut blk: Located<Block<'a>>) -> LowerResult<Located<Term<'a>>> {
+    if let Some(node) = blk.content.pop_front() {
+        match node.content {
+            Node::LetBind(annotation, body) => lower_let_bind(node.loc, annotation, *body, blk),
+            Node::FnDef(name, annotations, body) => {
+                lower_fn_def(node.loc, name, annotations, body, blk)
+            }
+            _ => {
+                if blk.content.is_empty() {
+                    lower_node(node)
+                } else {
+                    let head = lower_node(node)?;
+                    let tail = lower_blk(blk)?;
+                    let loc = head.loc + tail.loc;
+                    Ok(loc.with_content(Term::Seq(Box::new(head), Box::new(tail))))
+                }
+            }
         }
-        Ok(term)
     } else {
         Ok(blk.loc.with_content(Term::Lit(Literal::Unit)))
     }
@@ -70,9 +70,18 @@ fn lower_node(node: Located<Node<'_>>) -> LowerResult<Located<Term<'_>>> {
         Node::Call(node, args) => lower_call(loc, *node, args),
         Node::BinaryOp(bin_op, node1, node2) => lower_binary_op(loc, bin_op, *node1, *node2),
         Node::UnaryOp(un_op, node) => lower_unary_op(loc, un_op, *node),
-        Node::LetBind(name, opt_ty, node) => lower_let_bind(loc, name, opt_ty, *node),
-        Node::FnDef(opt_name, binds, body, opt_ty) => {
-            lower_fn_def(loc, opt_name, binds, body, opt_ty)
+        Node::AnonFn(binds, body) => lower_anon_fn(loc, binds, body),
+        node @ Node::LetBind(_, _) | node @ Node::FnDef(_, _, _) => {
+            let empty_blk = Location::new(loc.end, loc.end).with_content(Block::default());
+            match node {
+                Node::LetBind(annotation, body) => {
+                    lower_let_bind(loc, annotation, *body, empty_blk)
+                }
+                Node::FnDef(name, annotations, body) => {
+                    lower_fn_def(loc, name, annotations, body, empty_blk)
+                }
+                _ => unreachable!(),
+            }
         }
     }
 }
@@ -138,77 +147,92 @@ fn lower_unary_op(
 
 fn lower_let_bind<'a>(
     loc: Location,
-    name: Located<Name<'a>>,
-    opt_ty: Option<Located<TyAST>>,
-    node: Located<Node<'a>>,
+    annotation: TyAnnotation<Name<'a>>,
+    body: Located<Node<'a>>,
+    tail: Located<Block<'a>>,
 ) -> LowerResult<Located<Term<'a>>> {
-    let term = lower_node(node)?;
+    let body = lower_node(body)?;
 
-    let opt_ty = opt_ty.map(|located_ty| located_ty.map(Ty::from));
+    let opt_ty = if let Some(ty) = Ty::from_ast(annotation.ty.content) {
+        Some(annotation.ty.loc.with_content(ty))
+    } else {
+        None
+    };
+
+    let tail = lower_blk(tail)?;
 
     Ok(loc.with_content(Term::Let(
         LetKind::NonRec(opt_ty),
-        name,
-        Box::new(term),
-        Box::new(Location::new(loc.end, loc.end).with_content(Term::Lit(Literal::Unit))),
+        annotation.item,
+        Box::new(body),
+        Box::new(tail),
     )))
 }
 
 fn lower_fn_def<'a>(
     loc: Location,
-    opt_name: Option<Located<Name<'a>>>,
-    annotations: Vec<Located<TyAnnotation<'a>>>,
-    body: Located<Block<'a>>,
-    opt_ty: Option<Located<TyAST>>,
+    name: Located<Name<'a>>,
+    annotations: Vec<TyAnnotation<Name<'a>>>,
+    body: TyAnnotation<Block<'a>>,
+    tail: Located<Block<'a>>,
 ) -> LowerResult<Located<Term<'a>>> {
     // if the user added a return type annotation, we transform this type into the type of the
     // function using the bindings.
-    let opt_ty = opt_ty.map(|located_ty| {
-        let mut ty: Ty = located_ty.content.into();
-        let ty_loc = located_ty.loc;
-
+    let ty_loc = body.ty.loc;
+    let opt_ty = if let Some(mut ty) = Ty::from_ast(body.ty.content) {
         for annotation in annotations.iter().rev() {
-            let ann_ty = annotation.content.ty.clone().into();
+            // FIXME: There could be missing types here!
+            let ann_ty = Ty::from_ast(annotation.ty.content.clone()).unwrap();
             ty = Ty::Arrow(Box::new(ann_ty), Box::new(ty));
         }
-        ty_loc.with_content(ty)
-    });
-
-    // we need to decide if the function is recursive or not
-    let kind = match opt_name.as_ref() {
-        // functions can only be recursive if they have a name.
-        Some(name) if RecursionChecker::run(name.content, &body.content) => {
-            // if the function is recursive, we need the return type.
-            opt_ty
-                .map(LetKind::Rec)
-                .ok_or_else(|| LowerError::RecWithoutTy(name.loc))?
-        }
-        // anonymous functions cannot have type annotations
-        None if opt_ty.is_some() => {
-            return Err(LowerError::AnonWithTy(opt_ty.unwrap().loc));
-        }
-        // otherwise the function is either anonymous without a type anotation or a named
-        // non-recursive function with or without a type annotation.
-        _ => LetKind::NonRec(opt_ty),
+        Some(ty_loc.with_content(ty))
+    } else {
+        None
     };
 
-    let mut term = lower_blk(body)?;
+    // we need to decide if the function is recursive or not
+    let kind = if RecursionChecker::run(name.content, &body.item.content) {
+        // if the function is recursive, we need the return type.
+        opt_ty
+            .map(LetKind::Rec)
+            .ok_or_else(|| LowerError::RecWithoutTy(name.loc))?
+    } else {
+        LetKind::NonRec(opt_ty)
+    };
+
+    let mut term = lower_blk(body.item)?;
 
     for annotation in annotations.into_iter().rev() {
-        let annotation = annotation.content;
         term = loc.with_content(Term::Abs(
-            annotation.name,
-            annotation.ty.into(),
+            annotation.item.content,
+            Ty::from_ast(annotation.ty.content).unwrap(),
             Box::new(term),
         ));
     }
 
-    if let Some(name) = opt_name {
-        term = loc.with_content(Term::Let(
-            kind,
-            name,
+    let tail = lower_blk(tail)?;
+
+    term = loc.with_content(Term::Let(kind, name, Box::new(term), Box::new(tail)));
+
+    Ok(term)
+}
+
+fn lower_anon_fn<'a>(
+    loc: Location,
+    annotations: Vec<TyAnnotation<Name<'a>>>,
+    body: TyAnnotation<Block<'a>>,
+) -> LowerResult<Located<Term<'a>>> {
+    if let Some(_) = Ty::from_ast(body.ty.content) {
+        return Err(LowerError::AnonWithTy(body.ty.loc));
+    }
+
+    let mut term = lower_blk(body.item)?;
+
+    for annotation in annotations.into_iter().rev() {
+        term = loc.with_content(Term::Abs(
+            annotation.item.content,
+            Ty::from_ast(annotation.ty.content).unwrap(),
             Box::new(term),
-            Box::new(Location::new(loc.end, loc.end).with_content(Term::Lit(Literal::Unit))),
         ));
     }
 

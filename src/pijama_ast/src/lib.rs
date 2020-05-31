@@ -1,20 +1,22 @@
+//! Crate encapsulating Pijama's AST and associated types.
 #![deny(missing_docs)]
 
-//! Crate encapsulating Pijama's AST and 
-//! associated types.
 pub mod analysis;
 pub mod location;
 pub mod ty;
 pub mod visitor;
 
-use std::fmt::{Debug, Display, Formatter, Result};
+use std::{
+    collections::VecDeque,
+    fmt::{Debug, Display, Formatter, Result},
+};
 
-use crate::ty::{Ty, TyAnnotation};
+use crate::ty::TyAnnotation;
 
 pub use location::*;
 
 /// A [`Block`] constitutes a collection of [`Node`]s.
-pub type Block<'a> = Vec<Located<Node<'a>>>;
+pub type Block<'a> = VecDeque<Located<Node<'a>>>;
 
 /// Represents the name of a variable or non-primitive
 /// function in the AST.
@@ -27,45 +29,45 @@ impl<'a> Display for Name<'a> {
     }
 }
 
-/// The different binary operations that Pijama's 
+/// The different binary operators that Pijama's
 /// syntax supports.
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum BinOp {
-    /// Add operation.
+    /// Add operator.
     Add,
-    /// Subtract operation.
+    /// Subtract operator.
     Sub,
-    /// Multiply operation.
+    /// Multiply operator.
     Mul,
-    /// Divide operation.
+    /// Divide operator.
     Div,
-    /// Remainder/Modulo operation.
+    /// Remainder/Modulo operator.
     Rem,
-    /// Logical And operation.
+    /// Logical And operator.
     And,
-    /// Logical Or operation.
+    /// Logical Or operator.
     Or,
-    /// Bit-wise And operation.
+    /// Bit-wise And operator.
     BitAnd,
-    /// Bit-wise Or operation.
+    /// Bit-wise Or operator.
     BitOr,
-    /// Bit-wise Xor operation.
+    /// Bit-wise Xor operator.
     BitXor,
-    /// Right shift operation.
+    /// Right shift operator.
     Shr,
-    /// Left shift operation.
+    /// Left shift operator.
     Shl,
-    /// Equality operation.
+    /// Equality operator.
     Eq,
-    /// Not Equal operation.
+    /// Not Equal operator.
     Neq,
-    /// Less Than operation.
+    /// Less Than operator.
     Lt,
-    /// Greater Than operation.
+    /// Greater Than operator.
     Gt,
-    /// Less Than Or Equal operation.
+    /// Less Than Or Equal operator.
     Lte,
-    /// Greater Than Or Equal operation.
+    /// Greater Than Or Equal operator.
     Gte,
 }
 
@@ -98,9 +100,9 @@ impl<'a> Display for BinOp {
 /// The unary operators that Pijama's syntax supports.
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum UnOp {
-    /// Numeric Negation operation.
+    /// Numeric Negation operator.
     Neg,
-    /// Logical Negation operation 
+    /// Logical Negation operator.
     Not,
 }
 
@@ -114,7 +116,7 @@ impl<'a> Display for UnOp {
     }
 }
 
-/// The literal types that Pijama's syntax supports.
+/// The literal values that Pijama's syntax supports.
 #[derive(Debug, Eq, PartialEq, Copy, Clone)]
 pub enum Literal {
     /// Boolean Literal.
@@ -165,7 +167,7 @@ impl<'a> Display for Primitive {
     }
 }
 
-/// Encapsulates a conditional statement in Pijama's syntax of the 
+/// Encapsulates a conditional statement in Pijama's syntax of the
 /// form "if `cond` then `body`".
 #[derive(Debug, Eq, PartialEq)]
 pub struct Branch<'a> {
@@ -184,20 +186,17 @@ pub enum Node<'a> {
     /// Expression containing a unary operator.
     UnaryOp(UnOp, Box<Located<Node<'a>>>),
     /// Statement containing a Let binding.
-    LetBind(
-        Located<Name<'a>>,
-        Option<Located<Ty>>,
-        Box<Located<Node<'a>>>,
-    ),
+    LetBind(TyAnnotation<Name<'a>>, Box<Located<Node<'a>>>),
     /// Expression containing a conditional.
     Cond(Branch<'a>, Vec<Branch<'a>>, Located<Block<'a>>),
     /// Statement containing a Function Definition.
     FnDef(
-        Option<Located<Name<'a>>>,
-        Vec<Located<TyAnnotation<'a>>>,
-        Located<Block<'a>>,
-        Option<Located<Ty>>,
+        Located<Name<'a>>,
+        Vec<TyAnnotation<Name<'a>>>,
+        TyAnnotation<Block<'a>>,
     ),
+    /// Expression containing an Anonymous Function.
+    AnonFn(Vec<TyAnnotation<Name<'a>>>, TyAnnotation<Block<'a>>),
     /// Expression containing a Function Call.
     Call(Box<Located<Node<'a>>>, Block<'a>),
     /// Expression containing a Literal.

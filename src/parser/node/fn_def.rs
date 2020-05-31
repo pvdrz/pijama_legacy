@@ -1,14 +1,15 @@
 //! Parsers for function definitions.
 //!
-//! The entry point for this module is the [`fn_def`] function. Function definitions are parsed following the
-//! rule
+//! The entry point for this module is the [`fn_def`] function. Function definitions and anonymous
+//! functions are parsed following the rules
 //!
 //! ```abnf
-//! fn_def = "fn" name? "(" (ty_annotation ("," ty_annotation)*)? ")" (":" ty)? "do" block1 "end"
+//! fn_def = "fn" name "(" (ty_annotation ("," ty_annotation)*)? ")" (":" ty)? "do" block1 "end"
+//! anon_fn = "fn" "(" (ty_annotation ("," ty_annotation)*)? ")" (":" ty)? "do" block1 "end"
 //! ```
 //!
-//! Meaning that the return type annotation and name are optional. If the name is not given, the
-//! expression will be interpreted as an anonymous function.
+//! The `fn_def` parser takes care of both rules: If the name is not given, the expression will be
+//! interpreted as an anonymous function.
 //!
 //! The [`args`] parser is reutilized in the [`call`] parser.
 //!
@@ -17,11 +18,11 @@ use nom::{
     character::complete::{char, multispace0, space0, space1},
     combinator::{map, opt},
     multi::separated_list,
-    sequence::{delimited, pair, preceded, separated_pair, terminated, tuple},
+    sequence::{delimited, pair, preceded, terminated, tuple},
 };
 use nom_locate::position;
 
-use pijama_ast::{Block, Located, Location, Name, Node, Span};
+use pijama_ast::{ty::TyAnnotation, Block, Located, Location, Node, Span};
 
 use crate::parser::{
     block::block0,
@@ -31,7 +32,7 @@ use crate::parser::{
     IResult,
 };
 
-/// Parses a [`Node::FnDef`].
+/// Parses a [`Node::FnDef`] or [`Node::AnonFn`].
 ///
 /// This parser admits:
 /// - Spaces after the name of the function.
@@ -43,34 +44,22 @@ use crate::parser::{
 pub fn fn_def(input: Span) -> IResult<Located<Node>> {
     map(
         tuple((
-            fn_name,
+            keyword("fn"),
+            opt(preceded(space1, name)),
             surrounded(args(ty_annotation), space0),
-            terminated(opt(colon_ty), multispace0),
+            terminated(colon_ty, multispace0),
             fn_body,
         )),
-        |(name, args, opt_ty, body)| {
-            name.zip_with(body, move |name, body| {
-                Node::FnDef(name, args.content, body, opt_ty)
-            })
-        },
-    )(input)
-}
-
-/// Parses the name of a function in a definition if it has one.
-///
-/// This parser requires that the name is preceded by `"fn"` and at least one space. If the
-/// function does not have a name, it need to parse the `"fn"` only.
-///
-/// The location of the returned node matches the start of the `fn` and the end of the name.
-fn fn_name(input: Span) -> IResult<Located<Option<Located<Name>>>> {
-    map(
-        separated_pair(position, keyword("fn"), opt(preceded(space1, name))),
-        |(span, opt_name)| {
-            let mut loc = Location::from(span);
-            if let Some(name) = opt_name.as_ref() {
-                loc = loc + name.loc;
-            }
-            loc.with_content(opt_name)
+        |(fn_kw, opt_name, args, ty, body)| {
+            Location::from(fn_kw)
+                .with_content(())
+                .zip_with(body, move |_, body| {
+                    if let Some(name) = opt_name {
+                        Node::FnDef(name, args.content, TyAnnotation { item: body, ty })
+                    } else {
+                        Node::AnonFn(args.content, TyAnnotation { item: body, ty })
+                    }
+                })
         },
     )(input)
 }

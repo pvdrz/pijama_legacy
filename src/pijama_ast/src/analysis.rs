@@ -1,9 +1,5 @@
 //! An assortment of checks that are done before lowering.
-use crate::{
-    ty::{Ty, TyAnnotation},
-    visitor::{BlockRef, NodeVisitor},
-    Block, Located, Name, Node,
-};
+use crate::{ty::TyAnnotation, visitor::NodeVisitor, Block, Located, Name, Node};
 
 /// Checks if a function is recursive or not.
 pub struct RecursionChecker<'a> {
@@ -20,7 +16,7 @@ pub struct RecursionChecker<'a> {
 
 impl<'a> RecursionChecker<'a> {
     /// Runs the recursion check with the target function's name and body.
-    pub fn run(name: Name<'a>, body: BlockRef<'a, '_>) -> bool {
+    pub fn run(name: Name<'a>, body: &Block<'a>) -> bool {
         let mut this = RecursionChecker {
             name,
             is_rec: false,
@@ -68,40 +64,31 @@ impl<'a> NodeVisitor<'a> for RecursionChecker<'a> {
         self.super_name(name);
     }
 
-    fn visit_let_bind(
-        &mut self,
-        name: &Located<Name<'a>>,
-        opt_ty: &Option<Located<Ty>>,
-        body: &Located<Node<'a>>,
-    ) {
+    fn visit_let_bind(&mut self, annotation: &TyAnnotation<Name<'a>>, body: &Located<Node<'a>>) {
         // If the binding binds the target name, the latter is being shadowed in the current scope.
-        if name.content == self.name {
+        if annotation.item.content == self.name {
             self.is_shadowed = true;
         }
         // Keep visiting
-        self.super_let_bind(name, opt_ty, body);
+        self.super_let_bind(annotation, body);
     }
 
     fn visit_fn_def(
         &mut self,
-        opt_name: &Option<Located<Name<'a>>>,
-        args: &[Located<TyAnnotation<'a>>],
-        body: &Located<Block<'a>>,
-        opt_ty: &Option<Located<Ty>>,
+        name: &Located<Name<'a>>,
+        args: &[TyAnnotation<Name<'a>>],
+        body: &TyAnnotation<Block<'a>>,
     ) {
         // If the function definition binds the target name, the latter is being shadowed in the
         // current scope.
-        match opt_name {
-            Some(name) if name.content == self.name => {
-                self.is_shadowed = true;
-            }
-            _ => {}
-        };
+        if name.content == self.name {
+            self.is_shadowed = true;
+        }
         // Keep visiting
-        self.super_fn_def(opt_name, args, body, opt_ty);
+        self.super_fn_def(name, args, body);
     }
 
-    fn visit_block(&mut self, block: BlockRef<'a, '_>) {
+    fn visit_block(&mut self, block: &Block<'a>) {
         // Entering a block means that we need to push a new scope into the stack because the
         // bindings done inside the block can only exist in that block.
         self.push_scope();

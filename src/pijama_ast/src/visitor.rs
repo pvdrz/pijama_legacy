@@ -1,20 +1,17 @@
 //! Trait to traverse the AST.
 use crate::{
-    ty::{Ty, TyAnnotation},
-    BinOp, Block, Branch, Literal, Located, Name, Node, Primitive, UnOp,
+    ty::TyAnnotation, BinOp, Block, Branch, Literal, Located, Name, Node, Primitive, UnOp,
 };
 
-/// Helper type alias to traverse references to `Block`s as slices.
-pub type BlockRef<'a, 'b> = &'b [Located<Node<'a>>];
-
+/// Trait for the node visitor pattern.
 ///
 /// This trait should be used when you need to traverse the AST and you are only interested in
 /// particular elements of it or you do not want to write the code necessary to traverse the AST
 /// yourself.
 ///
-/// There are two kinds of methods: 
+/// There are two kinds of methods:
 /// - The `visit_<foo>` methods: where the code specific to
-/// your visiting resides.  
+/// your visiting resides.
 /// - The `super_<foo>` methods: that destructure each component and take
 /// care of the actual visiting.
 ///
@@ -29,7 +26,7 @@ pub type BlockRef<'a, 'b> = &'b [Located<Node<'a>>];
 /// breaking all the processes that use this trait to traverse the AST.
 pub trait NodeVisitor<'a> {
     /// Visits a Block.
-    fn super_block(&mut self, block: BlockRef<'a, '_>) {
+    fn super_block(&mut self, block: &Block<'a>) {
         for node in block {
             self.visit_node(&node);
         }
@@ -42,11 +39,10 @@ pub trait NodeVisitor<'a> {
                 self.visit_binary_op(*op, node1.as_ref(), node2.as_ref())
             }
             Node::UnaryOp(op, node) => self.visit_unary_op(*op, node.as_ref()),
-            Node::LetBind(name, opt_ty, node) => self.visit_let_bind(name, opt_ty, node.as_ref()),
+            Node::LetBind(annotation, node) => self.visit_let_bind(annotation, node.as_ref()),
             Node::Cond(if_branch, branches, el_blk) => self.visit_cond(if_branch, branches, el_blk),
-            Node::FnDef(opt_name, args, body, opt_ty) => {
-                self.visit_fn_def(opt_name, args, body, opt_ty)
-            }
+            Node::FnDef(name, args, body) => self.visit_fn_def(name, args, body),
+            Node::AnonFn(args, body) => self.visit_anon_fn(args, body),
             Node::Call(func, args) => self.visit_call(func.as_ref(), &args),
             Node::Literal(literal) => self.visit_literal(literal),
             Node::Name(name) => self.visit_name(name),
@@ -71,13 +67,8 @@ pub trait NodeVisitor<'a> {
     }
 
     /// Visits a Node with a Let binding.
-    fn super_let_bind(
-        &mut self,
-        name: &Located<Name<'a>>,
-        _opt_ty: &Option<Located<Ty>>,
-        node: &Located<Node<'a>>,
-    ) {
-        self.visit_name(&name.content);
+    fn super_let_bind(&mut self, annotation: &TyAnnotation<Name<'a>>, node: &Located<Node<'a>>) {
+        self.visit_name(&annotation.item.content);
         self.visit_node(node);
     }
 
@@ -109,20 +100,21 @@ pub trait NodeVisitor<'a> {
     /// Visits a Node with a Function Definition.
     fn super_fn_def(
         &mut self,
-        opt_name: &Option<Located<Name<'a>>>,
-        _args: &[Located<TyAnnotation<'a>>],
-        body: &Located<Block<'a>>,
-        _opt_ty: &Option<Located<Ty>>,
+        name: &Located<Name<'a>>,
+        _args: &[TyAnnotation<Name<'a>>],
+        body: &TyAnnotation<Block<'a>>,
     ) {
-        if let Some(name) = opt_name {
-            self.visit_name(&name.content);
-        }
+        self.visit_name(&name.content);
+        self.visit_block(&body.item.content);
+    }
 
-        self.visit_block(&body.content);
+    /// Visits a Node with an Anonymous Function.
+    fn super_anon_fn(&mut self, _args: &[TyAnnotation<Name<'a>>], body: &TyAnnotation<Block<'a>>) {
+        self.visit_block(&body.item.content);
     }
 
     /// Visits a Node with a Function Call.
-    fn super_call(&mut self, func: &Located<Node<'a>>, args: BlockRef<'a, '_>) {
+    fn super_call(&mut self, func: &Located<Node<'a>>, args: &Block<'a>) {
         self.visit_node(func);
         self.visit_block(args);
     }
@@ -137,7 +129,7 @@ pub trait NodeVisitor<'a> {
     fn super_prim_fn(&mut self, _prim_fn: Primitive) {}
 
     /// Specifies how Blocks should be visited.
-    fn visit_block(&mut self, block: BlockRef<'a, '_>) {
+    fn visit_block(&mut self, block: &Block<'a>) {
         self.super_block(block);
     }
 
@@ -157,13 +149,8 @@ pub trait NodeVisitor<'a> {
     }
 
     /// Specifies how Let bindings should be visited.
-    fn visit_let_bind(
-        &mut self,
-        name: &Located<Name<'a>>,
-        opt_ty: &Option<Located<Ty>>,
-        node: &Located<Node<'a>>,
-    ) {
-        self.super_let_bind(name, opt_ty, node);
+    fn visit_let_bind(&mut self, annotation: &TyAnnotation<Name<'a>>, node: &Located<Node<'a>>) {
+        self.super_let_bind(annotation, node);
     }
 
     /// Specifies how Conditionals should be visited.
@@ -184,16 +171,20 @@ pub trait NodeVisitor<'a> {
     /// Specifies how Function Definitions should be visited.
     fn visit_fn_def(
         &mut self,
-        opt_name: &Option<Located<Name<'a>>>,
-        args: &[Located<TyAnnotation<'a>>],
-        body: &Located<Block<'a>>,
-        opt_ty: &Option<Located<Ty>>,
+        name: &Located<Name<'a>>,
+        args: &[TyAnnotation<Name<'a>>],
+        body: &TyAnnotation<Block<'a>>,
     ) {
-        self.super_fn_def(opt_name, args, body, opt_ty);
+        self.super_fn_def(name, args, body);
+    }
+
+    /// Specifies how Anonymous Functions should be visited.
+    fn visit_anon_fn(&mut self, args: &[TyAnnotation<Name<'a>>], body: &TyAnnotation<Block<'a>>) {
+        self.super_anon_fn(args, body);
     }
 
     /// Specifies how Function Calls should be visited.
-    fn visit_call(&mut self, func: &Located<Node<'a>>, args: BlockRef<'a, '_>) {
+    fn visit_call(&mut self, func: &Located<Node<'a>>, args: &Block<'a>) {
         self.super_call(func, args)
     }
 
