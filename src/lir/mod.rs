@@ -1,6 +1,6 @@
 use std::fmt;
 
-use pijama_ast::*;
+use pijama_ast::{BinOp, Literal, Located, Primitive, UnOp};
 
 use Term::*;
 

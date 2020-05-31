@@ -2,4 +2,4 @@ fn foo(x: Int) do
     x
 end
 
-print(foo(10))
+print(foo)

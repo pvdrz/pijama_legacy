@@ -18,12 +18,7 @@ pub struct Machine<W: Write, A: Arithmetic> {
 }
 
 impl<W: Write, A: Arithmetic> Machine<W, A> {
-    pub fn evaluate(&mut self, mut term: Term) -> Term {
-        while {
-            let (eval, new_term) = self.step(term);
-            term = new_term;
-            eval
-        } {}
-        term
+    pub fn evaluate(&mut self, term: Term) -> Term {
+        self.eval(term).1
     }
 }
