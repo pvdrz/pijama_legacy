@@ -3,7 +3,7 @@ use crate::Name;
 
 /// A type in the AST.
 ///
-/// This type must only represent the kinds of types is possible to write in the AST. Other `Ty`
+/// This type must only represent the kinds of types that Pijama's AST can represent. Other `Ty`
 /// types exist with different purposes.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Ty {
@@ -23,6 +23,8 @@ pub enum Ty {
 /// annotations written by the user.
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct TyAnnotation<'a> {
+    /// The name of the annotation.
     pub name: Name<'a>,
+    /// The type specified by the annotation.
     pub ty: Ty,
 }

@@ -1,4 +1,4 @@
-//! Diverse checks that need to be done before lowering.
+//! An assortment of checks that are done before lowering.
 use crate::{
     ty::{Ty, TyAnnotation},
     visitor::{BlockRef, NodeVisitor},
@@ -28,8 +28,7 @@ impl<'a> RecursionChecker<'a> {
             stack: Vec::new(),
         };
         this.visit_block(body);
-        // Sanity check. There should be only one scope after visiting the body function. the
-        // original one
+        // Check to ensure that the there is only one scope after visiting the body.
         assert!(
             this.stack.is_empty(),
             "Someone forgot to pop a scope from the stack"
@@ -37,7 +36,7 @@ impl<'a> RecursionChecker<'a> {
         this.is_rec
     }
 
-    /// Push a new scope into the stack.
+    /// Push a new scope onto the stack.
     ///
     /// The new scope has the same shadowed status as the old scope because names are preserved
     /// when creating a new scope.
@@ -61,7 +60,7 @@ impl<'a> RecursionChecker<'a> {
 impl<'a> NodeVisitor<'a> for RecursionChecker<'a> {
     fn visit_name(&mut self, name: &Name<'a>) {
         // The function is recursive if its name is not shadowed in the current scope and we found
-        // it is somewhere inside its body.
+        // it somewhere inside its body.
         if !self.is_shadowed && *name == self.name {
             self.is_rec = true;
         }
