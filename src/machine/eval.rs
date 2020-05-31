@@ -7,6 +7,17 @@ use crate::{
 
 use std::{borrow::Borrow, io::Write};
 
+/// Evaluate `$term` in place using the `$self` machine. Then return `(changed, $ret)` where
+/// `changed` states if the evaluation produced any changes and `$ret` is a `Term` (possibly
+/// including `$term`).
+macro_rules! eval_in_place {
+    ($self:ident, $term:ident, $ret:expr) => {{
+        let (changed, new_t) = $self.eval(*$term);
+        *$term = new_t;
+        (changed, $ret)
+    }};
+}
+
 impl<W: Write, A: Arithmetic> Machine<W, A> {
     pub(super) fn eval(&mut self, mut term: Term) -> (bool, Term) {
         let mut changed = false;
@@ -33,11 +44,7 @@ impl<W: Write, A: Arithmetic> Machine<W, A> {
                 PrimFn(prim) => self.step_primitive_app(prim, *arg),
                 // Application with unevaluated first term (t1 t2)
                 // Evaluate t1.
-                _ => {
-                    let (changed, new_t1) = self.eval(*t1);
-                    *t1 = new_t1;
-                    (changed, App(t1, arg))
-                }
+                _ => eval_in_place!(self, t1, App(t1, arg)),
             },
             // Dispatch step for conditionals
             Cond(t1, t2, t3) => self.step_cond(t1, t2, t3),
@@ -60,9 +67,7 @@ impl<W: Write, A: Arithmetic> Machine<W, A> {
             }
         } else {
             // If t1 is not a literal, evaluate it in place and return (if t1 then t2 else t3)
-            let (changed, new_t1) = self.eval(*t1);
-            *t1 = new_t1;
-            (changed, Term::Cond(t1, t2, t3))
+            eval_in_place!(self, t1, Term::Cond(t1, t2, t3))
         }
     }
 
@@ -84,11 +89,7 @@ impl<W: Write, A: Arithmetic> Machine<W, A> {
                 (changed, Term::BinaryOp(op, t1, t2))
             }
             // If t1 is not a literal, evaluate it.
-            _ => {
-                let (changed, new_t1) = self.eval(*t1);
-                *t1 = new_t1;
-                (changed, Term::BinaryOp(op, t1, t2))
-            }
+            _ => eval_in_place!(self, t1, Term::BinaryOp(op, t1, t2)),
         }
     }
 
@@ -99,9 +100,7 @@ impl<W: Write, A: Arithmetic> Machine<W, A> {
             (true, Term::Lit(A::unary_operation(op, *lit)))
         // If t1 is not a literal, evaluate it.
         } else {
-            let (changed, new_t1) = self.eval(*t1);
-            *t1 = new_t1;
-            (changed, Term::UnaryOp(op, t1))
+            eval_in_place!(self, t1, Term::UnaryOp(op, t1))
         }
     }
 
@@ -115,9 +114,7 @@ impl<W: Write, A: Arithmetic> Machine<W, A> {
             (true, *t2)
         // If t1 is not an abstraction, evaluate it.
         } else {
-            let (changed, new_t1) = self.eval(*t1);
-            *t1 = new_t1;
-            (changed, Term::Fix(t1))
+            eval_in_place!(self, t1, Term::Fix(t1))
         }
     }
 
