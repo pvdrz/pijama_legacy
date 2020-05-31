@@ -1,0 +1,10 @@
+fn step(x: Int) do
+    if x > 0 do
+        1
+    else
+        0
+    end
+end
+
+x = step(10) + step(-10)
+print(x)

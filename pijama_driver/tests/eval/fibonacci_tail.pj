@@ -1,0 +1,12 @@
+fn fib(x: Int, a: Int, b: Int): Int do
+    if x == 0 do
+        a
+    elif x == 1 do
+        b
+    else
+        fib(x - 1, b, a + b)
+    end
+end
+
+x = fib(8, 0, 1)
+print(x)

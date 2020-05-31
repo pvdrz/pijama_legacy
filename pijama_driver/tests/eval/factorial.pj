@@ -1,0 +1,10 @@
+fn fact(n: Int): Int do
+    if n <= 0 do
+        1
+    else
+        n * fact(n - 1)
+    end
+end
+
+x = fact(10)
+print(x)
