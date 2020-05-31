@@ -80,10 +80,6 @@ impl Term {
         lower::remove_names(mir)
     }
 
-    pub fn is_value(&self) -> bool {
-        matches!(self, Lit(_) | Abs(_) | PrimFn(_))
-    }
-
     pub(crate) fn shift(&mut self, up: bool, cutoff: usize) {
         match self {
             Lit(_) | PrimFn(_) | Hole => (),
