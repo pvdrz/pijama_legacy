@@ -1,0 +1,10 @@
+fn gcd(x: Int, y: Int): Int do
+    if y == 0 do
+        x
+    else
+        gcd(y, x % y)
+    end
+end
+
+x = gcd(144, 233)
+print(x)

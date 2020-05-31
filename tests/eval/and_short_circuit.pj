@@ -1,9 +1,0 @@
-fn loop(): Bool do
-    if false do
-        true
-    else
-        loop()
-    end
-end
-
-false && loop()

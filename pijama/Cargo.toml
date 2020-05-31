@@ -1,0 +1,10 @@
+[package]
+name = "pijama"
+version = "0.1.0"
+authors = ["The Pijama Project Developers"]
+edition = "2018"
+
+[dependencies]
+codespan-reporting = "0.9.4"
+pijama_driver = { path = "../pijama_driver", version = "0.1.0" }
+structopt = "0.3.14"
