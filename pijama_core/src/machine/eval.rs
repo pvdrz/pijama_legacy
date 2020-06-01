@@ -51,7 +51,7 @@ impl<W: Write, A: Arithmetic> Machine<W, A> {
             // Dispatch step for fixed point operation
             Fix(t1) => self.step_fix(t1),
             // Any other term stops the evaluation.
-            Var(_) | Lit(_) | Abs(_) | PrimFn(_) | Hole => (false, term),
+            Var(_) | Lit(_) | Abs(_) | PrimFn(_) => (false, term),
         }
     }
     /// Evaluation step for conditionals (if t1 then t2 else t3)
