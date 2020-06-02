@@ -1,7 +1,7 @@
 //! An assortment of checks that are done before lowering.
 use crate::{
     location::Located,
-    node::{Expression, Block, Name},
+    node::{Block, Expression, Name},
     ty::TyAnnotation,
     visitor::NodeVisitor,
 };

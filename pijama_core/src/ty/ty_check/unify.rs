@@ -8,7 +8,7 @@
 //! Pierce.
 use std::collections::VecDeque;
 
-use pijama_ast::Located;
+use pijama_ast::location::Located;
 
 use crate::ty::{ty_check::Context, Ty, TyError, TyResult};
 
