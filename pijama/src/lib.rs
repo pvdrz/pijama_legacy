@@ -29,7 +29,7 @@ pub struct MachineOptions {
     pub overflow_check: bool,
 }
 
-pub fn display_error<'a>(input: &str, path: &str, error: &LangError<'a>) {
+pub fn display_error(input: &str, path: &str, error: &LangError) {
     let writer = StandardStream::stderr(ColorChoice::Always);
     let config = codespan_reporting::term::Config::default();
     let mut files = SimpleFiles::new();
@@ -38,7 +38,7 @@ pub fn display_error<'a>(input: &str, path: &str, error: &LangError<'a>) {
 
     let (msg, loc) = match &error {
         LangError::Ty(error) => ("Type error", error.loc()),
-        LangError::Parse(error) => ("Parsing error", error.span.into()),
+        LangError::Parse(error) => ("Parsing error", error.loc()),
         LangError::Lower(error) => ("Lowering error", error.loc()),
     };
 

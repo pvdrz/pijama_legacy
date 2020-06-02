@@ -2,6 +2,7 @@
 
 members = [
     "pijama_ast",
+    "pijama_parser",
     "pijama_core",
     "pijama_driver",
     "pijama",

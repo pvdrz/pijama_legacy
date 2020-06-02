@@ -9,27 +9,22 @@ use pijama_core::{
         Machine, MachineBuilder,
     },
     mir::{LowerError, Term as MirTerm},
-    parser::{parse, ParsingError},
     ty::{ty_check, TyError},
 };
+use pijama_parser::{parse, ParsingError};
 
-pub type LangResult<'a, T> = Result<T, LangError<'a>>;
+pub type LangResult<T> = Result<T, LangError>;
 
 #[derive(Error, Debug, Eq, PartialEq)]
-pub enum LangError<'a> {
+pub enum LangError {
     #[error("{0}")]
     Ty(#[from] TyError),
     #[error("{0}")]
-    Parse(ParsingError<'a>),
+    Parse(#[from] ParsingError),
     #[error("{0}")]
     Lower(#[from] LowerError),
 }
 
-impl<'a> From<ParsingError<'a>> for LangError<'a> {
-    fn from(err: ParsingError<'a>) -> Self {
-        LangError::Parse(err)
-    }
-}
 
 pub fn run_with_machine<W: Write, A: Arithmetic>(
     input: &str,

@@ -1,0 +1,238 @@
+use lalrpop_util::ParseError;
+
+use pijama_ast::{node::{Node, Primitive, Expression, Literal, BinOp, UnOp, Name, Statement, Block, Branch}, ty::{TyAnnotation, Ty}, location::{Located, Location}};
+
+use crate::lexer::{Token, LexError, Keyword, Operator, Symbol};
+
+grammar<'input>(input: &'input str);
+
+pub Prog: Block<'input> = {
+    "\n"* <mut nodes:(<Node> "\n"+)*> <node:Node> "\n"* => {
+        match node {
+            Node::Expr(expr) => Block{
+                nodes: nodes.into_iter().collect(),
+                expr: Box::new(expr)
+            },
+            Node::Stat(ref stat) => {
+                let loc = stat.loc.end;
+                nodes.push(node);
+                Block{
+                    nodes: nodes.into_iter().collect(),
+                    expr: Box::new(Location::new(loc, loc).with_content(Expression::Literal(Literal::Unit))),
+                }
+            },
+        }
+    },
+}
+
+Block: Block<'input> = {
+    "\n"* <nodes:(<Node> "\n"+)*> <node:Node> "\n"* =>? {
+        match node {
+            Node::Expr(expr) => Ok(Block{
+                nodes: nodes.into_iter().collect(),
+                expr: Box::new(expr)
+            }),
+            Node::Stat(stat) => Err(ParseError::User {
+                error: stat.loc.with_content(LexError::Custom("Blocks must terminate in an expression."))
+            }),
+        }
+    },
+}
+
+Node: Node<'input> = {
+    <Loc<Expr>> => Node::Expr(<>),
+    <Loc<Stat>> => Node::Stat(<>),
+}
+
+Expr = Tier<BinOp1, BinaryOp1>;
+BinaryOp1 = Tier<BinOp2, BinaryOp2>;
+BinaryOp2 = Tier<BinOp3, BinaryOp3>;
+BinaryOp3 = Tier<BinOp4, BinaryOp4>;
+BinaryOp4 = Tier<BinOp5, BaseExpr>;
+
+BaseExpr: Expression<'input> = {
+    <Call>,
+    <Cond>,
+    <Prim> => Expression::PrimFn(<>),
+    <Name> => Expression::Name(<>),
+    <Literal> => Expression::Literal(<>),
+    "(" <expr:Loc<Expr>> ")" <args:Args<Loc<Expr>>?> => {
+        if let Some(args) = args {
+            Expression::Call(Box::new(expr), args)
+        } else {
+            expr.content
+        }
+    },
+    <op:UnOp> <e:Loc<BaseExpr>> => Expression::UnaryOp(op, Box::new(e)),
+    <fn_loc:Loc<"fn">> <args:Args<TyAnn<Loc<Name>>>> <opt_ty:(":" <Loc<Ty>>)?> "do" <body:Block> "end" => {
+        Expression::AnonFn(args, TyAnnotation{item: body, ty: opt_ty.unwrap_or_else(|| fn_loc.loc.with_content(Ty::Missing))})
+    }
+}
+
+Call: Expression<'input> = {
+    <func:Loc<Name>> <args:Args<Loc<Expr>>> => Expression::Call(Box::new(func.map(Expression::Name)), args),
+    <func:Loc<Prim>> <args:Args<Loc<Expr>>> => Expression::Call(Box::new(func.map(Expression::PrimFn)), args),
+}
+
+Cond: Expression<'input> = {
+    <if_branch:Branch<"if">> <branches:Branch<"elif">*> "else" <block:Block> "end" => Expression::Cond(if_branch, branches, block),
+}
+
+Branch<T>: Branch<'input> = {
+    T <cond:Block> "do" <body:Block> => Branch{cond, body},
+}
+
+Stat: Statement<'input> = {
+    <TyAnn<Loc<Name>>> "=" <Loc<Expr>> => Statement::Assign(<>),
+    "fn" <name:Loc<Name>> <args:Args<TyAnn<Loc<Name>>>> <opt_ty:(":" <Loc<Ty>>)?> "do" <body:Block> "end" => {
+        Statement::FnDef(name, args, TyAnnotation{item: body, ty: opt_ty.unwrap_or_else(|| name.loc.with_content(Ty::Missing))})
+    }
+}
+
+TyAnn<T>: TyAnnotation<T> = {
+    <item:T> ":" <ty:Loc<Ty>> => TyAnnotation{item, ty},
+    <item:Loc<T>> => TyAnnotation{item: item.content, ty: item.loc.with_content(Ty::Missing)},
+}
+
+Ty: Ty = {
+    <t1:BaseTy> "->" <t2:Ty> => Ty::Arrow(Box::new(t1), Box::new(t2)),
+    <BaseTy> => <>,
+};
+
+BaseTy: Ty = {
+    "Int" => Ty::Int,
+    "Bool" => Ty::Bool,
+    "Unit" => Ty::Unit,
+    "(" <Ty> ")" => <>
+};
+
+Literal: Literal = {
+    "unit" => Literal::Unit,
+    "true" => Literal::Bool(true),
+    "false" => Literal::Bool(false),
+    <"int"> => Literal::Number(<>),
+};
+
+Name: Name<'input> = {
+    <"ident"> => Name(<>)
+};
+
+Prim: Primitive = {
+    "print" => Primitive::Print,
+}
+
+BinOp1: BinOp = {
+    "&&" => BinOp::And,
+    "||" => BinOp::Or,
+}
+
+BinOp2: BinOp = {
+    "<=" => BinOp::Lte,
+    ">=" => BinOp::Gte,
+    "<" => BinOp::Lt,
+    ">" => BinOp::Gt,
+    "==" => BinOp::Eq,
+    "!=" => BinOp::Neq,
+}
+
+BinOp3: BinOp = {
+    "&" => BinOp::BitAnd,
+    "|" => BinOp::BitOr,
+    "^" => BinOp::BitXor,
+    ">>" => BinOp::Shr,
+    "<<" => BinOp::Shl,
+}
+
+BinOp4: BinOp = {
+    "+" => BinOp::Add,
+    "-" => BinOp::Sub,
+}
+
+BinOp5: BinOp = {
+    "*" => BinOp::Mul,
+    "/" => BinOp::Div,
+    "%" => BinOp::Rem,
+}
+
+UnOp: UnOp = {
+    "-" => UnOp::Neg,
+    "!" => UnOp::Not,
+}
+
+Loc<T>: Located<T> = {
+    <start:@L> <content:T> <end:@R> => Location::new(start, end).with_content(content)
+};
+
+Tier<Op, NextTier>: Expression<'input> = {
+    <e1:Loc<Tier<Op, NextTier>>> <op:Op> <e2:Loc<NextTier>> => {
+        Expression::BinaryOp(op, Box::new(e1), Box::new(e2))
+    },
+    NextTier
+};
+
+Args<T>: Vec<T> = {
+    "(" "\n"* ")" => Vec::default(),
+    "(" "\n"* <arg:T> "\n"* ")" => vec![arg],
+    "(" "\n"* <mut args:(<T> "," "\n"*)+> <arg:T> "\n"* ")" => {
+        args.push(arg);
+        args
+    }
+};
+
+extern {
+    type Location = usize;
+    type Error = Located<LexError>;
+
+    enum Token<'input> {
+        // New line
+        "\n" => Token::Newline,
+        // Identifiers
+        "ident" => Token::Ident(<&'input str>),
+        // Keywords
+        "fn" => Token::Kword(Keyword::Fn),
+        "do" => Token::Kword(Keyword::Do),
+        "end" => Token::Kword(Keyword::End),
+        "if" => Token::Kword(Keyword::If),
+        "elif" => Token::Kword(Keyword::Elif),
+        "else" => Token::Kword(Keyword::Else),
+        // Tokens for literals
+        "int" => Token::Int(<i64>),
+        "true" => Token::Kword(Keyword::True),
+        "false" => Token::Kword(Keyword::False),
+        "unit" => Token::Kword(Keyword::Unit),
+        // Primitive functions
+        "print" => Token::Kword(Keyword::Print),
+        // Type related tokens
+        "Int" => Token::Kword(Keyword::IntTy),
+        "Bool" => Token::Kword(Keyword::BoolTy),
+        "Unit" => Token::Kword(Keyword::UnitTy),
+        "->" => Token::Op(Operator::Arrow),
+        ":" => Token::Op(Operator::Colon),
+        // Symbols
+        "(" => Token::Sym(Symbol::LParen),
+        ")" => Token::Sym(Symbol::RParen),
+        "," => Token::Sym(Symbol::Comma),
+        // Binary and unary operators
+        "&&" => Token::Op(Operator::And),
+        "||" => Token::Op(Operator::Or),
+        "<=" => Token::Op(Operator::Lte),
+        ">=" => Token::Op(Operator::Gte),
+        "<" => Token::Op(Operator::Lt),
+        ">" => Token::Op(Operator::Gt),
+        "==" => Token::Op(Operator::Eq),
+        "!=" => Token::Op(Operator::Neq),
+        "&" => Token::Op(Operator::BitAnd),
+        "|" => Token::Op(Operator::BitOr),
+        "^" => Token::Op(Operator::BitXor),
+        ">>" => Token::Op(Operator::Shr),
+        "<<" => Token::Op(Operator::Shl),
+        "+" => Token::Op(Operator::Add),
+        "-" => Token::Op(Operator::Sub),
+        "*" => Token::Op(Operator::Mul),
+        "/" => Token::Op(Operator::Div),
+        "%" => Token::Op(Operator::Rem),
+        "!" => Token::Op(Operator::Not),
+        // Assign operator
+        "=" => Token::Op(Operator::Assign),
+    }
+}
