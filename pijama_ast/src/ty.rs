@@ -1,7 +1,7 @@
 //! The AST representation of types.
 use std::fmt::Debug;
 
-use crate::Located;
+use crate::location::Located;
 
 /// A type in the AST.
 ///
@@ -28,7 +28,7 @@ pub enum Ty {
 #[derive(Debug, Eq, PartialEq)]
 pub struct TyAnnotation<I: Debug + Eq + PartialEq> {
     /// The annotated item.
-    pub item: Located<I>,
+    pub item: I,
     /// The type specified by the annotation.
     pub ty: Located<Ty>,
 }

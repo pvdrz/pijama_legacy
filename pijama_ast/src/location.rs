@@ -1,16 +1,14 @@
-//! Utilities for capturing and representing the location
-//! of tokens in the source code file.
+//! Utilities for capturing and representing the location of tokens in the source code file.
 use std::fmt::{Debug, Display, Formatter, Result as FmtResult};
 
-/// Type representing a length of tokens and their location
-/// in the source code file.
+/// Type representing a length of tokens and their location in the source code file.
 pub type Span<'a> = nom_locate::LocatedSpan<&'a str>;
 
 impl<'a> From<Span<'a>> for Location {
     /// Creates a `Location` instance from a `Span`.
     fn from(span: Span<'a>) -> Self {
         let start = span.location_offset();
-        let end = start + 1;
+        let end = start + span.fragment().len();
         Location { start, end }
     }
 }
@@ -32,13 +30,12 @@ impl Location {
         Location { start, end }
     }
     /// Creates a new `Located` consuming this `Location`.
-    pub fn with_content<T: Debug>(self, content: T) -> Located<T> {
+    pub fn with_content<T>(self, content: T) -> Located<T> {
         Located::new(content, self)
     }
 }
 
-/// Adding two locations `l1` and `l2` returns a location starting in `l1.start` and ending in
-/// `l2.end`.
+/// Adding two locations `l1` and `l2` returns a location starting in `l1.start` and ending in `l2.end`.
 impl std::ops::Add for Location {
     type Output = Self;
     fn add(mut self, other: Self) -> Self {
@@ -50,15 +47,14 @@ impl std::ops::Add for Location {
 /// Wrapper type with a `Location` field.
 ///
 /// It is used to add a location to elements in the AST and intermediate representations.
-#[derive(Debug)]
-pub struct Located<T: Debug> {
+pub struct Located<T> {
     /// Content of the wrapper.
     pub content: T,
     /// Location of `content` in the source file.
     pub loc: Location,
 }
 
-impl<T: Debug> Located<T> {
+impl<T> Located<T> {
     /// Creates a new `Located`.
     pub fn new(content: T, loc: impl Into<Location>) -> Self {
         Located {
@@ -93,22 +89,32 @@ impl<T: Debug> Located<T> {
     }
 }
 
-impl<T: Display + Debug> Display for Located<T> {
+impl<T: Display> Display for Located<T> {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
         write!(f, "{}", self.content)
     }
 }
 
+impl<T: Debug> Debug for Located<T> {
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+        write!(
+            f,
+            "{:?} at {}..{}",
+            self.content, self.loc.start, self.loc.end
+        )
+    }
+}
+
 /// `Located`s are compared by their content only.
-impl<T: Eq + Debug> Eq for Located<T> {}
+impl<T: Eq> Eq for Located<T> {}
 /// `Located`s are compared by their content only.
-impl<T: PartialEq + Debug> PartialEq for Located<T> {
+impl<T: PartialEq> PartialEq for Located<T> {
     fn eq(&self, other: &Self) -> bool {
         self.content == other.content
     }
 }
 
-impl<T: Clone + Debug> Clone for Located<T> {
+impl<T: Clone> Clone for Located<T> {
     fn clone(&self) -> Self {
         Located::new(self.content.clone(), self.loc)
     }
