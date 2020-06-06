@@ -1,2 +1,1 @@
-mod fail;
 mod pass;

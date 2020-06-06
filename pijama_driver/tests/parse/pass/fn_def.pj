@@ -1,4 +1,3 @@
-fn foo() do end
 fn foo(x: Int) do x end
 fn foo(): Unit do foo() end
 fn foo(x: Int, y: Int) do

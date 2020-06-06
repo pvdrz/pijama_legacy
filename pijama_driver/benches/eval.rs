@@ -2,10 +2,9 @@ use criterion::{criterion_group, criterion_main, Criterion};
 
 use std::include_str;
 
-use pijama_core::{
-    lir::Term, machine::MachineBuilder, mir::Term as MirTerm, parser::parse, ty::ty_check,
-};
+use pijama_core::{lir::Term, machine::MachineBuilder, mir::Term as MirTerm, ty::ty_check};
 use pijama_driver::LangResult;
+use pijama_parser::parse;
 
 fn compile(input: &str) -> LangResult<Term> {
     let ast = parse(input)?;

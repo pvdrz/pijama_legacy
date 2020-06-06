@@ -1,9 +1,9 @@
 use pijama_core::{
     mir::Term,
-    parser::parse,
     ty::{ty_check, Ty},
 };
 use pijama_driver::LangResult;
+use pijama_parser::parse;
 
 mod fail;
 mod pass;

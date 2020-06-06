@@ -1,4 +1,4 @@
-use pijama_ast::{Located, Location};
+use pijama_ast::location::{Located, Location};
 
 use std::fmt::Debug;
 
