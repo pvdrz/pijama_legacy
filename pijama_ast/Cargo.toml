@@ -6,4 +6,3 @@ edition = "2018"
 
 [dependencies]
 thiserror = "1.0"
-nom_locate = "2.0.0"

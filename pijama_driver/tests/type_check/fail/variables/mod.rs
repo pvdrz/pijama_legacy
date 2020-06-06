@@ -1,6 +1,6 @@
 use crate::{test_type, util::DummyLoc};
 
-use pijama_core::ty::{TyError};
+use pijama_core::ty::TyError;
 use pijama_driver::LangError;
 
 test_type!(

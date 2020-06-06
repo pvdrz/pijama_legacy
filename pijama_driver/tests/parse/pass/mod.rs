@@ -2,757 +2,914 @@ use std::include_str;
 
 use pijama_ast::{
     self,
+    node::{
+        BinOp::*, Block, Branch, Expression as Expr, Literal, Name, Node, Statement as Stat, UnOp,
+    },
     ty::{Ty, TyAnnotation},
-    BinOp::*,
-    Block, Branch,
-    Node::*,
-    UnOp,
 };
-use pijama_core::parser::parse;
 use pijama_driver::LangResult;
+use pijama_parser::parse;
 
 use crate::util::DummyLoc;
 
+fn block_into_iter<'a>(block: Block<'a>) -> impl Iterator<Item = Node<'a>> {
+    block.nodes.into_iter().chain(Some(Node::Expr(*block.expr)))
+}
+
 #[test]
-fn name() -> LangResult<'static, ()> {
+fn name() -> LangResult<()> {
     let input = include_str!("name.pj");
-    let result = parse(input)?.content;
-    let expected = vec![
-        Name(pijama_ast::Name("x")).loc(),
-        Name(pijama_ast::Name("foo")).loc(),
-        Name(pijama_ast::Name("foo_bar")).loc(),
-    ];
-
-    assert_eq!(expected[0], result[0], "single letter");
-    assert_eq!(expected[1], result[1], "word");
-    assert_eq!(expected[2], result[2], "snake case");
+    let mut result = block_into_iter(parse(input)?);
+    assert_eq!(
+        Node::Expr(Expr::Name(Name("x")).loc()),
+        result.next().unwrap(),
+        "single letter"
+    );
+    assert_eq!(
+        Node::Expr(Expr::Name(Name("foo")).loc()),
+        result.next().unwrap(),
+        "word"
+    );
+    assert_eq!(
+        Node::Expr(Expr::Name(Name("foo_bar")).loc()),
+        result.next().unwrap(),
+        "snake case"
+    );
     Ok(())
 }
 
 #[test]
-fn single_comment() -> LangResult<'static, ()> {
+fn single_comment() -> LangResult<()> {
     let input = include_str!("single_comment.pj");
-    let result = parse(input)?.content;
-    let expected = vec![Name(pijama_ast::Name("foo_bar")).loc()];
-
-    assert_eq!(expected[0], result[0], "snake case");
+    let mut result = block_into_iter(parse(input)?);
+    assert_eq!(
+        Node::Expr(Expr::Name(Name("foo_bar")).loc()),
+        result.next().unwrap(),
+        "snake case"
+    );
     Ok(())
 }
 
 #[test]
-fn literal() -> LangResult<'static, ()> {
+fn consecutive_comments() -> LangResult<()> {
+    let input = include_str!("consecutive_comments.pj");
+    let mut result = block_into_iter(parse(input)?);
+    assert_eq!(
+        Node::Expr(Expr::Name(Name("foo_bar")).loc()),
+        result.next().unwrap(),
+        "snake case"
+    );
+    Ok(())
+}
+
+#[test]
+fn literal() -> LangResult<()> {
     let input = include_str!("literal.pj");
-    let result = parse(input)?.content;
-    let expected = vec![
-        Literal(pijama_ast::Literal::Number(0)).loc(),
-        Literal(pijama_ast::Literal::Number(-1)).loc(),
-        Literal(pijama_ast::Literal::Number(14142)).loc(),
-        Literal(pijama_ast::Literal::Number(14142)).loc(),
-        Literal(pijama_ast::Literal::Number(14142)).loc(),
-        Literal(pijama_ast::Literal::Number(14142)).loc(),
-        Literal(pijama_ast::Literal::Number(14142)).loc(),
-        Literal(pijama_ast::Literal::Bool(true)).loc(),
-        Literal(pijama_ast::Literal::Bool(false)).loc(),
-        Literal(pijama_ast::Literal::Unit).loc(),
-    ];
-
-    assert_eq!(expected[0], result[0], "integer");
-    assert_eq!(expected[1], result[1], "negative integer");
-    for i in 2..7 {
-        assert_eq!(expected[i], result[i], "large integer in different bases");
-    }
-    assert_eq!(expected[7], result[7], "true");
-    assert_eq!(expected[8], result[8], "false");
-    assert_eq!(expected[9], result[9], "unit");
+    let mut result = block_into_iter(parse(input)?);
+    assert_eq!(
+        Node::Expr(Expr::Literal(Literal::Number(0)).loc()),
+        result.next().unwrap(),
+        "integer"
+    );
+    assert_eq!(
+        Node::Expr(Expr::Literal(Literal::Number(-1)).loc()),
+        result.next().unwrap(),
+        "negative integer"
+    );
+    assert_eq!(
+        Node::Expr(Expr::Literal(Literal::Number(14142)).loc()),
+        result.next().unwrap(),
+        "large integer in different bases"
+    );
+    assert_eq!(
+        Node::Expr(Expr::Literal(Literal::Number(14142)).loc()),
+        result.next().unwrap(),
+        "large integer in different bases"
+    );
+    assert_eq!(
+        Node::Expr(Expr::Literal(Literal::Number(14142)).loc()),
+        result.next().unwrap(),
+        "large integer in different bases"
+    );
+    assert_eq!(
+        Node::Expr(Expr::Literal(Literal::Number(14142)).loc()),
+        result.next().unwrap(),
+        "large integer in different bases"
+    );
+    assert_eq!(
+        Node::Expr(Expr::Literal(Literal::Number(14142)).loc()),
+        result.next().unwrap(),
+        "large integer in different bases"
+    );
+    assert_eq!(
+        Node::Expr(Expr::Literal(Literal::Bool(true)).loc()),
+        result.next().unwrap(),
+        "true"
+    );
+    assert_eq!(
+        Node::Expr(Expr::Literal(Literal::Bool(false)).loc()),
+        result.next().unwrap(),
+        "false"
+    );
+    assert_eq!(
+        Node::Expr(Expr::Literal(Literal::Unit).loc()),
+        result.next().unwrap(),
+        "unit"
+    );
     Ok(())
 }
 
 #[test]
-fn binary_op() -> LangResult<'static, ()> {
+fn binary_op() -> LangResult<()> {
     let input = include_str!("bin_op.pj");
-    let result = parse(input)?.content;
-    let expected = vec![
-        BinaryOp(
-            Add,
-            Box::new(Name(pijama_ast::Name("a")).loc()),
-            Box::new(Name(pijama_ast::Name("b")).loc()),
-        )
-        .loc(),
-        BinaryOp(
-            Add,
-            Box::new(
-                BinaryOp(
-                    Add,
-                    Box::new(Name(pijama_ast::Name("a")).loc()),
-                    Box::new(Name(pijama_ast::Name("b")).loc()),
-                )
-                .loc(),
-            ),
-            Box::new(Name(pijama_ast::Name("c")).loc()),
-        )
-        .loc(),
-        BinaryOp(
-            Add,
-            Box::new(Name(pijama_ast::Name("a")).loc()),
-            Box::new(
-                BinaryOp(
-                    Add,
-                    Box::new(Name(pijama_ast::Name("b")).loc()),
-                    Box::new(Name(pijama_ast::Name("c")).loc()),
-                )
-                .loc(),
-            ),
-        )
-        .loc(),
-    ];
-
-    assert_eq!(expected[0], result[0], "simple");
-    assert_eq!(expected[1], result[1], "left-associative");
-    assert_eq!(expected[2], result[2], "brackets");
+    let mut result = block_into_iter(parse(input)?);
+    assert_eq!(
+        Node::Expr(
+            Expr::BinaryOp(
+                Add,
+                Box::new(Expr::Name(Name("a")).loc()),
+                Box::new(Expr::Name(Name("b")).loc()),
+            )
+            .loc(),
+        ),
+        result.next().unwrap(),
+        "simple"
+    );
+    assert_eq!(
+        Node::Expr(
+            Expr::BinaryOp(
+                Add,
+                Box::new(
+                    Expr::BinaryOp(
+                        Add,
+                        Box::new(Expr::Name(Name("a")).loc()),
+                        Box::new(Expr::Name(Name("b")).loc()),
+                    )
+                    .loc(),
+                ),
+                Box::new(Expr::Name(Name("c")).loc()),
+            )
+            .loc()
+        ),
+        result.next().unwrap(),
+        "left-associative"
+    );
+    assert_eq!(
+        Node::Expr(
+            Expr::BinaryOp(
+                Add,
+                Box::new(Expr::Name(Name("a")).loc()),
+                Box::new(
+                    Expr::BinaryOp(
+                        Add,
+                        Box::new(Expr::Name(Name("b")).loc()),
+                        Box::new(Expr::Name(Name("c")).loc()),
+                    )
+                    .loc(),
+                ),
+            )
+            .loc()
+        ),
+        result.next().unwrap(),
+        "brackets"
+    );
     Ok(())
 }
 
 #[test]
-fn unary_op() -> LangResult<'static, ()> {
+fn unary_op() -> LangResult<()> {
     let input = include_str!("un_op.pj");
-    let result = parse(input)?.content;
-    let expected = vec![
-        UnaryOp(UnOp::Neg, Box::new(Name(pijama_ast::Name("x")).loc())).loc(),
-        UnaryOp(UnOp::Not, Box::new(Name(pijama_ast::Name("x")).loc())).loc(),
-        UnaryOp(
-            UnOp::Not,
-            Box::new(UnaryOp(UnOp::Not, Box::new(Name(pijama_ast::Name("x")).loc())).loc()),
-        )
-        .loc(),
-        UnaryOp(UnOp::Not, Box::new(Name(pijama_ast::Name("x")).loc())).loc(),
-    ];
-
-    assert_eq!(expected[0], result[0], "minus");
-    assert_eq!(expected[1], result[1], "not");
-    assert_eq!(expected[2], result[2], "double");
-    assert_eq!(expected[3], result[3], "brackets");
+    let mut result = block_into_iter(parse(input)?);
+    assert_eq!(
+        Node::Expr(Expr::UnaryOp(UnOp::Neg, Box::new(Expr::Name(Name("x")).loc())).loc(),),
+        result.next().unwrap(),
+        "minus"
+    );
+    assert_eq!(
+        Node::Expr(Expr::UnaryOp(UnOp::Not, Box::new(Expr::Name(Name("x")).loc())).loc(),),
+        result.next().unwrap(),
+        "not"
+    );
+    assert_eq!(
+        Node::Expr(
+            Expr::UnaryOp(
+                UnOp::Not,
+                Box::new(Expr::UnaryOp(UnOp::Not, Box::new(Expr::Name(Name("x")).loc())).loc(),),
+            )
+            .loc(),
+        ),
+        result.next().unwrap(),
+        "double"
+    );
+    assert_eq!(
+        Node::Expr(Expr::UnaryOp(UnOp::Not, Box::new(Expr::Name(Name("x")).loc())).loc()),
+        result.next().unwrap(),
+        "brackets"
+    );
     Ok(())
 }
 
 #[test]
-fn logic_op() -> LangResult<'static, ()> {
+fn logic_op() -> LangResult<()> {
     let input = include_str!("logic_op.pj");
-    let result = parse(input)?.content;
-    let expected = vec![
-        BinaryOp(
-            And,
-            Box::new(Name(pijama_ast::Name("a")).loc()),
-            Box::new(Name(pijama_ast::Name("b")).loc()),
-        )
-        .loc(),
-        BinaryOp(
-            Or,
-            Box::new(
-                BinaryOp(
-                    And,
-                    Box::new(Name(pijama_ast::Name("a")).loc()),
-                    Box::new(Name(pijama_ast::Name("b")).loc()),
-                )
-                .loc(),
-            ),
-            Box::new(Name(pijama_ast::Name("c")).loc()),
-        )
-        .loc(),
-        BinaryOp(
-            And,
-            Box::new(Name(pijama_ast::Name("a")).loc()),
-            Box::new(
-                BinaryOp(
-                    Or,
-                    Box::new(Name(pijama_ast::Name("b")).loc()),
-                    Box::new(Name(pijama_ast::Name("c")).loc()),
-                )
-                .loc(),
-            ),
-        )
-        .loc(),
-    ];
-
-    assert_eq!(expected[0], result[0], "simple");
-    assert_eq!(expected[1], result[1], "left-associative");
-    assert_eq!(expected[2], result[2], "brackets");
+    let mut result = block_into_iter(parse(input)?);
+    assert_eq!(
+        Node::Expr(
+            Expr::BinaryOp(
+                And,
+                Box::new(Expr::Name(Name("a")).loc()),
+                Box::new(Expr::Name(Name("b")).loc()),
+            )
+            .loc(),
+        ),
+        result.next().unwrap(),
+        "simple"
+    );
+    assert_eq!(
+        Node::Expr(
+            Expr::BinaryOp(
+                Or,
+                Box::new(
+                    Expr::BinaryOp(
+                        And,
+                        Box::new(Expr::Name(Name("a")).loc()),
+                        Box::new(Expr::Name(Name("b")).loc()),
+                    )
+                    .loc(),
+                ),
+                Box::new(Expr::Name(Name("c")).loc()),
+            )
+            .loc(),
+        ),
+        result.next().unwrap(),
+        "left-associative"
+    );
+    assert_eq!(
+        Node::Expr(
+            Expr::BinaryOp(
+                And,
+                Box::new(Expr::Name(Name("a")).loc()),
+                Box::new(
+                    Expr::BinaryOp(
+                        Or,
+                        Box::new(Expr::Name(Name("b")).loc()),
+                        Box::new(Expr::Name(Name("c")).loc()),
+                    )
+                    .loc(),
+                ),
+            )
+            .loc()
+        ),
+        result.next().unwrap(),
+        "brackets"
+    );
     Ok(())
 }
 
 #[test]
-fn bit_op() -> LangResult<'static, ()> {
+fn bit_op() -> LangResult<()> {
     let input = include_str!("bit_op.pj");
-    let result = parse(input)?.content;
-    let expected = vec![
-        BinaryOp(
-            BitAnd,
-            Box::new(Name(pijama_ast::Name("a")).loc()),
-            Box::new(Name(pijama_ast::Name("b")).loc()),
-        )
-        .loc(),
-        BinaryOp(
-            BitXor,
-            Box::new(
-                BinaryOp(
-                    BitOr,
-                    Box::new(
-                        BinaryOp(
-                            BitAnd,
-                            Box::new(Name(pijama_ast::Name("a")).loc()),
-                            Box::new(Name(pijama_ast::Name("b")).loc()),
-                        )
-                        .loc(),
-                    ),
-                    Box::new(Name(pijama_ast::Name("c")).loc()),
-                )
-                .loc(),
-            ),
-            Box::new(Name(pijama_ast::Name("d")).loc()),
-        )
-        .loc(),
-        BinaryOp(
-            BitXor,
-            Box::new(
-                BinaryOp(
-                    BitAnd,
-                    Box::new(Name(pijama_ast::Name("a")).loc()),
-                    Box::new(
-                        BinaryOp(
-                            BitOr,
-                            Box::new(Name(pijama_ast::Name("b")).loc()),
-                            Box::new(Name(pijama_ast::Name("c")).loc()),
-                        )
-                        .loc(),
-                    ),
-                )
-                .loc(),
-            ),
-            Box::new(Name(pijama_ast::Name("d")).loc()),
-        )
-        .loc(),
-    ];
-
-    assert_eq!(expected[0], result[0], "simple");
-    assert_eq!(expected[1], result[1], "left-associative");
-    assert_eq!(expected[2], result[2], "brackets");
+    let mut result = block_into_iter(parse(input)?);
+    assert_eq!(
+        Node::Expr(
+            Expr::BinaryOp(
+                BitAnd,
+                Box::new(Expr::Name(Name("a")).loc()),
+                Box::new(Expr::Name(Name("b")).loc()),
+            )
+            .loc(),
+        ),
+        result.next().unwrap(),
+        "simple"
+    );
+    assert_eq!(
+        Node::Expr(
+            Expr::BinaryOp(
+                BitXor,
+                Box::new(
+                    Expr::BinaryOp(
+                        BitOr,
+                        Box::new(
+                            Expr::BinaryOp(
+                                BitAnd,
+                                Box::new(Expr::Name(Name("a")).loc()),
+                                Box::new(Expr::Name(Name("b")).loc()),
+                            )
+                            .loc(),
+                        ),
+                        Box::new(Expr::Name(Name("c")).loc()),
+                    )
+                    .loc(),
+                ),
+                Box::new(Expr::Name(Name("d")).loc()),
+            )
+            .loc()
+        ),
+        result.next().unwrap(),
+        "left-associative"
+    );
+    assert_eq!(
+        Node::Expr(
+            Expr::BinaryOp(
+                BitXor,
+                Box::new(
+                    Expr::BinaryOp(
+                        BitAnd,
+                        Box::new(Expr::Name(Name("a")).loc()),
+                        Box::new(
+                            Expr::BinaryOp(
+                                BitOr,
+                                Box::new(Expr::Name(Name("b")).loc()),
+                                Box::new(Expr::Name(Name("c")).loc()),
+                            )
+                            .loc(),
+                        ),
+                    )
+                    .loc(),
+                ),
+                Box::new(Expr::Name(Name("d")).loc()),
+            )
+            .loc()
+        ),
+        result.next().unwrap(),
+        "brackets"
+    );
     Ok(())
 }
 
 #[test]
-fn let_bind() -> LangResult<'static, ()> {
+fn assign() -> LangResult<()> {
     let input = include_str!("let_bind.pj");
-    let result = parse(input)?.content;
-    let expected = vec![
-        LetBind(
-            TyAnnotation {
-                item: pijama_ast::Name("x").loc(),
-                ty: Ty::Missing.loc(),
-            },
-            Box::new(Name(pijama_ast::Name("y")).loc()),
-        )
-        .loc(),
-        LetBind(
-            TyAnnotation {
-                item: pijama_ast::Name("x").loc(),
-                ty: Ty::Missing.loc(),
-            },
-            Box::new(
-                BinaryOp(
+    let mut result = block_into_iter(parse(input)?);
+    assert_eq!(
+        Node::Stat(
+            Stat::Assign(
+                TyAnnotation {
+                    item: Name("x").loc(),
+                    ty: Ty::Missing.loc(),
+                },
+                Expr::Name(Name("y")).loc(),
+            )
+            .loc(),
+        ),
+        result.next().unwrap(),
+        "simple"
+    );
+    assert_eq!(
+        Node::Stat(
+            Stat::Assign(
+                TyAnnotation {
+                    item: Name("x").loc(),
+                    ty: Ty::Missing.loc(),
+                },
+                Expr::BinaryOp(
                     Add,
-                    Box::new(Name(pijama_ast::Name("y")).loc()),
-                    Box::new(Name(pijama_ast::Name("z")).loc()),
+                    Box::new(Expr::Name(Name("y")).loc()),
+                    Box::new(Expr::Name(Name("z")).loc()),
                 )
                 .loc(),
-            ),
-        )
-        .loc(),
-        LetBind(
-            TyAnnotation {
-                item: pijama_ast::Name("x").loc(),
-                ty: Ty::Int.loc(),
-            },
-            Box::new(Name(pijama_ast::Name("y")).loc()),
-        )
-        .loc(),
-        LetBind(
-            TyAnnotation {
-                item: pijama_ast::Name("foo").loc(),
-                ty: Ty::Missing.loc(),
-            },
-            Box::new(
-                AnonFn(
+            )
+            .loc(),
+        ),
+        result.next().unwrap(),
+        "bind to bin op"
+    );
+    assert_eq!(
+        Node::Stat(
+            Stat::Assign(
+                TyAnnotation {
+                    item: Name("x").loc(),
+                    ty: Ty::Int.loc(),
+                },
+                Expr::Name(Name("y")).loc(),
+            )
+            .loc(),
+        ),
+        result.next().unwrap(),
+        "type binding"
+    );
+    assert_eq!(
+        Node::Stat(
+            Stat::Assign(
+                TyAnnotation {
+                    item: Name("foo").loc(),
+                    ty: Ty::Missing.loc(),
+                },
+                Expr::AnonFn(
                     vec![TyAnnotation {
-                        item: pijama_ast::Name("x").loc(),
+                        item: Name("x").loc(),
                         ty: Ty::Int.loc(),
                     }],
                     TyAnnotation {
-                        item: vec![Name(pijama_ast::Name("x")).loc()]
-                            .into_iter()
-                            .collect::<Block<'_>>()
-                            .loc(),
+                        item: Block {
+                            nodes: Default::default(),
+                            expr: Box::new(Expr::Name(Name("x")).loc()),
+                        },
                         ty: Ty::Missing.loc(),
                     },
                 )
                 .loc(),
-            ),
-        )
-        .loc(),
-    ];
-
-    assert_eq!(expected[0], result[0], "simple");
-    assert_eq!(expected[1], result[1], "bind to bin op");
-    assert_eq!(expected[2], result[2], "type binding");
-    assert_eq!(expected[3], result[3], "bind to nameless function");
+            )
+            .loc(),
+        ),
+        result.next().unwrap(),
+        "bind to nameless function"
+    );
     Ok(())
 }
 
 #[test]
-fn cond() -> LangResult<'static, ()> {
+fn cond() -> LangResult<()> {
     let input = include_str!("cond.pj");
-    let result = parse(input)?.content;
-    let expected = vec![
-        Cond(
-            Branch {
-                cond: vec![Name(pijama_ast::Name("x")).loc()]
-                    .into_iter()
-                    .collect::<Block<'_>>()
-                    .loc(),
-                body: vec![Name(pijama_ast::Name("y")).loc()]
-                    .into_iter()
-                    .collect::<Block<'_>>()
-                    .loc(),
-            },
-            vec![],
-            vec![Name(pijama_ast::Name("z")).loc()]
-                .into_iter()
-                .collect::<Block<'_>>()
-                .loc(),
-        )
-        .loc(),
-        Cond(
-            Branch {
-                cond: vec![
-                    Name(pijama_ast::Name("u")).loc(),
-                    Name(pijama_ast::Name("v")).loc(),
-                ]
-                .into_iter()
-                .collect::<Block<'_>>()
-                .loc(),
-                body: vec![
-                    Name(pijama_ast::Name("w")).loc(),
-                    Name(pijama_ast::Name("x")).loc(),
-                ]
-                .into_iter()
-                .collect::<Block<'_>>()
-                .loc(),
-            },
-            vec![],
-            vec![
-                Name(pijama_ast::Name("y")).loc(),
-                Name(pijama_ast::Name("z")).loc(),
-            ]
-            .into_iter()
-            .collect::<Block<'_>>()
+    let mut result = block_into_iter(parse(input)?);
+    assert_eq!(
+        Node::Expr(
+            Expr::Cond(
+                Branch {
+                    cond: Block {
+                        nodes: Default::default(),
+                        expr: Box::new(Expr::Name(Name("x")).loc()),
+                    },
+                    body: Block {
+                        nodes: Default::default(),
+                        expr: Box::new(Expr::Name(Name("y")).loc()),
+                    },
+                },
+                vec![],
+                Block {
+                    nodes: Default::default(),
+                    expr: Box::new(Expr::Name(Name("z")).loc()),
+                },
+            )
             .loc(),
-        )
-        .loc(),
-    ];
-
-    assert_eq!(expected[0], result[0], "simple blocks");
-    assert_eq!(expected[1], result[1], "long blocks");
+        ),
+        result.next().unwrap(),
+        "simple blocks"
+    );
+    assert_eq!(
+        Node::Expr(
+            Expr::Cond(
+                Branch {
+                    cond: Block {
+                        nodes: vec![Node::Expr(Expr::Name(Name("u")).loc())]
+                            .into_iter()
+                            .collect(),
+                        expr: Box::new(Expr::Name(Name("v")).loc()),
+                    },
+                    body: Block {
+                        nodes: vec![Node::Expr(Expr::Name(Name("w")).loc())]
+                            .into_iter()
+                            .collect(),
+                        expr: Box::new(Expr::Name(Name("x")).loc()),
+                    },
+                },
+                vec![],
+                Block {
+                    nodes: vec![Node::Expr(Expr::Name(Name("y")).loc())]
+                        .into_iter()
+                        .collect(),
+                    expr: Box::new(Expr::Name(Name("z")).loc()),
+                },
+            )
+            .loc(),
+        ),
+        result.next().unwrap(),
+        "long blocks"
+    );
     Ok(())
 }
-
 #[test]
-fn elif() -> LangResult<'static, ()> {
+fn elif() -> LangResult<()> {
     let input = include_str!("elif.pj");
-    let result = parse(input)?.content;
-    let expected = vec![
-        Cond(
-            Branch {
-                cond: vec![Name(pijama_ast::Name("x")).loc()]
-                    .into_iter()
-                    .collect::<Block<'_>>()
-                    .loc(),
-                body: vec![Name(pijama_ast::Name("y")).loc()]
-                    .into_iter()
-                    .collect::<Block<'_>>()
-                    .loc(),
-            },
-            vec![Branch {
-                cond: vec![Name(pijama_ast::Name("a")).loc()]
-                    .into_iter()
-                    .collect::<Block<'_>>()
-                    .loc(),
-                body: vec![Name(pijama_ast::Name("b")).loc()]
-                    .into_iter()
-                    .collect::<Block<'_>>()
-                    .loc(),
-            }],
-            vec![Name(pijama_ast::Name("z")).loc()]
-                .into_iter()
-                .collect::<Block<'_>>()
-                .loc(),
-        )
-        .loc(),
-        Cond(
-            Branch {
-                cond: vec![
-                    Name(pijama_ast::Name("u")).loc(),
-                    Name(pijama_ast::Name("v")).loc(),
-                ]
-                .into_iter()
-                .collect::<Block<'_>>()
-                .loc(),
-                body: vec![
-                    Name(pijama_ast::Name("w")).loc(),
-                    Name(pijama_ast::Name("x")).loc(),
-                ]
-                .into_iter()
-                .collect::<Block<'_>>()
-                .loc(),
-            },
-            vec![
+    let mut result = block_into_iter(parse(input)?);
+    assert_eq!(
+        Node::Expr(
+            Expr::Cond(
                 Branch {
-                    cond: vec![
-                        Name(pijama_ast::Name("a")).loc(),
-                        Name(pijama_ast::Name("b")).loc(),
-                    ]
-                    .into_iter()
-                    .collect::<Block<'_>>()
-                    .loc(),
-                    body: vec![
-                        Name(pijama_ast::Name("c")).loc(),
-                        Name(pijama_ast::Name("d")).loc(),
-                    ]
-                    .into_iter()
-                    .collect::<Block<'_>>()
-                    .loc(),
+                    cond: Block {
+                        nodes: Default::default(),
+                        expr: Box::new(Expr::Name(Name("x")).loc()),
+                    },
+                    body: Block {
+                        nodes: Default::default(),
+                        expr: Box::new(Expr::Name(Name("y")).loc()),
+                    },
                 },
-                Branch {
-                    cond: vec![
-                        Name(pijama_ast::Name("e")).loc(),
-                        Name(pijama_ast::Name("f")).loc(),
-                    ]
-                    .into_iter()
-                    .collect::<Block<'_>>()
-                    .loc(),
-                    body: vec![
-                        Name(pijama_ast::Name("g")).loc(),
-                        Name(pijama_ast::Name("h")).loc(),
-                    ]
-                    .into_iter()
-                    .collect::<Block<'_>>()
-                    .loc(),
+                vec![Branch {
+                    cond: Block {
+                        nodes: Default::default(),
+                        expr: Box::new(Expr::Name(Name("a")).loc()),
+                    },
+                    body: Block {
+                        nodes: Default::default(),
+                        expr: Box::new(Expr::Name(Name("b")).loc()),
+                    },
+                },],
+                Block {
+                    nodes: Default::default(),
+                    expr: Box::new(Expr::Name(Name("z")).loc()),
                 },
-            ],
-            vec![
-                Name(pijama_ast::Name("y")).loc(),
-                Name(pijama_ast::Name("z")).loc(),
-            ]
-            .into_iter()
-            .collect::<Block<'_>>()
+            )
             .loc(),
-        )
-        .loc(),
-    ];
-    assert_eq!(expected[0], result[0], "simple blocks");
-    assert_eq!(expected[1], result[1], "long blocks");
+        ),
+        result.next().unwrap(),
+        "simple blocks"
+    );
+    assert_eq!(
+        Node::Expr(
+            Expr::Cond(
+                Branch {
+                    cond: Block {
+                        nodes: vec![Node::Expr(Expr::Name(Name("u")).loc())]
+                            .into_iter()
+                            .collect(),
+                        expr: Box::new(Expr::Name(Name("v")).loc()),
+                    },
+                    body: Block {
+                        nodes: vec![Node::Expr(Expr::Name(Name("w")).loc())]
+                            .into_iter()
+                            .collect(),
+                        expr: Box::new(Expr::Name(Name("x")).loc()),
+                    },
+                },
+                vec![
+                    Branch {
+                        cond: Block {
+                            nodes: vec![Node::Expr(Expr::Name(Name("a")).loc())]
+                                .into_iter()
+                                .collect(),
+                            expr: Box::new(Expr::Name(Name("b")).loc()),
+                        },
+                        body: Block {
+                            nodes: vec![Node::Expr(Expr::Name(Name("c")).loc())]
+                                .into_iter()
+                                .collect(),
+                            expr: Box::new(Expr::Name(Name("d")).loc()),
+                        },
+                    },
+                    Branch {
+                        cond: Block {
+                            nodes: vec![Node::Expr(Expr::Name(Name("e")).loc())]
+                                .into_iter()
+                                .collect(),
+                            expr: Box::new(Expr::Name(Name("f")).loc()),
+                        },
+                        body: Block {
+                            nodes: vec![Node::Expr(Expr::Name(Name("g")).loc())]
+                                .into_iter()
+                                .collect(),
+                            expr: Box::new(Expr::Name(Name("h")).loc()),
+                        },
+                    },
+                ],
+                Block {
+                    nodes: vec![Node::Expr(Expr::Name(Name("y")).loc())]
+                        .into_iter()
+                        .collect(),
+                    expr: Box::new(Expr::Name(Name("z")).loc()),
+                },
+            )
+            .loc(),
+        ),
+        result.next().unwrap(),
+        "long blocks"
+    );
     Ok(())
 }
 
 #[test]
-fn call() -> LangResult<'static, ()> {
+fn call() -> LangResult<()> {
     let input = include_str!("call.pj");
-    let result = parse(input)?.content;
-    let expected = vec![
-        Call(
-            Box::new(Name(pijama_ast::Name("x")).loc()),
-            vec![].into_iter().collect::<Block<'_>>(),
-        )
-        .loc(),
-        Call(
-            Box::new(Name(pijama_ast::Name("x")).loc()),
-            vec![Name(pijama_ast::Name("y")).loc()]
-                .into_iter()
-                .collect::<Block<'_>>(),
-        )
-        .loc(),
-        Call(
-            Box::new(Name(pijama_ast::Name("x")).loc()),
-            vec![
-                Name(pijama_ast::Name("y")).loc(),
-                Name(pijama_ast::Name("z")).loc(),
-            ]
-            .into_iter()
-            .collect::<Block<'_>>(),
-        )
-        .loc(),
-        Call(
-            Box::new(
-                BinaryOp(
-                    Add,
-                    Box::new(Name(pijama_ast::Name("x")).loc()),
-                    Box::new(Name(pijama_ast::Name("y")).loc()),
-                )
-                .loc(),
-            ),
-            vec![Name(pijama_ast::Name("z")).loc()]
-                .into_iter()
-                .collect::<Block<'_>>(),
-        )
-        .loc(),
-    ];
-
-    assert_eq!(expected[0], result[0], "nullary call");
-    assert_eq!(expected[1], result[1], "unary call");
-    assert_eq!(expected[2], result[2], "binary call");
-    assert_eq!(expected[3], result[3], "complex callee");
+    let mut result = block_into_iter(parse(input)?);
+    assert_eq!(
+        Node::Expr(Expr::Call(Box::new(Expr::Name(Name("x")).loc()), vec![]).loc()),
+        result.next().unwrap(),
+        "nullary call"
+    );
+    assert_eq!(
+        Node::Expr(
+            Expr::Call(
+                Box::new(Expr::Name(Name("x")).loc()),
+                vec![Expr::Name(Name("y")).loc()],
+            )
+            .loc(),
+        ),
+        result.next().unwrap(),
+        "unary call"
+    );
+    assert_eq!(
+        Node::Expr(
+            Expr::Call(
+                Box::new(Expr::Name(Name("x")).loc()),
+                vec![Expr::Name(Name("y")).loc(), Expr::Name(Name("z")).loc()],
+            )
+            .loc(),
+        ),
+        result.next().unwrap(),
+        "binary call"
+    );
+    assert_eq!(
+        Node::Expr(
+            Expr::Call(
+                Box::new(
+                    Expr::BinaryOp(
+                        Add,
+                        Box::new(Expr::Name(Name("x")).loc()),
+                        Box::new(Expr::Name(Name("y")).loc()),
+                    )
+                    .loc(),
+                ),
+                vec![Expr::Name(Name("z")).loc()],
+            )
+            .loc(),
+        ),
+        result.next().unwrap(),
+        "complex call"
+    );
     Ok(())
 }
 
 #[test]
-fn fn_def() -> LangResult<'static, ()> {
+fn fn_def() -> LangResult<()> {
     let input = include_str!("fn_def.pj");
-    let result = parse(input)?.content;
-    let expected = vec![
-        FnDef(
-            pijama_ast::Name("foo").loc(),
-            vec![],
-            TyAnnotation {
-                item: vec![].into_iter().collect::<Block<'_>>().loc(),
-                ty: Ty::Missing.loc(),
-            },
-        )
-        .loc(),
-        FnDef(
-            pijama_ast::Name("foo").loc(),
-            vec![TyAnnotation {
-                item: pijama_ast::Name("x").loc(),
-                ty: Ty::Int.loc(),
-            }],
-            TyAnnotation {
-                item: vec![Name(pijama_ast::Name("x")).loc()]
-                    .into_iter()
-                    .collect::<Block<'_>>()
-                    .loc(),
-                ty: Ty::Missing.loc(),
-            },
-        )
-        .loc(),
-        FnDef(
-            pijama_ast::Name("foo").loc(),
-            vec![],
-            TyAnnotation {
-                item: vec![Call(
-                    Box::new(Name(pijama_ast::Name("foo")).loc()),
-                    vec![].into_iter().collect::<Block<'_>>(),
-                )
-                .loc()]
-                .into_iter()
-                .collect::<Block<'_>>()
-                .loc(),
-                ty: Ty::Unit.loc(),
-            },
-        )
-        .loc(),
-        FnDef(
-            pijama_ast::Name("foo").loc(),
-            vec![
-                TyAnnotation {
-                    item: pijama_ast::Name("x").loc(),
+    let mut result = block_into_iter(parse(input)?);
+    assert_eq!(
+        Node::Stat(
+            Stat::FnDef(
+                Name("foo").loc(),
+                vec![TyAnnotation {
+                    item: Name("x").loc(),
                     ty: Ty::Int.loc(),
-                },
+                }],
                 TyAnnotation {
-                    item: pijama_ast::Name("y").loc(),
-                    ty: Ty::Int.loc(),
+                    item: Block {
+                        nodes: Default::default(),
+                        expr: Box::new(Expr::Name(Name("x")).loc()),
+                    },
+                    ty: Ty::Missing.loc(),
                 },
-            ],
-            TyAnnotation {
-                item: vec![
-                    Name(pijama_ast::Name("x")).loc(),
-                    Name(pijama_ast::Name("y")).loc(),
-                ]
-                .into_iter()
-                .collect::<Block<'_>>()
-                .loc(),
-                ty: Ty::Missing.loc(),
-            },
-        )
-        .loc(),
-        AnonFn(
-            vec![TyAnnotation {
-                item: pijama_ast::Name("x").loc(),
-                ty: Ty::Int.loc(),
-            }],
-            TyAnnotation {
-                item: vec![Name(pijama_ast::Name("x")).loc()]
-                    .into_iter()
-                    .collect::<Block<'_>>()
-                    .loc(),
-                ty: Ty::Missing.loc(),
-            },
-        )
-        .loc(),
-        AnonFn(
-            vec![TyAnnotation {
-                item: pijama_ast::Name("x").loc(),
-                ty: Ty::Int.loc(),
-            }],
-            TyAnnotation {
-                item: vec![Name(pijama_ast::Name("x")).loc()]
-                    .into_iter()
-                    .collect::<Block<'_>>()
-                    .loc(),
-                ty: Ty::Missing.loc(),
-            },
-        )
-        .loc(),
-    ];
-
-    assert_eq!(expected[0], result[0], "nullary def");
-    assert_eq!(expected[1], result[1], "unary def");
-    assert_eq!(expected[2], result[2], "recursive def");
-    assert_eq!(expected[3], result[3], "long body");
-    assert_eq!(expected[4], result[4], "nameless");
-    assert_eq!(expected[5], result[5], "nameless with space");
+            )
+            .loc(),
+        ),
+        result.next().unwrap(),
+        "unary def"
+    );
+    assert_eq!(
+        Node::Stat(
+            Stat::FnDef(
+                Name("foo").loc(),
+                vec![],
+                TyAnnotation {
+                    item: Block {
+                        nodes: Default::default(),
+                        expr: Box::new(
+                            Expr::Call(Box::new(Expr::Name(Name("foo")).loc()), vec![]).loc(),
+                        ),
+                    },
+                    ty: Ty::Unit.loc(),
+                },
+            )
+            .loc(),
+        ),
+        result.next().unwrap(),
+        "recursive def"
+    );
+    assert_eq!(
+        Node::Stat(
+            Stat::FnDef(
+                Name("foo").loc(),
+                vec![
+                    TyAnnotation {
+                        item: Name("x").loc(),
+                        ty: Ty::Int.loc(),
+                    },
+                    TyAnnotation {
+                        item: Name("y").loc(),
+                        ty: Ty::Int.loc(),
+                    },
+                ],
+                TyAnnotation {
+                    item: Block {
+                        nodes: vec![Node::Expr(Expr::Name(Name("x")).loc())]
+                            .into_iter()
+                            .collect(),
+                        expr: Box::new(Expr::Name(Name("y")).loc()),
+                    },
+                    ty: Ty::Missing.loc(),
+                },
+            )
+            .loc(),
+        ),
+        result.next().unwrap(),
+        "long body"
+    );
+    assert_eq!(
+        Node::Expr(
+            Expr::AnonFn(
+                vec![TyAnnotation {
+                    item: Name("x").loc(),
+                    ty: Ty::Int.loc(),
+                }],
+                TyAnnotation {
+                    item: Block {
+                        nodes: Default::default(),
+                        expr: Box::new(Expr::Name(Name("x")).loc()),
+                    },
+                    ty: Ty::Missing.loc(),
+                },
+            )
+            .loc(),
+        ),
+        result.next().unwrap(),
+        "nameless"
+    );
+    assert_eq!(
+        Node::Expr(
+            Expr::AnonFn(
+                vec![TyAnnotation {
+                    item: Name("x").loc(),
+                    ty: Ty::Int.loc(),
+                }],
+                TyAnnotation {
+                    item: Block {
+                        nodes: Default::default(),
+                        expr: Box::new(Expr::Name(Name("x")).loc()),
+                    },
+                    ty: Ty::Missing.loc(),
+                },
+            )
+            .loc(),
+        ),
+        result.next().unwrap(),
+        "nameless with space"
+    );
     Ok(())
 }
 
 #[test]
-fn precedence() -> LangResult<'static, ()> {
+fn precedence() -> LangResult<()> {
     let input = include_str!("precedence.pj");
-    let result = parse(input)?.content;
-    let expected = vec![
-        BinaryOp(
-            Add,
-            Box::new(Name(pijama_ast::Name("a")).loc()),
-            Box::new(
-                BinaryOp(
-                    Mul,
-                    Box::new(Name(pijama_ast::Name("b")).loc()),
-                    Box::new(Name(pijama_ast::Name("c")).loc()),
-                )
-                .loc(),
-            ),
-        )
-        .loc(),
-        BinaryOp(
-            BitAnd,
-            Box::new(Name(pijama_ast::Name("a")).loc()),
-            Box::new(
-                BinaryOp(
-                    Add,
-                    Box::new(Name(pijama_ast::Name("b")).loc()),
-                    Box::new(Name(pijama_ast::Name("c")).loc()),
-                )
-                .loc(),
-            ),
-        )
-        .loc(),
-        BinaryOp(
-            Eq,
-            Box::new(Name(pijama_ast::Name("a")).loc()),
-            Box::new(
-                BinaryOp(
-                    BitAnd,
-                    Box::new(Name(pijama_ast::Name("b")).loc()),
-                    Box::new(Name(pijama_ast::Name("c")).loc()),
-                )
-                .loc(),
-            ),
-        )
-        .loc(),
-        BinaryOp(
-            And,
-            Box::new(Name(pijama_ast::Name("a")).loc()),
-            Box::new(
-                BinaryOp(
-                    Eq,
-                    Box::new(Name(pijama_ast::Name("b")).loc()),
-                    Box::new(Name(pijama_ast::Name("c")).loc()),
-                )
-                .loc(),
-            ),
-        )
-        .loc(),
-    ];
-    assert_eq!(expected[0], result[0], "mul precedes add");
-    assert_eq!(expected[1], result[1], "add precedes bitwise and");
-    assert_eq!(expected[2], result[2], "bitwise and precedes equal");
-    assert_eq!(expected[3], result[3], "equal precedes and");
+    let mut result = block_into_iter(parse(input)?);
+    assert_eq!(
+        Node::Expr(
+            Expr::BinaryOp(
+                Add,
+                Box::new(Expr::Name(Name("a")).loc()),
+                Box::new(
+                    Expr::BinaryOp(
+                        Mul,
+                        Box::new(Expr::Name(Name("b")).loc()),
+                        Box::new(Expr::Name(Name("c")).loc()),
+                    )
+                    .loc(),
+                ),
+            )
+            .loc(),
+        ),
+        result.next().unwrap(),
+        "mul precedes add"
+    );
+    assert_eq!(
+        Node::Expr(
+            Expr::BinaryOp(
+                BitAnd,
+                Box::new(Expr::Name(Name("a")).loc()),
+                Box::new(
+                    Expr::BinaryOp(
+                        Add,
+                        Box::new(Expr::Name(Name("b")).loc()),
+                        Box::new(Expr::Name(Name("c")).loc()),
+                    )
+                    .loc(),
+                ),
+            )
+            .loc(),
+        ),
+        result.next().unwrap(),
+        "add precedes bitwise and"
+    );
+    assert_eq!(
+        Node::Expr(
+            Expr::BinaryOp(
+                Eq,
+                Box::new(Expr::Name(Name("a")).loc()),
+                Box::new(
+                    Expr::BinaryOp(
+                        BitAnd,
+                        Box::new(Expr::Name(Name("b")).loc()),
+                        Box::new(Expr::Name(Name("c")).loc()),
+                    )
+                    .loc(),
+                ),
+            )
+            .loc(),
+        ),
+        result.next().unwrap(),
+        "bitwise and precedes equal"
+    );
+    assert_eq!(
+        Node::Expr(
+            Expr::BinaryOp(
+                And,
+                Box::new(Expr::Name(Name("a")).loc()),
+                Box::new(
+                    Expr::BinaryOp(
+                        Eq,
+                        Box::new(Expr::Name(Name("b")).loc()),
+                        Box::new(Expr::Name(Name("c")).loc()),
+                    )
+                    .loc(),
+                ),
+            )
+            .loc(),
+        ),
+        result.next().unwrap(),
+        "equal precedes and"
+    );
     Ok(())
 }
 
 #[test]
-fn cmp_and_shift() -> LangResult<'static, ()> {
+fn cmp_and_shift() -> LangResult<()> {
     let input = include_str!("cmp_and_shift.pj");
-    let result = parse(input)?.content;
-    let expected = vec![
-        BinaryOp(
-            Lt,
-            Box::new(
-                BinaryOp(
-                    Shl,
-                    Box::new(Name(pijama_ast::Name("a")).loc()),
-                    Box::new(Name(pijama_ast::Name("b")).loc()),
-                )
-                .loc(),
-            ),
-            Box::new(
-                BinaryOp(
-                    Shl,
-                    Box::new(Name(pijama_ast::Name("c")).loc()),
-                    Box::new(Name(pijama_ast::Name("d")).loc()),
-                )
-                .loc(),
-            ),
-        )
-        .loc(),
-        BinaryOp(
-            Gt,
-            Box::new(
-                BinaryOp(
-                    Shr,
-                    Box::new(Name(pijama_ast::Name("a")).loc()),
-                    Box::new(Name(pijama_ast::Name("b")).loc()),
-                )
-                .loc(),
-            ),
-            Box::new(
-                BinaryOp(
-                    Shr,
-                    Box::new(Name(pijama_ast::Name("c")).loc()),
-                    Box::new(Name(pijama_ast::Name("d")).loc()),
-                )
-                .loc(),
-            ),
-        )
-        .loc(),
-        BinaryOp(
-            Shr,
-            Box::new(
-                BinaryOp(
-                    Shr,
-                    Box::new(Name(pijama_ast::Name("a")).loc()),
-                    Box::new(
-                        BinaryOp(
-                            Gt,
-                            Box::new(Name(pijama_ast::Name("b")).loc()),
-                            Box::new(Name(pijama_ast::Name("c")).loc()),
-                        )
-                        .loc(),
-                    ),
-                )
-                .loc(),
-            ),
-            Box::new(Name(pijama_ast::Name("d")).loc()),
-        )
-        .loc(),
-    ];
-
-    assert_eq!(expected[0], result[0], "left shift");
-    assert_eq!(expected[1], result[1], "right shift");
-    assert_eq!(expected[2], result[2], "brackets");
+    let mut result = block_into_iter(parse(input)?);
+    assert_eq!(
+        Node::Expr(
+            Expr::BinaryOp(
+                Lt,
+                Box::new(
+                    Expr::BinaryOp(
+                        Shl,
+                        Box::new(Expr::Name(Name("a")).loc()),
+                        Box::new(Expr::Name(Name("b")).loc()),
+                    )
+                    .loc(),
+                ),
+                Box::new(
+                    Expr::BinaryOp(
+                        Shl,
+                        Box::new(Expr::Name(Name("c")).loc()),
+                        Box::new(Expr::Name(Name("d")).loc()),
+                    )
+                    .loc(),
+                ),
+            )
+            .loc()
+        ),
+        result.next().unwrap(),
+        "left shift"
+    );
+    assert_eq!(
+        Node::Expr(
+            Expr::BinaryOp(
+                Gt,
+                Box::new(
+                    Expr::BinaryOp(
+                        Shr,
+                        Box::new(Expr::Name(Name("a")).loc()),
+                        Box::new(Expr::Name(Name("b")).loc()),
+                    )
+                    .loc(),
+                ),
+                Box::new(
+                    Expr::BinaryOp(
+                        Shr,
+                        Box::new(Expr::Name(Name("c")).loc()),
+                        Box::new(Expr::Name(Name("d")).loc()),
+                    )
+                    .loc(),
+                ),
+            )
+            .loc()
+        ),
+        result.next().unwrap(),
+        "right shift"
+    );
+    assert_eq!(
+        Node::Expr(
+            Expr::BinaryOp(
+                Shr,
+                Box::new(
+                    Expr::BinaryOp(
+                        Shr,
+                        Box::new(Expr::Name(Name("a")).loc()),
+                        Box::new(
+                            Expr::BinaryOp(
+                                Gt,
+                                Box::new(Expr::Name(Name("b")).loc()),
+                                Box::new(Expr::Name(Name("c")).loc()),
+                            )
+                            .loc(),
+                        ),
+                    )
+                    .loc(),
+                ),
+                Box::new(Expr::Name(Name("d")).loc()),
+            )
+            .loc()
+        ),
+        result.next().unwrap(),
+        "brackets"
+    );
     Ok(())
 }

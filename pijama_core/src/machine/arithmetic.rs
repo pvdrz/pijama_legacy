@@ -1,6 +1,6 @@
 use std::convert::TryFrom;
 
-use pijama_ast::{BinOp, BinOp::*, UnOp, UnOp::*};
+use pijama_ast::node::{BinOp, BinOp::*, UnOp, UnOp::*};
 
 /// Trait determining how arithmetic operations should be handled.
 pub trait Arithmetic {

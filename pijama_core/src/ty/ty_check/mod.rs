@@ -6,7 +6,10 @@
 //!
 //! The entry-point for this module is the `ty_check` method which does the type checking of a
 //! whole program. However, most of the heavy lifting is done by the `Context` and `Unifier` types.
-use pijama_ast::{BinOp, Literal, Located, Location, Name, Primitive, UnOp};
+use pijama_ast::{
+    location::{Located, Location},
+    node::{BinOp, Literal, Name, Primitive, UnOp},
+};
 
 use std::collections::VecDeque;
 

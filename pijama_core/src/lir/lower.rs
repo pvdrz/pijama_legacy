@@ -1,4 +1,4 @@
-use pijama_ast::{Located, Name};
+use pijama_ast::{location::Located, node::Name};
 
 use crate::{
     lir::Term,

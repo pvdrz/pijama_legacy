@@ -1,6 +1,9 @@
 use std::fmt::{Display, Formatter, Result};
 
-use pijama_ast::{BinOp, Block, Literal, Located, Name, Primitive, UnOp};
+use pijama_ast::{
+    location::Located,
+    node::{BinOp, Block, Literal, Name, Primitive, UnOp},
+};
 
 use crate::ty::Ty;
 
@@ -63,7 +66,7 @@ impl<'a> Display for Term<'a> {
 }
 
 impl<'a> Term<'a> {
-    pub fn from_ast(blk: Located<Block<'a>>) -> LowerResult<Located<Self>> {
-        lower::lower_blk(blk)
+    pub fn from_ast(blk: Block<'a>) -> LowerResult<Located<Self>> {
+        lower::lower_block(blk)
     }
 }

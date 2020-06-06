@@ -1,4 +1,4 @@
-use pijama_ast::{BinOp, Literal, Primitive, UnOp};
+use pijama_ast::node::{BinOp, Literal, Primitive, UnOp};
 
 use crate::{
     lir::Term::{self, *},
