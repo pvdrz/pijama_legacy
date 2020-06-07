@@ -1,6 +1,10 @@
 use lalrpop_util::ParseError;
 
-use pijama_ast::{node::{Node, Primitive, Expression, Literal, BinOp, UnOp, Name, Statement, Block, Branch}, ty::{TyAnnotation, Ty}, location::{Located, Location}};
+use pijama_ast::{
+    location::{Located, Location},
+    node::{BinOp, Block, Branch, Expression, Literal, Name, Node, Primitive, Statement, UnOp},
+    ty::{Ty, TyAnnotation},
+};
 
 use crate::lexer::{Token, LexError, Keyword, Operator, Symbol};
 
@@ -9,18 +13,20 @@ grammar<'input>(input: &'input str);
 pub Prog: Block<'input> = {
     "\n"* <mut nodes:(<Node> "\n"+)*> <node:Node> "\n"* => {
         match node {
-            Node::Expr(expr) => Block{
+            Node::Expr(expr) => Block {
                 nodes: nodes.into_iter().collect(),
-                expr: Box::new(expr)
+                expr: Box::new(expr),
             },
             Node::Stat(ref stat) => {
                 let loc = stat.loc.end;
                 nodes.push(node);
-                Block{
+                Block {
                     nodes: nodes.into_iter().collect(),
-                    expr: Box::new(Location::new(loc, loc).with_content(Expression::Literal(Literal::Unit))),
+                    expr: Box::new(
+                        Location::new(loc, loc).with_content(Expression::Literal(Literal::Unit)),
+                    ),
                 }
-            },
+            }
         }
     },
 }
@@ -28,12 +34,14 @@ pub Prog: Block<'input> = {
 Block: Block<'input> = {
     "\n"* <nodes:(<Node> "\n"+)*> <node:Node> "\n"* =>? {
         match node {
-            Node::Expr(expr) => Ok(Block{
+            Node::Expr(expr) => Ok(Block {
                 nodes: nodes.into_iter().collect(),
-                expr: Box::new(expr)
+                expr: Box::new(expr),
             }),
             Node::Stat(stat) => Err(ParseError::User {
-                error: stat.loc.with_content(LexError::Custom("Blocks must terminate in an expression."))
+                error: stat.loc.with_content(LexError::Custom(
+                    "Blocks must terminate in an expression, found statement",
+                )),
             }),
         }
     },
@@ -53,6 +61,8 @@ BinaryOp4 = Tier<BinOp5, BaseExpr>;
 BaseExpr: Expression<'input> = {
     <Call>,
     <Cond>,
+    <AnonFn>,
+    <UnaryOp>,
     <Prim> => Expression::PrimFn(<>),
     <Name> => Expression::Name(<>),
     <Literal> => Expression::Literal(<>),
@@ -63,19 +73,37 @@ BaseExpr: Expression<'input> = {
             expr.content
         }
     },
+}
+
+UnaryOp: Expression<'input> = {
     <op:UnOp> <e:Loc<BaseExpr>> => Expression::UnaryOp(op, Box::new(e)),
+}
+
+AnonFn: Expression<'input> = {
     <fn_loc:Loc<"fn">> <args:Args<TyAnn<Loc<Name>>>> <opt_ty:(":" <Loc<Ty>>)?> "do" <body:Block> "end" => {
-        Expression::AnonFn(args, TyAnnotation{item: body, ty: opt_ty.unwrap_or_else(|| fn_loc.loc.with_content(Ty::Missing))})
+        Expression::AnonFn(
+            args,
+            TyAnnotation {
+                item: body,
+                ty: opt_ty.unwrap_or_else(|| fn_loc.loc.with_content(Ty::Missing)),
+            },
+        )
     }
 }
 
 Call: Expression<'input> = {
-    <func:Loc<Name>> <args:Args<Loc<Expr>>> => Expression::Call(Box::new(func.map(Expression::Name)), args),
-    <func:Loc<Prim>> <args:Args<Loc<Expr>>> => Expression::Call(Box::new(func.map(Expression::PrimFn)), args),
+    <func:Loc<Name>> <args:Args<Loc<Expr>>> => {
+        Expression::Call(Box::new(func.map(Expression::Name)), args)
+    },
+    <func:Loc<Prim>> <args:Args<Loc<Expr>>> => {
+        Expression::Call(Box::new(func.map(Expression::PrimFn)), args)
+    },
 }
 
 Cond: Expression<'input> = {
-    <if_branch:Branch<"if">> <branches:Branch<"elif">*> "else" <block:Block> "end" => Expression::Cond(if_branch, branches, block),
+    <if_branch:Branch<"if">> <branches:Branch<"elif">*> "else" <block:Block> "end" => {
+        Expression::Cond(if_branch, branches, block)
+    },
 }
 
 Branch<T>: Branch<'input> = {
@@ -85,13 +113,25 @@ Branch<T>: Branch<'input> = {
 Stat: Statement<'input> = {
     <TyAnn<Loc<Name>>> "=" <Loc<Expr>> => Statement::Assign(<>),
     "fn" <name:Loc<Name>> <args:Args<TyAnn<Loc<Name>>>> <opt_ty:(":" <Loc<Ty>>)?> "do" <body:Block> "end" => {
-        Statement::FnDef(name, args, TyAnnotation{item: body, ty: opt_ty.unwrap_or_else(|| name.loc.with_content(Ty::Missing))})
+        Statement::FnDef(
+            name,
+            args,
+            TyAnnotation {
+                item: body,
+                ty: opt_ty.unwrap_or_else(|| name.loc.with_content(Ty::Missing)),
+            },
+        )
     }
 }
 
 TyAnn<T>: TyAnnotation<T> = {
     <item:T> ":" <ty:Loc<Ty>> => TyAnnotation{item, ty},
-    <item:Loc<T>> => TyAnnotation{item: item.content, ty: item.loc.with_content(Ty::Missing)},
+    <item:Loc<T>> => {
+        TyAnnotation {
+            item: item.content,
+            ty: item.loc.with_content(Ty::Missing),
+        }
+    },
 }
 
 Ty: Ty = {

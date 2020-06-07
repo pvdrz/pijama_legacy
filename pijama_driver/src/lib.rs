@@ -25,7 +25,6 @@ pub enum LangError {
     Lower(#[from] LowerError),
 }
 
-
 pub fn run_with_machine<W: Write, A: Arithmetic>(
     input: &str,
     mut machine: Machine<W, A>,

@@ -1,7 +1,9 @@
 use logos::{Logos, SpannedIter};
 
-use std::convert::TryFrom;
-use std::fmt::{Display, Formatter, Result as FmtResult};
+use std::{
+    convert::TryFrom,
+    fmt::{Display, Formatter, Result as FmtResult},
+};
 
 use pijama_ast::location::{Located, Location};
 
