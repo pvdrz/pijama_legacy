@@ -8,62 +8,80 @@ use pijama_ast::{
 };
 
 mod lexer;
-lalrpop_mod!(#[allow(unused_imports)] parser);
+lalrpop_mod!(
+    #[allow(unused_imports)]
+    parser
+);
 
 use lexer::{LexError, Lexer, Token};
 use parser::ProgParser;
 
 #[derive(Error, Debug, Eq, PartialEq)]
-pub enum ParsingError {
-    #[error("Unexpected token")]
+#[error("{kind}")]
+pub struct ParsingError {
+    loc: Location,
+    kind: ParsingErrorKind,
+}
+
+#[derive(Error, Debug, Eq, PartialEq)]
+pub enum ParsingErrorKind {
+    #[error("Unexpected token \"{found}\", expected {}, ...", expected[..5.min(expected.len())].join(", "))]
     UnexpectedToken {
-        loc: Location,
+        found: String,
         expected: Vec<String>,
     },
-    #[error("{msg}")]
-    Custom { loc: Location, msg: &'static str },
+    #[error("Invalid token")]
+    InvalidToken,
+    #[error("Extra token")]
+    ExtraToken,
+    #[error("{0}")]
+    Custom(&'static str),
 }
 
 impl ParsingError {
     pub fn loc(&self) -> Location {
-        match self {
-            ParsingError::UnexpectedToken { loc, .. } | ParsingError::Custom { loc, .. } => *loc,
-        }
+        self.loc
     }
 }
 
 impl<'a> From<ParseError<usize, Token<'a>, Located<LexError>>> for ParsingError {
     fn from(error: ParseError<usize, Token<'a>, Located<LexError>>) -> Self {
         match error {
-            ParseError::InvalidToken { location } => ParsingError::UnexpectedToken {
+            ParseError::InvalidToken { location } => ParsingError {
                 loc: Location::new(location, location),
-                expected: Vec::default(),
+                kind: ParsingErrorKind::InvalidToken,
             },
-            ParseError::UnrecognizedEOF { location, expected } => ParsingError::UnexpectedToken {
+            ParseError::UnrecognizedEOF { location, expected } => ParsingError {
                 loc: Location::new(location, location),
-                expected,
+                kind: ParsingErrorKind::UnexpectedToken {
+                    found: "EOF".to_string(),
+                    expected,
+                },
             },
             ParseError::UnrecognizedToken {
-                token: (start, _, end),
+                token: (start, token, end),
                 expected,
-            } => ParsingError::UnexpectedToken {
+            } => ParsingError {
                 loc: Location::new(start, end),
-                expected,
+                kind: ParsingErrorKind::UnexpectedToken {
+                    found: token.to_string(),
+                    expected,
+                },
             },
             ParseError::ExtraToken {
                 token: (start, _, end),
-            } => ParsingError::UnexpectedToken {
+            } => ParsingError {
                 loc: Location::new(start, end),
-                expected: Vec::default(),
+                kind: ParsingErrorKind::ExtraToken,
             },
             ParseError::User { error } => {
                 let msg = match error.content {
-                    LexError::Internal => "Internal lexing error",
+                    LexError::Internal => "Unrecognized token",
                     LexError::Custom(msg) => msg,
                 };
-                ParsingError::Custom {
-                    msg,
+                ParsingError {
                     loc: error.loc,
+                    kind: ParsingErrorKind::Custom(msg),
                 }
             }
         }

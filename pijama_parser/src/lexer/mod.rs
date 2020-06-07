@@ -1,8 +1,9 @@
 use logos::{Logos, SpannedIter};
 
 use std::convert::TryFrom;
+use std::fmt::{Display, Formatter, Result as FmtResult};
 
-use pijama_ast::location::{Location, Located};
+use pijama_ast::location::{Located, Location};
 
 mod raw;
 
@@ -48,6 +49,19 @@ pub enum Token<'a> {
     Kword(Keyword),
     Op(Operator),
     Sym(Symbol),
+}
+
+impl<'a> Display for Token<'a> {
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+        match self {
+            Token::Newline => write!(f, "\\n"),
+            Token::Int(int) => write!(f, "{}", int),
+            Token::Ident(ident) => write!(f, "{}", ident),
+            Token::Kword(kw) => write!(f, "{}", kw),
+            Token::Op(op) => write!(f, "{}", op),
+            Token::Sym(sym) => write!(f, "{}", sym),
+        }
+    }
 }
 
 impl<'a> TryFrom<RawToken<'a>> for Token<'a> {
@@ -118,6 +132,26 @@ pub enum Keyword {
     Print,
 }
 
+impl Display for Keyword {
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+        match self {
+            Keyword::Fn => write!(f, "fn"),
+            Keyword::If => write!(f, "if"),
+            Keyword::Do => write!(f, "do"),
+            Keyword::End => write!(f, "end"),
+            Keyword::Else => write!(f, "else"),
+            Keyword::Elif => write!(f, "elif"),
+            Keyword::True => write!(f, "true"),
+            Keyword::False => write!(f, "false"),
+            Keyword::Unit => write!(f, "unit"),
+            Keyword::IntTy => write!(f, "Int"),
+            Keyword::BoolTy => write!(f, "Bool"),
+            Keyword::UnitTy => write!(f, "Unit"),
+            Keyword::Print => write!(f, "print"),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum Operator {
     Add,
@@ -144,9 +178,48 @@ pub enum Operator {
     Arrow,
 }
 
+impl Display for Operator {
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+        match self {
+            Operator::Add => write!(f, "+"),
+            Operator::Sub => write!(f, "-"),
+            Operator::Mul => write!(f, "*"),
+            Operator::Div => write!(f, "/"),
+            Operator::Rem => write!(f, "%"),
+            Operator::BitAnd => write!(f, "&"),
+            Operator::BitOr => write!(f, "|"),
+            Operator::BitXor => write!(f, "^"),
+            Operator::Shr => write!(f, ">>"),
+            Operator::Shl => write!(f, "<<"),
+            Operator::Not => write!(f, "!"),
+            Operator::And => write!(f, "&&"),
+            Operator::Or => write!(f, "||"),
+            Operator::Eq => write!(f, "=="),
+            Operator::Neq => write!(f, "!="),
+            Operator::Gt => write!(f, ">"),
+            Operator::Lt => write!(f, "<"),
+            Operator::Gte => write!(f, ">="),
+            Operator::Lte => write!(f, "<="),
+            Operator::Assign => write!(f, "="),
+            Operator::Colon => write!(f, ":"),
+            Operator::Arrow => write!(f, "->"),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum Symbol {
     LParen,
     RParen,
     Comma,
+}
+
+impl Display for Symbol {
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+        match self {
+            Symbol::LParen => write!(f, "("),
+            Symbol::RParen => write!(f, ")"),
+            Symbol::Comma => write!(f, ","),
+        }
+    }
 }
