@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1591493614122,
+  "lastUpdate": 1591659165845,
   "repoUrl": "https://github.com/christianpoveda/pijama",
   "entries": {
     "Rust Benchmark": [
@@ -3071,6 +3071,102 @@ window.BENCHMARK_DATA = {
             "name": "step",
             "value": 1261,
             "range": "± 58",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "31802960+christianpoveda@users.noreply.github.com",
+            "name": "Christian Poveda",
+            "username": "christianpoveda"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "67727c0d650475c4b43c3491902a3972bb731d22",
+          "message": "Merge pull request #114 from christianpoveda/fix-scoping\n\nFix scoping and type checking of recursive functions",
+          "timestamp": "2020-06-08T18:24:43-05:00",
+          "tree_id": "9a57089fdd38f7926c636ea71b172303bfa0f252",
+          "url": "https://github.com/christianpoveda/pijama/commit/67727c0d650475c4b43c3491902a3972bb731d22"
+        },
+        "date": 1591659164453,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "arithmetic",
+            "value": 6184,
+            "range": "± 84",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "logic",
+            "value": 7917,
+            "range": "± 133",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "factorial",
+            "value": 40500,
+            "range": "± 745",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "factorial_tail",
+            "value": 113157,
+            "range": "± 1659",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fibonacci",
+            "value": 407430,
+            "range": "± 7962",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fibonacci_tail",
+            "value": 102636,
+            "range": "± 2484",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "gcd",
+            "value": 654750,
+            "range": "± 7598",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "ackermann",
+            "value": 411219,
+            "range": "± 6947",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "calling",
+            "value": 177230,
+            "range": "± 1730",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "complex_calling",
+            "value": 189303,
+            "range": "± 4464",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fancy_max",
+            "value": 1770,
+            "range": "± 25",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "step",
+            "value": 1397,
+            "range": "± 19",
             "unit": "ns/iter"
           }
         ]
