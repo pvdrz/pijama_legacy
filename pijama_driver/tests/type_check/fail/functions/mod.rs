@@ -26,3 +26,11 @@ test_type!(
         found: Ty::Bool.loc()
     }))
 );
+
+test_type!(
+    wrong_type_rec_fn,
+    Err(LangError::Ty(TyError::Mismatch {
+        expected: Ty::Unit,
+        found: Ty::Int.loc()
+    }))
+);
