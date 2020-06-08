@@ -1,0 +1,4 @@
+fn foo(x: Int): Unit do
+    foo(x)
+    10
+end

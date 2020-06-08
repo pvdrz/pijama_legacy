@@ -151,6 +151,7 @@ impl<'a> Context<'a> {
         let ty = self
             .inner
             .iter()
+            .rev() // We iterate in reverse to give priority to the most recent binding.
             .find(|bind| bind.name == *name)
             .ok_or_else(|| TyError::Unbounded(loc.with_content(name.0.to_string())))?
             .ty
@@ -332,10 +333,8 @@ impl<'a> Context<'a> {
                     ty: ty.content.clone(),
                 });
 
-                // FIXME: Should a recursive function match the type of its signature? It is even
-                // possible that the body has a different type and still satisfies all the
-                // constraints?
-                self.type_of(t1)?;
+                let found_ty = self.type_of(t1)?;
+                self.add_constraint(ty.content.clone(), found_ty.content, found_ty.loc);
             }
         };
 
