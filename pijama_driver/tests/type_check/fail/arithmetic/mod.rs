@@ -1,6 +1,9 @@
 use crate::{test_type, test_type_for_all_integer_binops, util::DummyLoc};
 
-use pijama_core::ty::{Ty, TyError};
+use pijama_ty::Ty;
+
+use pijama_tycheck::TyError;
+
 use pijama_driver::LangError;
 
 test_type!(

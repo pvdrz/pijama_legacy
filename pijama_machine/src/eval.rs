@@ -1,11 +1,10 @@
+use std::{borrow::Borrow, io::Write};
+
 use pijama_ast::node::{BinOp, Literal, Primitive, UnOp};
 
-use crate::{
-    lir::Term::{self, *},
-    machine::{arithmetic::Arithmetic, Machine},
-};
+use pijama_lir::Term::{self, *};
 
-use std::{borrow::Borrow, io::Write};
+use crate::{arithmetic::Arithmetic, Machine};
 
 /// Evaluate `$term` in place using the `$self` machine. Then return `(changed, $ret)` where
 /// `changed` states if the evaluation produced any changes and `$ret` is a `Term` (possibly

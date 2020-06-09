@@ -1,9 +1,8 @@
 use std::io::Write;
 
-use crate::{
-    lir::Term,
-    machine::{arithmetic::Arithmetic, env::Env},
-};
+use pijama_lir::Term;
+
+use crate::{arithmetic::Arithmetic, env::Env};
 
 pub mod arithmetic;
 mod builder;

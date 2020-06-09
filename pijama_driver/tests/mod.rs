@@ -2,8 +2,8 @@ extern crate pijama_driver;
 
 use std::{panic, sync::mpsc, thread, time::Duration};
 
-use pijama_core::machine::{arithmetic::CheckedArithmetic, env::Env, MachineBuilder};
 use pijama_driver::{run_with_machine, LangResult};
+use pijama_machine::{arithmetic::CheckedArithmetic, env::Env, MachineBuilder};
 
 mod ast;
 mod eval;

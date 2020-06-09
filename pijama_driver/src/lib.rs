@@ -2,16 +2,18 @@ use thiserror::Error;
 
 use std::io::Write;
 
-use pijama_core::{
-    lir::Term as LirTerm,
-    machine::{
-        arithmetic::{Arithmetic, CheckedArithmetic, OverflowArithmetic},
-        Machine, MachineBuilder,
-    },
-    mir::{LowerError, Term as MirTerm},
-    ty::{ty_check, TyError},
-};
 use pijama_parser::{parse, ParsingError};
+
+use pijama_mir::{LowerError, Term as MirTerm};
+
+use pijama_tycheck::{ty_check, TyError};
+
+use pijama_lir::Term as LirTerm;
+
+use pijama_machine::{
+    arithmetic::{Arithmetic, CheckedArithmetic, OverflowArithmetic},
+    Machine, MachineBuilder,
+};
 
 pub type LangResult<T> = Result<T, LangError>;
 

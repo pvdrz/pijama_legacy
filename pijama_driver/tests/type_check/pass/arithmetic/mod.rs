@@ -1,6 +1,6 @@
 use crate::{test_type, test_type_for_all_integer_binops};
 
-use pijama_core::ty::Ty;
+use pijama_ty::Ty;
 
 // Unary operations
 test_type!(minus_is_int, Ok(Ty::Int));

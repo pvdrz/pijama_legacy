@@ -1,6 +1,6 @@
 use std::io::{Stdout, Write};
 
-use crate::machine::{
+use crate::{
     arithmetic::{Arithmetic, OverflowArithmetic},
     env::Env,
     Machine,

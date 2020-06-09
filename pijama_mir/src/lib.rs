@@ -5,7 +5,7 @@ use pijama_ast::{
     node::{BinOp, Block, Literal, Name, Primitive, UnOp},
 };
 
-use crate::ty::Ty;
+use pijama_ty::Ty;
 
 pub use lower::{LowerError, LowerResult};
 

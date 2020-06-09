@@ -13,13 +13,13 @@ use pijama_ast::{
 
 use std::collections::VecDeque;
 
-use crate::{
-    mir::{LetKind, Term},
-    ty::{Ty, TyError, TyResult},
-};
+use pijama_mir::{LetKind, Term};
+use pijama_ty::Ty;
 
+mod result;
 mod unify;
 
+pub use result::{TyError, TyResult};
 use unify::{Constraint, Unifier};
 
 /// Function that type-checks a term and returns its type.
