@@ -1,0 +1,3 @@
+fn foo(x: Int) do x end
+
+foo(10) + 1

@@ -5,3 +5,4 @@ mod conditionals;
 mod functions;
 mod logic;
 mod variables;
+mod sequences;
