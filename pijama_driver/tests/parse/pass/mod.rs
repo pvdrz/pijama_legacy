@@ -7,8 +7,10 @@ use pijama_ast::{
     },
     ty::{Ty, TyAnnotation},
 };
-use pijama_driver::LangResult;
+
 use pijama_parser::parse;
+
+use pijama_driver::LangResult;
 
 use crate::util::DummyLoc;
 

@@ -4,7 +4,7 @@ use thiserror::Error;
 
 use pijama_ast::location::{Located, Location};
 
-use crate::ty::Ty;
+use pijama_ty::Ty;
 
 /// The type returned by methods and functions in this module.
 pub type TyResult<T = Ty> = Result<T, TyError>;

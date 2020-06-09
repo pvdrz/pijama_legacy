@@ -10,7 +10,9 @@ use std::collections::VecDeque;
 
 use pijama_ast::location::Located;
 
-use crate::ty::{ty_check::Context, Ty, TyError, TyResult};
+use pijama_ty::Ty;
+
+use crate::{Context, TyError, TyResult};
 
 /// Solves the constraints created by the `Context` type.
 ///

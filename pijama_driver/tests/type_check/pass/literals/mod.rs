@@ -1,6 +1,6 @@
 use crate::test_type;
 
-use pijama_core::ty::Ty;
+use pijama_ty::Ty;
 
 test_type!(true_is_bool, Ok(Ty::Bool));
 test_type!(false_is_bool, Ok(Ty::Bool));

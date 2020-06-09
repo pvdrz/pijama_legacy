@@ -77,11 +77,11 @@ impl fmt::Display for Term {
 }
 
 impl Term {
-    pub fn from_mir(mir: Located<crate::mir::Term>) -> Self {
+    pub fn from_mir(mir: Located<pijama_mir::Term>) -> Self {
         lower::remove_names(mir)
     }
 
-    pub(crate) fn shift(&mut self, up: bool, cutoff: usize) {
+    pub fn shift(&mut self, up: bool, cutoff: usize) {
         match self {
             Lit(_) | PrimFn(_) => (),
             Var(index) => {
@@ -118,7 +118,7 @@ impl Term {
         }
     }
 
-    pub(crate) fn replace(&mut self, index: usize, subs: &mut Term) {
+    pub fn replace(&mut self, index: usize, subs: &mut Term) {
         match self {
             Lit(_) | PrimFn(_) => (),
             Var(index2) => {

@@ -1,9 +1,8 @@
 use pijama_ast::{location::Located, node::Name};
 
-use crate::{
-    lir::Term,
-    mir::{LetKind, Term as MirTerm},
-};
+use pijama_mir::{LetKind, Term as MirTerm};
+
+use crate::Term;
 
 pub fn remove_names(term: Located<MirTerm<'_>>) -> Term {
     Context::default().remove_names(term.content)

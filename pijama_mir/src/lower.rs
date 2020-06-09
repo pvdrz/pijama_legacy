@@ -1,3 +1,5 @@
+use thiserror::Error;
+
 use std::mem::discriminant;
 
 use pijama_ast::{
@@ -7,12 +9,9 @@ use pijama_ast::{
     ty::TyAnnotation,
 };
 
-use thiserror::Error;
+use pijama_ty::Ty;
 
-use crate::{
-    mir::{LetKind, Term},
-    ty::Ty,
-};
+use crate::{LetKind, Term};
 
 pub type LowerResult<T> = Result<T, LowerError>;
 

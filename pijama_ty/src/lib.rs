@@ -1,19 +1,10 @@
-//! Pijama's type system.
+//! Pijama's types.
 //!
-//! This module contains all the types and functions related to Pijama's type system.
-//!
-//! In particular, this module exposes the `Ty` type which is the type representation used by the
-//! type-checker. There is also the `ty_check` module which contains all the logic related to
-//! type-checking.
+//! This module exposes the `Ty` type which is the type representation used by the
+//! type-checker.
 use std::fmt;
 
 use pijama_ast::ty::Ty as TyAST;
-
-mod result;
-mod ty_check;
-
-pub use result::{TyError, TyResult};
-pub use ty_check::ty_check;
 
 /// A type used by the type-checker.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -32,7 +23,7 @@ pub enum Ty {
 
 impl Ty {
     /// Checks if the index of a `Ty::Var` is contained inside the type.
-    fn contains(&self, index: usize) -> bool {
+    pub fn contains(&self, index: usize) -> bool {
         match self {
             Ty::Bool | Ty::Int | Ty::Unit => false,
             Ty::Arrow(ty1, ty2) => ty1.contains(index) || ty2.contains(index),
