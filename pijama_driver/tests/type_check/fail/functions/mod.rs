@@ -37,3 +37,11 @@ test_type!(
         found: Ty::Int.loc()
     }))
 );
+
+test_type!(
+    wrong_type_after_call,
+    Err(LangError::Ty(TyError::Mismatch {
+        expected: Ty::Bool,
+        found: Ty::Int.loc()
+    }))
+);

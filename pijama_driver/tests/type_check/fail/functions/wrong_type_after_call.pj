@@ -1,0 +1,4 @@
+fn foo(x: Int): Int do
+    x + 1
+end
+foo(10) && true
