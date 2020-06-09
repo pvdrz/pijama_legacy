@@ -1,0 +1,8 @@
+fn hash(s0: Int, s1: Int, s2: Int, s3: Int, s4: Int, s5: Int, s6: Int, s7: Int, s8: Int): Int do
+    a = (1 + s0 + s1 + s2 + s3 + s4 + s5 + s6 + s7 + s8) % 65521
+    b = (9 * s0 + 8 * s1 + 7 * s2 + 6 * s3 + 5 * s4 + 4 * s5 + 3 * s6 + 2 * s7 + s8 + 9) % 65521
+    b * 65536 + a
+end
+
+x = hash(87, 105, 107, 105, 112, 101, 100, 105, 97)
+print(x)

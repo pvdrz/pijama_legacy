@@ -228,3 +228,27 @@ fn neg_overflow_panics() {
     let input = include_str!("neg_overflow_panics.pj");
     run(input).ok();
 }
+
+#[test]
+fn short_circuit() -> LangResult<()> {
+    let input = include_str!("short_circuit.pj");
+    let output = run(input)?;
+    assert_eq!("1\n", output);
+    Ok(())
+}
+
+#[test]
+fn cond_chain() -> LangResult<()> {
+    let input = include_str!("cond_chain.pj");
+    let output = run(input)?;
+    assert_eq!("1\n", output);
+    Ok(())
+}
+
+#[test]
+fn adler32() -> LangResult<()> {
+    let input = include_str!("adler32.pj");
+    let output = run(input)?;
+    assert_eq!("300286872\n", output);
+    Ok(())
+}

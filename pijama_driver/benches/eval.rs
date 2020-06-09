@@ -111,6 +111,29 @@ fn complex_calling(c: &mut Criterion) {
     });
 }
 
+fn cond_chain(c: &mut Criterion) {
+    let input = include_str!("cond_chain.pj");
+    let term = compile(input).unwrap();
+    let mut machine = MachineBuilder::default().build();
+    c.bench_function("cond_chain", |b| b.iter(|| machine.evaluate(term.clone())));
+}
+
+fn short_circuit(c: &mut Criterion) {
+    let input = include_str!("short_circuit.pj");
+    let term = compile(input).unwrap();
+    let mut machine = MachineBuilder::default().build();
+    c.bench_function("short_circuit", |b| {
+        b.iter(|| machine.evaluate(term.clone()))
+    });
+}
+
+fn adler32(c: &mut Criterion) {
+    let input = include_str!("adler32.pj");
+    let term = compile(input).unwrap();
+    let mut machine = MachineBuilder::default().build();
+    c.bench_function("adler32", |b| b.iter(|| machine.evaluate(term.clone())));
+}
+
 criterion_group!(
     benches,
     arithmetic,
@@ -124,6 +147,9 @@ criterion_group!(
     calling,
     complex_calling,
     fancy_max,
-    step
+    step,
+    cond_chain,
+    short_circuit,
+    adler32,
 );
 criterion_main!(benches);
