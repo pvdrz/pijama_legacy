@@ -59,6 +59,9 @@ impl Machine {
                 Op::BitAnd => self.eval_bitand(),
                 Op::BitOr => self.eval_bitor(),
                 Op::BitXor => self.eval_bitxor(),
+                Op::True => self.eval_true(),
+                Op::False => self.eval_false(),
+                Op::Unit => self.eval_unit(),
             }
         }
     }
@@ -125,6 +128,18 @@ impl Machine {
         let v1 = self.stack.pop().expect("Empty stack in add");
         let v2 = self.stack.pop().expect("Empty stack in add");
         self.stack.push(v1 ^ v2);
+    }
+
+    fn eval_true(&mut self) {
+        self.stack.push(1);
+    }
+
+    fn eval_false(&mut self) {
+        self.stack.push(0);
+    }
+
+    fn eval_unit(&mut self) {
+        self.stack.push(0);
     }
 }
 

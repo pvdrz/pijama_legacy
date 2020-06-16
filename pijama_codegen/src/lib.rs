@@ -1,4 +1,7 @@
-use pijama_ast::{location::Located, node::{UnOp, Literal, BinOp}};
+use pijama_ast::{
+    location::Located,
+    node::{BinOp, Literal, UnOp},
+};
 use pijama_mir::Term;
 
 pub fn codegen(term: Located<Term>) -> (Vec<u8>, Vec<i64>) {
@@ -20,6 +23,9 @@ pub enum Op {
     BitAnd,
     BitOr,
     BitXor,
+    True,
+    False,
+    Unit,
 }
 
 impl Op {
@@ -36,6 +42,9 @@ impl Op {
             Op::BitAnd => 8,
             Op::BitOr => 9,
             Op::BitXor => 10,
+            Op::True => 11,
+            Op::False => 12,
+            Op::Unit => 13,
         }
     }
 
@@ -52,6 +61,9 @@ impl Op {
             8 => Op::BitAnd,
             9 => Op::BitOr,
             10 => Op::BitXor,
+            11 => Op::True,
+            12 => Op::False,
+            13 => Op::Unit,
             _ => panic!("Invalid opcode {}", byte),
         }
     }
@@ -82,11 +94,23 @@ impl Generator {
 
     fn transpile(&mut self, term: Located<Term>) {
         match term.content {
-            Term::Lit(Literal::Number(uint)) => {
-                let index = self.store_value(uint);
-                self.write_byte(Op::Lit.into_byte());
-                self.write_index(index);
-            }
+            Term::Lit(lit) => match lit {
+                Literal::Number(uint) => {
+                    let index = self.store_value(uint);
+                    self.write_byte(Op::Lit.into_byte());
+                    self.write_index(index);
+                }
+                Literal::Bool(boolean) => {
+                    if boolean {
+                        self.write_byte(Op::True.into_byte());
+                    } else {
+                        self.write_byte(Op::False.into_byte());
+                    }
+                }
+                Literal::Unit => {
+                    self.write_byte(Op::Unit.into_byte());
+                }
+            },
             Term::UnaryOp(UnOp::Neg, term) => {
                 self.transpile(*term);
                 self.write_byte(Op::Neg.into_byte());
@@ -104,10 +128,11 @@ impl Generator {
                     BinOp::BitOr => Op::BitOr,
                     BinOp::BitXor => Op::BitXor,
                     _ => todo!("unsupported binary operator {}", op),
-                }.into_byte();
+                }
+                .into_byte();
                 self.write_byte(byte);
             }
-            _ => todo!("unsupported term `{}`", term)
+            _ => todo!("unsupported term `{}`", term),
         }
     }
 }
