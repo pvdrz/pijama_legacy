@@ -40,15 +40,21 @@ pub fn run_with_machine<W: Write, A: Arithmetic>(
 }
 
 pub fn run(input: &str, overflow_check: bool) -> LangResult<()> {
-    if overflow_check {
-        let machine = MachineBuilder::default()
-            .with_arithmetic(CheckedArithmetic)
-            .build();
-        run_with_machine(input, machine)
-    } else {
-        let machine = MachineBuilder::default()
-            .with_arithmetic(OverflowArithmetic)
-            .build();
-        run_with_machine(input, machine)
-    }
+    // if overflow_check {
+    //     let machine = MachineBuilder::default()
+    //         .with_arithmetic(CheckedArithmetic)
+    //         .build();
+    //     run_with_machine(input, machine)
+    // } else {
+    //     let machine = MachineBuilder::default()
+    //         .with_arithmetic(OverflowArithmetic)
+    //         .build();
+    //     run_with_machine(input, machine)
+    // }
+    let ast = parse(input)?;
+    let mir = MirTerm::from_ast(ast)?;
+    let _ty = ty_check(&mir)?;
+    let (code, values) = pijama_codegen::codegen(mir);
+    pijama_vm::run(code, values);
+    Ok(())
 }
