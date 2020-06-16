@@ -62,13 +62,15 @@ impl Machine {
                 Op::True => self.eval_true(),
                 Op::False => self.eval_false(),
                 Op::Unit => self.eval_unit(),
+                Op::GetLocal => self.eval_get_local(),
+                Op::Pop => self.eval_pop(),
+                Op::Print => self.eval_print(),
             }
         }
     }
 
     fn eval_ret(&mut self) {
-        let value = self.stack.pop().expect("Empty stack in ret");
-        println!("{}", value);
+        self.stack.pop().expect("Empty stack in ret");
     }
 
     fn eval_lit(&mut self) {
@@ -140,6 +142,20 @@ impl Machine {
 
     fn eval_unit(&mut self) {
         self.stack.push(0);
+    }
+
+    fn eval_get_local(&mut self) {
+        let index = self.read_index().unwrap();
+        self.stack.push(self.stack[index]);
+    }
+
+    fn eval_pop(&mut self) {
+        self.stack.pop().expect("Empty stack at pop");
+    }
+
+    fn eval_print(&mut self) {
+        let value = self.stack.pop().expect("Empty stack at print");
+        println!("{}", value);
     }
 }
 

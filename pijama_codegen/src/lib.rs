@@ -1,16 +1,16 @@
 use pijama_ast::{
     location::Located,
-    node::{BinOp, Literal, UnOp},
+    node::{BinOp, Literal, Name, Primitive, UnOp},
 };
-use pijama_mir::Term;
+use pijama_mir::{LetKind, Term};
 
 pub fn codegen(term: Located<Term>) -> (Vec<u8>, Vec<i64>) {
     let mut generator = Generator::default();
     generator.transpile(term);
-    generator.code.push(Op::Ret.into_byte());
     (generator.code, generator.values)
 }
 
+#[derive(Debug)]
 pub enum Op {
     Ret,
     Lit,
@@ -26,6 +26,9 @@ pub enum Op {
     True,
     False,
     Unit,
+    GetLocal,
+    Pop,
+    Print,
 }
 
 impl Op {
@@ -45,6 +48,9 @@ impl Op {
             Op::True => 11,
             Op::False => 12,
             Op::Unit => 13,
+            Op::GetLocal => 14,
+            Op::Pop => 15,
+            Op::Print => 16,
         }
     }
 
@@ -64,18 +70,22 @@ impl Op {
             11 => Op::True,
             12 => Op::False,
             13 => Op::Unit,
+            14 => Op::GetLocal,
+            15 => Op::Pop,
+            16 => Op::Print,
             _ => panic!("Invalid opcode {}", byte),
         }
     }
 }
 
 #[derive(Default)]
-struct Generator {
+struct Generator<'a> {
     code: Vec<u8>,
     values: Vec<i64>,
+    locals: Vec<Name<'a>>,
 }
 
-impl Generator {
+impl<'a> Generator<'a> {
     fn write_byte(&mut self, byte: u8) {
         self.code.push(byte);
     }
@@ -92,8 +102,21 @@ impl Generator {
         index
     }
 
-    fn transpile(&mut self, term: Located<Term>) {
+    fn transpile(&mut self, term: Located<Term<'a>>) {
         match term.content {
+            Term::Var(name) => {
+                for (index, &local) in self.locals.iter().enumerate().rev() {
+                    if local == name {
+                        self.write_byte(Op::GetLocal.into_byte());
+                        self.write_index(index);
+                        return;
+                    }
+                }
+                panic!("Unbounded name {}", name);
+            }
+            Term::PrimFn(Primitive::Print) => {
+                self.write_byte(Op::Print.into_byte());
+            }
             Term::Lit(lit) => match lit {
                 Literal::Number(uint) => {
                     let index = self.store_value(uint);
@@ -131,6 +154,17 @@ impl Generator {
                 }
                 .into_byte();
                 self.write_byte(byte);
+            }
+            Term::Let(LetKind::NonRec(_), lhs, rhs, tail) => {
+                self.transpile(*rhs);
+                self.locals.push(lhs.content);
+                self.transpile(*tail);
+                self.write_byte(Op::Pop.into_byte());
+                self.locals.pop().unwrap();
+            }
+            Term::App(t1, t2) => {
+                self.transpile(*t2);
+                self.transpile(*t1);
             }
             _ => todo!("unsupported term `{}`", term),
         }
