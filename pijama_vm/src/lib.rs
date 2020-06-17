@@ -65,6 +65,8 @@ impl Machine {
                 Op::GetLocal => self.eval_get_local(),
                 Op::Pop => self.eval_pop(),
                 Op::Print => self.eval_print(),
+                Op::Jump => self.eval_jump(),
+                Op::Skip => self.eval_skip(),
             }
         }
     }
@@ -156,6 +158,19 @@ impl Machine {
     fn eval_print(&mut self) {
         let value = self.stack.pop().expect("Empty stack at print");
         println!("{}", value);
+    }
+
+    fn eval_jump(&mut self) {
+        let offset = self.read_index().unwrap();
+        let cond = self.stack.pop().expect("Empty stack at jump");
+        if cond == 0 {
+            self.ins_ptr += offset;
+        }
+    }
+
+    fn eval_skip(&mut self) {
+        let offset = self.read_index().unwrap();
+        self.ins_ptr += offset;
     }
 }
 

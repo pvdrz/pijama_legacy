@@ -29,6 +29,8 @@ pub enum Op {
     GetLocal,
     Pop,
     Print,
+    Jump,
+    Skip,
 }
 
 impl Op {
@@ -51,6 +53,8 @@ impl Op {
             Op::GetLocal => 14,
             Op::Pop => 15,
             Op::Print => 16,
+            Op::Jump => 17,
+            Op::Skip => 18,
         }
     }
 
@@ -73,6 +77,8 @@ impl Op {
             14 => Op::GetLocal,
             15 => Op::Pop,
             16 => Op::Print,
+            17 => Op::Jump,
+            18 => Op::Skip,
             _ => panic!("Invalid opcode {}", byte),
         }
     }
@@ -91,8 +97,13 @@ impl<'a> Generator<'a> {
     }
 
     fn write_index(&mut self, index: usize) {
-        for &byte in index.to_be_bytes().iter() {
-            self.write_byte(byte);
+        self.code.extend_from_slice(&index.to_be_bytes());
+    }
+
+    fn overwrite_index(&mut self, pos: usize, index: usize) {
+        let new_bytes = index.to_be_bytes();
+        for (offset, &byte) in new_bytes.iter().enumerate() {
+            self.code[pos + offset] = byte;
         }
     }
 
@@ -165,6 +176,22 @@ impl<'a> Generator<'a> {
             Term::App(t1, t2) => {
                 self.transpile(*t2);
                 self.transpile(*t1);
+            }
+            Term::Cond(t1, t2, t3) => {
+                self.transpile(*t1);
+                self.write_byte(Op::Jump.into_byte());
+                let jump_offset_pos = self.code.len();
+                self.write_index(usize::max_value());
+                let t2_start = self.code.len();
+                self.transpile(*t2);
+                self.write_byte(Op::Skip.into_byte());
+                let skip_offset_pos = self.code.len();
+                self.write_index(usize::max_value());
+                let t3_start = self.code.len();
+                self.transpile(*t3);
+                let t3_end = self.code.len();
+                self.overwrite_index(jump_offset_pos, t3_start - t2_start);
+                self.overwrite_index(skip_offset_pos, t3_end - t3_start);
             }
             _ => todo!("unsupported term `{}`", term),
         }
