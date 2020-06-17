@@ -10,78 +10,49 @@ pub fn codegen(term: Located<Term>) -> (Vec<u8>, Vec<i64>) {
     (generator.code, generator.values)
 }
 
-#[derive(Debug)]
-pub enum Op {
-    Ret,
-    Lit,
-    Neg,
-    Add,
-    Sub,
-    Mul,
-    Div,
-    Rem,
-    BitAnd,
-    BitOr,
-    BitXor,
-    True,
-    False,
-    Unit,
-    GetLocal,
-    Pop,
-    Print,
-    Jump,
-    Skip,
+macro_rules! opcodes {
+    ($($op:ident => $byte:tt), *) => {
+        #[derive(Debug)]
+        pub enum Op {
+            $($op,)*
+        }
+
+        impl Op {
+            pub fn into_byte(self) -> u8 {
+                match self {
+                    $(Op::$op => $byte,)*
+                }
+            }
+
+            pub fn from_byte(byte: u8) -> Self {
+                match byte {
+                    $($byte => Op::$op,)*
+                    _ => panic!("Invalid opcode {}", byte),
+                }
+            }
+        }
+    }
 }
-
-impl Op {
-    pub fn into_byte(self) -> u8 {
-        match self {
-            Op::Ret => 0,
-            Op::Lit => 1,
-            Op::Neg => 2,
-            Op::Add => 3,
-            Op::Sub => 4,
-            Op::Mul => 5,
-            Op::Div => 6,
-            Op::Rem => 7,
-            Op::BitAnd => 8,
-            Op::BitOr => 9,
-            Op::BitXor => 10,
-            Op::True => 11,
-            Op::False => 12,
-            Op::Unit => 13,
-            Op::GetLocal => 14,
-            Op::Pop => 15,
-            Op::Print => 16,
-            Op::Jump => 17,
-            Op::Skip => 18,
-        }
-    }
-
-    pub fn from_byte(byte: u8) -> Self {
-        match byte {
-            0 => Op::Ret,
-            1 => Op::Lit,
-            2 => Op::Neg,
-            3 => Op::Add,
-            4 => Op::Sub,
-            5 => Op::Mul,
-            6 => Op::Div,
-            7 => Op::Rem,
-            8 => Op::BitAnd,
-            9 => Op::BitOr,
-            10 => Op::BitXor,
-            11 => Op::True,
-            12 => Op::False,
-            13 => Op::Unit,
-            14 => Op::GetLocal,
-            15 => Op::Pop,
-            16 => Op::Print,
-            17 => Op::Jump,
-            18 => Op::Skip,
-            _ => panic!("Invalid opcode {}", byte),
-        }
-    }
+opcodes! {
+    Ret => 0,
+    True => 1,
+    False => 2,
+    Unit => 3,
+    Int => 4,
+    Neg => 5,
+    Add => 6,
+    Sub => 7,
+    Mul => 8,
+    Div => 9,
+    Rem => 10,
+    BitAnd => 11,
+    BitOr => 12,
+    BitXor => 13,
+    GetLocal => 14,
+    Pop => 15,
+    Jump => 16,
+    Skip => 17,
+    Print => 18
 }
 
 #[derive(Default)]
@@ -129,9 +100,9 @@ impl<'a> Generator<'a> {
                 self.write_byte(Op::Print.into_byte());
             }
             Term::Lit(lit) => match lit {
-                Literal::Number(uint) => {
-                    let index = self.store_value(uint);
-                    self.write_byte(Op::Lit.into_byte());
+                Literal::Number(int) => {
+                    let index = self.store_value(int);
+                    self.write_byte(Op::Int.into_byte());
                     self.write_index(index);
                 }
                 Literal::Bool(boolean) => {

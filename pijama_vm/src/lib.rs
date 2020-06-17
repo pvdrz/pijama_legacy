@@ -49,7 +49,7 @@ impl Machine {
         while let Some(op) = self.read_op() {
             match op {
                 Op::Ret => self.eval_ret(),
-                Op::Lit => self.eval_lit(),
+                Op::Int => self.eval_int(),
                 Op::Neg => self.eval_neg(),
                 Op::Add => self.eval_add(),
                 Op::Sub => self.eval_sub(),
@@ -75,9 +75,9 @@ impl Machine {
         self.stack.pop().expect("Empty stack in ret");
     }
 
-    fn eval_lit(&mut self) {
+    fn eval_int(&mut self) {
         let index = self.read_index().unwrap();
-        let value = *self.values.get(index).expect("Invalid value index in lit");
+        let value = *self.values.get(index).expect("Invalid value index in int");
         self.stack.push(value);
     }
 
