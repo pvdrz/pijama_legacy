@@ -5,9 +5,9 @@ use pijama_ast::{
 use pijama_mir::{LetKind, Term};
 
 pub fn codegen(term: Located<Term>) -> (Vec<u8>, Vec<i64>) {
-    let mut generator = Generator::default();
-    generator.compile(term);
-    (generator.code, generator.values)
+    let mut compiler = Compiler::default();
+    compiler.compile(term);
+    (compiler.code, compiler.values)
 }
 
 macro_rules! opcodes {
@@ -33,6 +33,7 @@ macro_rules! opcodes {
         }
     }
 }
+
 opcodes! {
     Ret => 0,
     True => 1,
@@ -56,13 +57,13 @@ opcodes! {
 }
 
 #[derive(Default)]
-struct Generator<'a> {
+struct Compiler<'a> {
     code: Vec<u8>,
     values: Vec<i64>,
     locals: Vec<Name<'a>>,
 }
 
-impl<'a> Generator<'a> {
+impl<'a> Compiler<'a> {
     fn write_byte(&mut self, byte: u8) {
         self.code.push(byte);
     }
