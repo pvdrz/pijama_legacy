@@ -51,6 +51,7 @@ impl Machine {
                 Op::Ret => self.eval_ret(),
                 Op::Int => self.eval_int(),
                 Op::Neg => self.eval_neg(),
+                Op::Not => self.eval_not(),
                 Op::Add => self.eval_add(),
                 Op::Sub => self.eval_sub(),
                 Op::Mul => self.eval_mul(),
@@ -84,6 +85,11 @@ impl Machine {
     fn eval_neg(&mut self) {
         let value = self.stack.pop().expect("Empty stack in neg");
         self.stack.push(-value);
+    }
+
+    fn eval_not(&mut self) {
+        let value = self.stack.pop().expect("Empty stack in not");
+        self.stack.push(value ^ 0);
     }
 
     fn eval_add(&mut self) {

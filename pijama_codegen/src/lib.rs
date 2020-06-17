@@ -6,7 +6,7 @@ use pijama_mir::{LetKind, Term};
 
 pub fn codegen(term: Located<Term>) -> (Vec<u8>, Vec<i64>) {
     let mut compiler = Compiler::default();
-    compiler.compile(term);
+    compiler.compile(term.content);
     (compiler.code, compiler.values)
 }
 
@@ -44,6 +44,7 @@ opcodes! {
     Unit => 3,
     Int => 4,
     Neg => 5,
+    Not => 19,
     Add => 6,
     Sub => 7,
     Mul => 8,
@@ -86,7 +87,7 @@ impl<'a> Compiler<'a> {
     fn overwrite_usize(&mut self, pos: usize, uint: usize) {
         let new_bytes = uint.to_be_bytes();
         for (offset, &byte) in new_bytes.iter().enumerate() {
-            self.code_mut()[pos + offset] = byte;
+            *self.code_mut().get_mut(pos + offset).unwrap() = byte;
         }
     }
 
@@ -101,102 +102,143 @@ impl<'a> Compiler<'a> {
         index
     }
 
-    fn compile(&mut self, term: Located<Term<'a>>) {
-        match term.content {
-            Term::Var(name) => {
-                for (index, &local) in self.locals.iter().enumerate().rev() {
-                    if local == name {
-                        self.write_u8(Op::GetLocal);
-                        self.write_usize(index);
-                        return;
-                    }
-                }
-                panic!("Unbounded name {}", name);
+    fn compile(&mut self, term: Term<'a>) {
+        match term {
+            Term::Var(name) => self.compile_var(name),
+            Term::PrimFn(prim) => self.compile_prim_fn(prim),
+            Term::Lit(lit) => self.compile_lit(lit),
+            Term::UnaryOp(op, term) => self.compile_unary_op(op, term.content),
+            Term::BinaryOp(op, t1, t2) => self.compile_binary_op(op, t1.content, t2.content),
+            Term::Let(kind, lhs, rhs, tail) => {
+                self.compile_let(kind, lhs.content, rhs.content, tail.content)
             }
-            Term::PrimFn(Primitive::Print) => {
-                self.write_u8(Op::Print);
-            }
-            Term::Lit(lit) => match lit {
-                Literal::Number(int) => {
-                    let index = self.store_value(int);
-                    self.write_u8(Op::Int);
-                    self.write_usize(index);
-                }
-                Literal::Bool(boolean) => {
-                    if boolean {
-                        self.write_u8(Op::True);
-                    } else {
-                        self.write_u8(Op::False);
-                    }
-                }
-                Literal::Unit => {
-                    self.write_u8(Op::Unit);
-                }
-            },
-            Term::UnaryOp(UnOp::Neg, term) => {
-                self.compile(*term);
-                self.write_u8(Op::Neg);
-            }
-            Term::BinaryOp(BinOp::And, t1, t2) => {
-                self.compile(term.loc.with_content(Term::Cond(
-                    t1,
-                    t2,
-                    Box::new(term.loc.with_content(Term::Lit(Literal::Bool(false)))),
-                )));
-            }
-            Term::BinaryOp(BinOp::Or, t1, t2) => {
-                self.compile(term.loc.with_content(Term::Cond(
-                    t1,
-                    Box::new(term.loc.with_content(Term::Lit(Literal::Bool(true)))),
-                    t2,
-                )));
-            }
-            Term::BinaryOp(op, term1, term2) => {
-                self.compile(*term2);
-                self.compile(*term1);
-                let byte = match op {
-                    BinOp::Add => Op::Add,
-                    BinOp::Sub => Op::Sub,
-                    BinOp::Mul => Op::Mul,
-                    BinOp::Div => Op::Div,
-                    BinOp::Rem => Op::Rem,
-                    BinOp::BitAnd => Op::BitAnd,
-                    BinOp::BitOr => Op::BitOr,
-                    BinOp::BitXor => Op::BitXor,
-                    BinOp::And | BinOp::Or => unreachable!(),
-                    _ => todo!("unsupported binary operator {}", op),
-                }
-                ;
-                self.write_u8(byte);
-            }
-            Term::Let(LetKind::NonRec(_), lhs, rhs, tail) => {
-                self.compile(*rhs);
-                self.locals.push(lhs.content);
-                self.compile(*tail);
-                self.write_u8(Op::Pop);
-                self.locals.pop().unwrap();
-            }
-            Term::App(t1, t2) => {
-                self.compile(*t2);
-                self.compile(*t1);
-            }
-            Term::Cond(t1, t2, t3) => {
-                self.compile(*t1);
-                self.write_u8(Op::Jump);
-                let jump_offset_pos = self.code().len();
-                self.write_usize(usize::max_value());
-                let t2_start = self.code().len();
-                self.compile(*t2);
-                self.write_u8(Op::Skip);
-                let skip_offset_pos = self.code().len();
-                self.write_usize(usize::max_value());
-                let t3_start = self.code().len();
-                self.compile(*t3);
-                let t3_end = self.code().len();
-                self.overwrite_usize(jump_offset_pos, t3_start - t2_start);
-                self.overwrite_usize(skip_offset_pos, t3_end - t3_start);
-            }
+            Term::App(t1, t2) => self.compile_app(t1.content, t2.content),
+            Term::Cond(t1, t2, t3) => self.compile_cond(t1.content, t2.content, t3.content),
             _ => todo!("unsupported term `{}`", term),
         }
+    }
+
+    fn compile_var(&mut self, name: Name<'a>) {
+        for (index, &local) in self.locals.iter().enumerate().rev() {
+            if local == name {
+                self.write_u8(Op::GetLocal);
+                self.write_usize(index);
+                return;
+            }
+        }
+        // Any previous compilation stage should have captured this error.
+        panic!("unbounded name {}", name);
+    }
+
+    fn compile_prim_fn(&mut self, prim: Primitive) {
+        match prim {
+            Primitive::Print => self.write_u8(Op::Print),
+        }
+    }
+
+    fn compile_lit(&mut self, lit: Literal) {
+        match lit {
+            Literal::Number(int) => {
+                let index = self.store_value(int);
+                self.write_u8(Op::Int);
+                self.write_usize(index);
+            }
+            Literal::Bool(boolean) => {
+                if boolean {
+                    self.write_u8(Op::True);
+                } else {
+                    self.write_u8(Op::False);
+                }
+            }
+            Literal::Unit => {
+                self.write_u8(Op::Unit);
+            }
+        }
+    }
+
+    fn compile_unary_op(&mut self, op: UnOp, term: Term<'a>) {
+        let op = match op {
+            UnOp::Neg => Op::Neg,
+            UnOp::Not => Op::Not,
+        };
+        self.compile(term);
+        self.write_u8(op)
+    }
+
+    fn compile_binary_op(&mut self, op: BinOp, t1: Term<'a>, t2: Term<'a>) {
+        let op = match op {
+            BinOp::Add => Op::Add,
+            BinOp::Sub => Op::Sub,
+            BinOp::Mul => Op::Mul,
+            BinOp::Div => Op::Div,
+            BinOp::Rem => Op::Rem,
+            BinOp::BitAnd => Op::BitAnd,
+            BinOp::BitOr => Op::BitOr,
+            BinOp::BitXor => Op::BitXor,
+            BinOp::And => {
+                return self.compile_cond(t1, t2, Term::Lit(Literal::Bool(false)));
+            }
+            BinOp::Or => {
+                return self.compile_cond(t1, Term::Lit(Literal::Bool(true)), t2);
+            }
+            _ => todo!("unsupported binary operator {}", op),
+        };
+        self.compile(t2);
+        self.compile(t1);
+        self.write_u8(op);
+    }
+
+    fn compile_let(&mut self, kind: LetKind, lhs: Name<'a>, rhs: Term<'a>, tail: Term<'a>) {
+        match kind {
+            LetKind::NonRec(_) => {
+                self.compile(rhs);
+                self.locals.push(lhs);
+                self.compile(tail);
+                self.write_u8(Op::Pop);
+                self.locals.pop().expect("Could not pop local");
+            }
+            LetKind::Rec(_) => {
+                todo!("cannot compile recursive binding");
+            }
+        }
+    }
+
+    fn compile_app(&mut self, t1: Term<'a>, t2: Term<'a>) {
+        self.compile(t2);
+        self.compile(t1);
+    }
+
+    fn compile_cond(&mut self, t1: Term<'a>, t2: Term<'a>, t3: Term<'a>) {
+        // Compile the condition, when the generated code is executed the value of the condition
+        // should be in the stack.
+        self.compile(t1);
+        // Now we generate code for the jump.
+        self.write_u8(Op::Jump);
+        // Save the position of the jump offset to overwrite it later.
+        let jump_offset_pos = self.code().len();
+        // Write a dummy value for the offset.
+        self.write_usize(usize::max_value());
+        // Store the position where the code for the `then` branch starts.
+        let t2_start = self.code().len();
+        // Compile the `then` branch.
+        self.compile(t2);
+        // If the VM executes the `then` branch, it must skip over the `else` branch code.
+        self.write_u8(Op::Skip);
+        // Save the position of the skip offset to overwrite it later.
+        let skip_offset_pos = self.code().len();
+        // Write a dummy value for the offset.
+        self.write_usize(usize::max_value());
+        // Store the position where the code for the `else` branch starts.
+        let t3_start = self.code().len();
+        // Compile the `else` branch.
+        self.compile(t3);
+        // Store the position where the code for the `else` branch ends.
+        let t3_end = self.code().len();
+        // Overwrite the offset for the jump. This offset must be the length of the `then` branch
+        // code including the skip and its offset.
+        self.overwrite_usize(jump_offset_pos, t3_start - t2_start);
+        // Overwrite the offset for the skip. This offset must be the length of the `else` branch
+        // code.
+        self.overwrite_usize(skip_offset_pos, t3_end - t3_start);
     }
 }
