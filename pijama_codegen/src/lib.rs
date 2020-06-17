@@ -17,14 +17,17 @@ macro_rules! opcodes {
             $($op,)*
         }
 
-        impl Op {
-            pub fn into_byte(self) -> u8 {
-                match self {
+
+        impl From<Op> for u8 {
+            fn from(op: Op) -> u8 {
+                match op {
                     $(Op::$op => $byte,)*
                 }
             }
+        }
 
-            pub fn from_byte(byte: u8) -> Self {
+        impl From<u8> for Op {
+            fn from(byte: u8) -> Op {
                 match byte {
                     $($byte => Op::$op,)*
                     _ => panic!("Invalid opcode {}", byte),
@@ -72,16 +75,16 @@ impl<'a> Compiler<'a> {
         &mut self.code
     }
 
-    fn write_byte(&mut self, byte: u8) {
-        self.code_mut().push(byte);
+    fn write_u8(&mut self, byte: impl Into<u8>) {
+        self.code_mut().push(byte.into());
     }
 
-    fn write_index(&mut self, index: usize) {
-        self.code_mut().extend_from_slice(&index.to_be_bytes());
+    fn write_usize(&mut self, uint: usize) {
+        self.code_mut().extend_from_slice(&uint.to_be_bytes());
     }
 
-    fn overwrite_index(&mut self, pos: usize, index: usize) {
-        let new_bytes = index.to_be_bytes();
+    fn overwrite_usize(&mut self, pos: usize, uint: usize) {
+        let new_bytes = uint.to_be_bytes();
         for (offset, &byte) in new_bytes.iter().enumerate() {
             self.code_mut()[pos + offset] = byte;
         }
@@ -103,36 +106,36 @@ impl<'a> Compiler<'a> {
             Term::Var(name) => {
                 for (index, &local) in self.locals.iter().enumerate().rev() {
                     if local == name {
-                        self.write_byte(Op::GetLocal.into_byte());
-                        self.write_index(index);
+                        self.write_u8(Op::GetLocal);
+                        self.write_usize(index);
                         return;
                     }
                 }
                 panic!("Unbounded name {}", name);
             }
             Term::PrimFn(Primitive::Print) => {
-                self.write_byte(Op::Print.into_byte());
+                self.write_u8(Op::Print);
             }
             Term::Lit(lit) => match lit {
                 Literal::Number(int) => {
                     let index = self.store_value(int);
-                    self.write_byte(Op::Int.into_byte());
-                    self.write_index(index);
+                    self.write_u8(Op::Int);
+                    self.write_usize(index);
                 }
                 Literal::Bool(boolean) => {
                     if boolean {
-                        self.write_byte(Op::True.into_byte());
+                        self.write_u8(Op::True);
                     } else {
-                        self.write_byte(Op::False.into_byte());
+                        self.write_u8(Op::False);
                     }
                 }
                 Literal::Unit => {
-                    self.write_byte(Op::Unit.into_byte());
+                    self.write_u8(Op::Unit);
                 }
             },
             Term::UnaryOp(UnOp::Neg, term) => {
                 self.compile(*term);
-                self.write_byte(Op::Neg.into_byte());
+                self.write_u8(Op::Neg);
             }
             Term::BinaryOp(BinOp::And, t1, t2) => {
                 self.compile(term.loc.with_content(Term::Cond(
@@ -163,14 +166,14 @@ impl<'a> Compiler<'a> {
                     BinOp::And | BinOp::Or => unreachable!(),
                     _ => todo!("unsupported binary operator {}", op),
                 }
-                .into_byte();
-                self.write_byte(byte);
+                ;
+                self.write_u8(byte);
             }
             Term::Let(LetKind::NonRec(_), lhs, rhs, tail) => {
                 self.compile(*rhs);
                 self.locals.push(lhs.content);
                 self.compile(*tail);
-                self.write_byte(Op::Pop.into_byte());
+                self.write_u8(Op::Pop);
                 self.locals.pop().unwrap();
             }
             Term::App(t1, t2) => {
@@ -179,19 +182,19 @@ impl<'a> Compiler<'a> {
             }
             Term::Cond(t1, t2, t3) => {
                 self.compile(*t1);
-                self.write_byte(Op::Jump.into_byte());
+                self.write_u8(Op::Jump);
                 let jump_offset_pos = self.code().len();
-                self.write_index(usize::max_value());
+                self.write_usize(usize::max_value());
                 let t2_start = self.code().len();
                 self.compile(*t2);
-                self.write_byte(Op::Skip.into_byte());
+                self.write_u8(Op::Skip);
                 let skip_offset_pos = self.code().len();
-                self.write_index(usize::max_value());
+                self.write_usize(usize::max_value());
                 let t3_start = self.code().len();
                 self.compile(*t3);
                 let t3_end = self.code().len();
-                self.overwrite_index(jump_offset_pos, t3_start - t2_start);
-                self.overwrite_index(skip_offset_pos, t3_end - t3_start);
+                self.overwrite_usize(jump_offset_pos, t3_start - t2_start);
+                self.overwrite_usize(skip_offset_pos, t3_end - t3_start);
             }
             _ => todo!("unsupported term `{}`", term),
         }

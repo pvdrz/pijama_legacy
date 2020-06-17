@@ -33,7 +33,7 @@ impl Machine {
     }
 
     fn read_op(&mut self) -> Option<Op> {
-        let op = Op::from_byte(self.read_byte()?);
+        let op = self.read_byte()?.into();
         self.ins_ptr += 1;
         Some(op)
     }
