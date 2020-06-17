@@ -149,6 +149,20 @@ impl<'a> Generator<'a> {
                 self.compile(*term);
                 self.write_byte(Op::Neg.into_byte());
             }
+            Term::BinaryOp(BinOp::And, t1, t2) => {
+                self.compile(term.loc.with_content(Term::Cond(
+                    t1,
+                    t2,
+                    Box::new(term.loc.with_content(Term::Lit(Literal::Bool(false)))),
+                )));
+            }
+            Term::BinaryOp(BinOp::Or, t1, t2) => {
+                self.compile(term.loc.with_content(Term::Cond(
+                    t1,
+                    Box::new(term.loc.with_content(Term::Lit(Literal::Bool(true)))),
+                    t2,
+                )));
+            }
             Term::BinaryOp(op, term1, term2) => {
                 self.compile(*term2);
                 self.compile(*term1);
@@ -161,6 +175,7 @@ impl<'a> Generator<'a> {
                     BinOp::BitAnd => Op::BitAnd,
                     BinOp::BitOr => Op::BitOr,
                     BinOp::BitXor => Op::BitXor,
+                    BinOp::And | BinOp::Or => unreachable!(),
                     _ => todo!("unsupported binary operator {}", op),
                 }
                 .into_byte();
