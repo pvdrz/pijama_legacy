@@ -7,7 +7,6 @@ use pijama_mir::{LetKind, Term};
 pub fn codegen(term: Located<Term>) -> (Vec<u8>, Vec<i64>) {
     let mut compiler = Compiler::default();
     compiler.compile(term);
-    println!("{:?}", compiler.values);
     (compiler.code, compiler.values)
 }
 
@@ -65,18 +64,26 @@ struct Compiler<'a> {
 }
 
 impl<'a> Compiler<'a> {
+    fn code(&self) -> &[u8] {
+        &self.code
+    }
+
+    fn code_mut(&mut self) -> &mut Vec<u8> {
+        &mut self.code
+    }
+
     fn write_byte(&mut self, byte: u8) {
-        self.code.push(byte);
+        self.code_mut().push(byte);
     }
 
     fn write_index(&mut self, index: usize) {
-        self.code.extend_from_slice(&index.to_be_bytes());
+        self.code_mut().extend_from_slice(&index.to_be_bytes());
     }
 
     fn overwrite_index(&mut self, pos: usize, index: usize) {
         let new_bytes = index.to_be_bytes();
         for (offset, &byte) in new_bytes.iter().enumerate() {
-            self.code[pos + offset] = byte;
+            self.code_mut()[pos + offset] = byte;
         }
     }
 
@@ -173,16 +180,16 @@ impl<'a> Compiler<'a> {
             Term::Cond(t1, t2, t3) => {
                 self.compile(*t1);
                 self.write_byte(Op::Jump.into_byte());
-                let jump_offset_pos = self.code.len();
+                let jump_offset_pos = self.code().len();
                 self.write_index(usize::max_value());
-                let t2_start = self.code.len();
+                let t2_start = self.code().len();
                 self.compile(*t2);
                 self.write_byte(Op::Skip.into_byte());
-                let skip_offset_pos = self.code.len();
+                let skip_offset_pos = self.code().len();
                 self.write_index(usize::max_value());
-                let t3_start = self.code.len();
+                let t3_start = self.code().len();
                 self.compile(*t3);
-                let t3_end = self.code.len();
+                let t3_end = self.code().len();
                 self.overwrite_index(jump_offset_pos, t3_start - t2_start);
                 self.overwrite_index(skip_offset_pos, t3_end - t3_start);
             }
