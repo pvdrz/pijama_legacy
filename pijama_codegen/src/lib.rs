@@ -6,7 +6,7 @@ use pijama_mir::{LetKind, Term};
 
 pub fn codegen(term: Located<Term>) -> (Vec<u8>, Vec<i64>) {
     let mut generator = Generator::default();
-    generator.transpile(term);
+    generator.compile(term);
     (generator.code, generator.values)
 }
 
@@ -113,7 +113,7 @@ impl<'a> Generator<'a> {
         index
     }
 
-    fn transpile(&mut self, term: Located<Term<'a>>) {
+    fn compile(&mut self, term: Located<Term<'a>>) {
         match term.content {
             Term::Var(name) => {
                 for (index, &local) in self.locals.iter().enumerate().rev() {
@@ -146,12 +146,12 @@ impl<'a> Generator<'a> {
                 }
             },
             Term::UnaryOp(UnOp::Neg, term) => {
-                self.transpile(*term);
+                self.compile(*term);
                 self.write_byte(Op::Neg.into_byte());
             }
             Term::BinaryOp(op, term1, term2) => {
-                self.transpile(*term2);
-                self.transpile(*term1);
+                self.compile(*term2);
+                self.compile(*term1);
                 let byte = match op {
                     BinOp::Add => Op::Add,
                     BinOp::Sub => Op::Sub,
@@ -167,28 +167,28 @@ impl<'a> Generator<'a> {
                 self.write_byte(byte);
             }
             Term::Let(LetKind::NonRec(_), lhs, rhs, tail) => {
-                self.transpile(*rhs);
+                self.compile(*rhs);
                 self.locals.push(lhs.content);
-                self.transpile(*tail);
+                self.compile(*tail);
                 self.write_byte(Op::Pop.into_byte());
                 self.locals.pop().unwrap();
             }
             Term::App(t1, t2) => {
-                self.transpile(*t2);
-                self.transpile(*t1);
+                self.compile(*t2);
+                self.compile(*t1);
             }
             Term::Cond(t1, t2, t3) => {
-                self.transpile(*t1);
+                self.compile(*t1);
                 self.write_byte(Op::Jump.into_byte());
                 let jump_offset_pos = self.code.len();
                 self.write_index(usize::max_value());
                 let t2_start = self.code.len();
-                self.transpile(*t2);
+                self.compile(*t2);
                 self.write_byte(Op::Skip.into_byte());
                 let skip_offset_pos = self.code.len();
                 self.write_index(usize::max_value());
                 let t3_start = self.code.len();
-                self.transpile(*t3);
+                self.compile(*t3);
                 let t3_end = self.code.len();
                 self.overwrite_index(jump_offset_pos, t3_start - t2_start);
                 self.overwrite_index(skip_offset_pos, t3_end - t3_start);
