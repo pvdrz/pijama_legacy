@@ -7,6 +7,7 @@ use pijama_mir::{LetKind, Term};
 pub fn codegen(term: Located<Term>) -> (Vec<u8>, Vec<i64>) {
     let mut compiler = Compiler::default();
     compiler.compile(term);
+    println!("{:?}", compiler.values);
     (compiler.code, compiler.values)
 }
 
@@ -80,6 +81,11 @@ impl<'a> Compiler<'a> {
     }
 
     fn store_value(&mut self, value: i64) -> usize {
+        for (index, &val) in self.values.iter().enumerate() {
+            if val == value {
+                return index;
+            }
+        }
         let index = self.values.len();
         self.values.push(value);
         index
