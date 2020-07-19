@@ -34,6 +34,10 @@ pub fn run_with_machine<W: Write, A: Arithmetic>(
     let ast = parse(input)?;
     let mir = MirTerm::from_ast(ast)?;
     let _ty = ty_check(&mir)?;
+
+    let llama = pijama_llama::lower(&mir);
+    dbg!(llama);
+
     let lir = LirTerm::from_mir(mir);
     let _res = machine.evaluate(lir);
     Ok(())

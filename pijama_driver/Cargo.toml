@@ -11,6 +11,7 @@ pijama_parser = { path = "../pijama_parser" }
 pijama_ty = { path = "../pijama_ty" }
 pijama_mir = { path = "../pijama_mir" }
 pijama_tycheck = { path = "../pijama_tycheck" }
+pijama_llama = { path = "../pijama_llama" }
 pijama_lir = { path = "../pijama_lir" }
 pijama_machine = { path = "../pijama_machine" }
 
