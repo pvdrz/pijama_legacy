@@ -7,6 +7,7 @@ members = [
     "pijama_mir",
     "pijama_tycheck",
     "pijama_lir",
+    "pijama_llama",
     "pijama_machine",
     "pijama_driver",
     "pijama",

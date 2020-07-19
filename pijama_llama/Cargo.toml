@@ -1,0 +1,10 @@
+[package]
+name = "pijama_llama"
+version = "0.1.0"
+authors = ["The Pijama Project Developers"]
+edition = "2018"
+
+[dependencies]
+pijama_ast = { path = "../pijama_ast" }
+pijama_mir = { path = "../pijama_mir" }
+
