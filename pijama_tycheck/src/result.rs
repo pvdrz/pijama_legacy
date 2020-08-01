@@ -2,7 +2,7 @@
 
 use thiserror::Error;
 
-use pijama_ast::location::{Located, Location};
+use pijama_common::location::{Located, Location};
 
 use pijama_ty::Ty;
 

@@ -1,10 +1,7 @@
 use std::fmt::{Display, Formatter, Result};
 
-use pijama_ast::{
-    location::Located,
-    node::{BinOp, Block, Literal, Name, Primitive, UnOp},
-};
-
+use pijama_ast::node::Block;
+use pijama_common::{location::Located, BinOp, Literal, Name, Primitive, UnOp};
 use pijama_ty::Ty;
 
 pub use lower::{LowerError, LowerResult};

@@ -1,10 +1,10 @@
 use lalrpop_util::ParseError;
 
 use pijama_ast::{
-    location::{Located, Location},
-    node::{BinOp, Block, Branch, Expression, Literal, Name, Node, Primitive, Statement, UnOp},
+    node::{Block, Branch, Expression, Node, Statement},
     ty::{Ty, TyAnnotation},
 };
+use pijama_common::{BinOp, Literal, Name, Primitive, UnOp, location::{Located, Location}};
 
 use crate::lexer::{Token, LexError, Keyword, Operator, Symbol};
 

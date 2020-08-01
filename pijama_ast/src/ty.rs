@@ -1,7 +1,7 @@
 //! The AST representation of types.
 use std::fmt::Debug;
 
-use crate::location::Located;
+use pijama_common::location::Located;
 
 /// A type in the AST.
 ///

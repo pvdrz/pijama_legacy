@@ -2,12 +2,10 @@ use std::include_str;
 
 use pijama_ast::{
     self,
-    node::{
-        BinOp::*, Block, Branch, Expression as Expr, Literal, Name, Node, Statement as Stat, UnOp,
-    },
+    node::{Block, Branch, Expression as Expr, Node, Statement as Stat},
     ty::{Ty, TyAnnotation},
 };
-
+use pijama_common::{BinOp::*, Literal, Name, UnOp};
 use pijama_parser::parse;
 
 use pijama_driver::LangResult;

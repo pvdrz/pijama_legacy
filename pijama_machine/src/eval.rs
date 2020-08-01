@@ -1,6 +1,6 @@
 use std::{borrow::Borrow, io::Write};
 
-use pijama_ast::node::{BinOp, Literal, Primitive, UnOp};
+use pijama_common::{BinOp, Literal, Primitive, UnOp};
 
 use pijama_lir::Term::{self, *};
 

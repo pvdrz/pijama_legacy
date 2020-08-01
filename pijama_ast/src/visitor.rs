@@ -1,7 +1,8 @@
 //! Trait to traverse the AST.
+use pijama_common::{location::Located, BinOp, Literal, Name, Primitive, UnOp};
+
 use crate::{
-    location::Located,
-    node::{BinOp, Block, Branch, Expression, Literal, Name, Node, Primitive, Statement, UnOp},
+    node::{Block, Branch, Expression, Node, Statement},
     ty::TyAnnotation,
 };
 

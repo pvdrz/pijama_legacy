@@ -1,5 +1,4 @@
-use pijama_ast::{location::Located, node::Name};
-
+use pijama_common::{location::Located, Name};
 use pijama_mir::{LetKind, Term as MirTerm};
 
 use crate::Term;

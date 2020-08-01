@@ -4,11 +4,13 @@ use std::mem::discriminant;
 
 use pijama_ast::{
     analysis::is_fn_def_recursive,
-    location::{Located, Location},
-    node::{BinOp, Block, Branch, Expression, Name, Node, Statement, UnOp},
+    node::{Block, Branch, Expression, Node, Statement},
     ty::TyAnnotation,
 };
-
+use pijama_common::{
+    location::{Located, Location},
+    BinOp, Name, UnOp,
+};
 use pijama_ty::Ty;
 
 use crate::{LetKind, Term};

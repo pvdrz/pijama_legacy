@@ -1,9 +1,6 @@
 use std::fmt;
 
-use pijama_ast::{
-    location::Located,
-    node::{BinOp, Literal, Primitive, UnOp},
-};
+use pijama_common::{location::Located, BinOp, Literal, Primitive, UnOp};
 
 use Term::*;
 

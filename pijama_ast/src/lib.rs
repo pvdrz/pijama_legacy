@@ -2,7 +2,6 @@
 #![deny(missing_docs)]
 
 pub mod analysis;
-pub mod location;
 pub mod node;
 pub mod ty;
 pub mod visitor;
