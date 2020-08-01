@@ -13,6 +13,7 @@ pijama_mir = { path = "../pijama_mir" }
 pijama_tycheck = { path = "../pijama_tycheck" }
 pijama_lir = { path = "../pijama_lir" }
 pijama_machine = { path = "../pijama_machine" }
+pijama_common = { path = "../pijama_common" }
 
 [dev-dependencies]
 criterion = "0.3"

@@ -1,10 +1,11 @@
 //! An assortment of checks that are done before lowering.
 use crate::{
-    location::Located,
-    node::{Block, Expression, Name},
+    node::{Block, Expression},
     ty::TyAnnotation,
     visitor::NodeVisitor,
 };
+
+use pijama_common::{location::Located, Name};
 
 /// Checks if a function is recursive or not.
 pub fn is_fn_def_recursive<'a>(name: Name<'a>, body: &Block<'a>) -> bool {

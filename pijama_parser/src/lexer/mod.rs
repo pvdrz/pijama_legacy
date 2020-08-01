@@ -5,7 +5,7 @@ use std::{
     fmt::{Display, Formatter, Result as FmtResult},
 };
 
-use pijama_ast::location::{Located, Location};
+use pijama_common::location::{Located, Location};
 
 mod raw;
 

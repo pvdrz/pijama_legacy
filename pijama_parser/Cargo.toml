@@ -12,3 +12,4 @@ thiserror = "1.0"
 lalrpop-util = "0.19.0"
 logos = "0.11.4"
 pijama_ast = {path = "../pijama_ast"}
+pijama_common = {path = "../pijama_common"}

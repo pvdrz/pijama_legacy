@@ -1,6 +1,7 @@
 [workspace]
 
 members = [
+    "pijama_common",
     "pijama_ast",
     "pijama_parser",
     "pijama_ty",

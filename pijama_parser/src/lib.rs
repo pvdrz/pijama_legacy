@@ -2,10 +2,8 @@ use thiserror::Error;
 
 use lalrpop_util::{lalrpop_mod, ParseError};
 
-use pijama_ast::{
-    location::{Located, Location},
-    node::Block,
-};
+use pijama_ast::node::Block;
+use pijama_common::location::{Located, Location};
 
 mod lexer;
 lalrpop_mod!(
