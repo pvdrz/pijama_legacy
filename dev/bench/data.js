@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1591716414138,
+  "lastUpdate": 1596321203419,
   "repoUrl": "https://github.com/christianpoveda/pijama",
   "entries": {
     "Rust Benchmark": [
@@ -3473,6 +3473,120 @@ window.BENCHMARK_DATA = {
             "name": "adler32",
             "value": 17856,
             "range": "± 942",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "31802960+christianpoveda@users.noreply.github.com",
+            "name": "Christian Poveda",
+            "username": "christianpoveda"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8dec0f14423e1d1bc8a4e853b16dce46554cc949",
+          "message": "Merge pull request #120 from christianpoveda/common\n\nmove common types to new crate",
+          "timestamp": "2020-08-01T17:23:48-05:00",
+          "tree_id": "50b7537099cd009c53fd04c28c89118f6be3f770",
+          "url": "https://github.com/christianpoveda/pijama/commit/8dec0f14423e1d1bc8a4e853b16dce46554cc949"
+        },
+        "date": 1596321203045,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "arithmetic",
+            "value": 5445,
+            "range": "± 390",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "logic",
+            "value": 7075,
+            "range": "± 459",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "factorial",
+            "value": 34276,
+            "range": "± 1117",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "factorial_tail",
+            "value": 96408,
+            "range": "± 3864",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fibonacci",
+            "value": 351669,
+            "range": "± 19117",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fibonacci_tail",
+            "value": 84522,
+            "range": "± 2732",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "gcd",
+            "value": 553907,
+            "range": "± 29208",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "ackermann",
+            "value": 350054,
+            "range": "± 14575",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "calling",
+            "value": 149075,
+            "range": "± 6478",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "complex_calling",
+            "value": 161750,
+            "range": "± 4153",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fancy_max",
+            "value": 1510,
+            "range": "± 59",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "step",
+            "value": 1281,
+            "range": "± 61",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cond_chain",
+            "value": 20320,
+            "range": "± 959",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "short_circuit",
+            "value": 9132,
+            "range": "± 242",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "adler32",
+            "value": 16672,
+            "range": "± 734",
             "unit": "ns/iter"
           }
         ]
