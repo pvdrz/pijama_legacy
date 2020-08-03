@@ -76,11 +76,6 @@ impl<'a> Context<'a> {
                 let t3 = self.remove_names(t3.content);
                 Term::Cond(Box::new(t1), Box::new(t2), Box::new(t3))
             }
-            MirTerm::Seq(t1, t2) => {
-                let t1 = self.remove_names(t1.content);
-                let t2 = self.remove_names(t2.content);
-                Term::App(Box::new(Term::Abs(Box::new(t2))), Box::new(t1))
-            }
             MirTerm::PrimFn(prim) => Term::PrimFn(prim),
         }
     }

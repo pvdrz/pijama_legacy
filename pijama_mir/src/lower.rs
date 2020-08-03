@@ -48,7 +48,12 @@ pub fn lower_block<'a>(mut block: Block<'a>) -> LowerResult<Located<Term<'a>>> {
                 let head = lower_expression(expr)?;
                 let tail = lower_block(block)?;
                 let loc = head.loc + tail.loc;
-                Ok(loc.with_content(Term::Seq(Box::new(head), Box::new(tail))))
+                Ok(loc.with_content(Term::Let(
+                    LetKind::NonRec(None),
+                    Located::new(Local::Wildcard, loc),
+                    Box::new(head),
+                    Box::new(tail),
+                )))
             }
             Node::Stat(stat) => match stat.content {
                 Statement::Assign(lhs, rhs) => lower_assign(stat.loc, lhs, rhs, block),

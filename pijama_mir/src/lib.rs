@@ -33,7 +33,6 @@ pub enum Term<'a> {
         Box<Located<Term<'a>>>,
         Box<Located<Term<'a>>>,
     ),
-    Seq(Box<Located<Term<'a>>>, Box<Located<Term<'a>>>),
     PrimFn(Primitive),
 }
 
@@ -56,7 +55,6 @@ impl<'a> Display for Term<'a> {
             Term::Let(LetKind::NonRec(None), name, t1, t2) => {
                 write!(f, "(let {} = {} in {})", name, t1, t2)
             }
-            Term::Seq(t1, t2) => write!(f, "{} ; {}", t1, t2),
             Term::PrimFn(prim) => write!(f, "{}", prim),
         }
     }

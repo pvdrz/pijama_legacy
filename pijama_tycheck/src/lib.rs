@@ -120,7 +120,6 @@ impl<'a> Context<'a> {
                 self.type_of_let(loc, kind, name, t1.as_ref(), t2.as_ref())
             }
             Term::Cond(t1, t2, t3) => self.type_of_cond(loc, t1.as_ref(), t2.as_ref(), t3.as_ref()),
-            Term::Seq(t1, t2) => self.type_of_seq(loc, t1.as_ref(), t2.as_ref()),
             Term::PrimFn(prim) => self.type_of_prim_fn(loc, *prim),
         }
     }
@@ -362,24 +361,6 @@ impl<'a> Context<'a> {
         self.add_constraint(ty2.clone(), ty3.content, ty3.loc);
 
         Ok(loc.with_content(ty2))
-    }
-
-    /// Returns the type of a sequence.
-    ///
-    /// Typing a sequence adds a constraint enforcing that the first term has type `Unit`. This is
-    /// because terms cannot be simply omitted during evaluation (this is a limitation of the LIR).
-    /// The returned type is the same as the type of the second term.
-    fn type_of_seq(
-        &mut self,
-        _loc: Location,
-        t1: &Located<Term<'a>>,
-        t2: &Located<Term<'a>>,
-    ) -> TyResult<Located<Ty>> {
-        let ty1 = self.type_of(t1)?;
-        self.add_constraint(Ty::Unit, ty1.content, ty1.loc);
-        // FIXME: this is the only method that doesn't use the location of the Term to reflect its
-        // own location. If we can this, all the `type_of_*` methods could return `TyResult<Ty>`
-        self.type_of(t2)
     }
 
     /// Returns the type of a primitive function.
