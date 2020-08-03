@@ -5,10 +5,10 @@ use crate::{
     visitor::NodeVisitor,
 };
 
-use pijama_common::{location::Located, Name};
+use pijama_common::{location::Located, Local};
 
 /// Checks if a function is recursive or not.
-pub fn is_fn_def_recursive<'a>(name: Name<'a>, body: &Block<'a>) -> bool {
+pub fn is_fn_def_recursive<'a>(name: Local<'a>, body: &Block<'a>) -> bool {
     let mut checker = RecursionChecker {
         name,
         is_rec: false,
@@ -26,8 +26,8 @@ pub fn is_fn_def_recursive<'a>(name: Name<'a>, body: &Block<'a>) -> bool {
 
 /// Visitor that checks if a function is recursive or not.
 struct RecursionChecker<'a> {
-    /// Name of the target function
-    name: Name<'a>,
+    /// Local of the target function
+    name: Local<'a>,
     /// Stores if the function is recursive or not in each step of the traversal.
     is_rec: bool,
     /// Stores if the target name is being shadowed in the current scope. It represents the top of
@@ -60,19 +60,19 @@ impl<'a> RecursionChecker<'a> {
 }
 
 impl<'a> NodeVisitor<'a> for RecursionChecker<'a> {
-    fn visit_name(&mut self, name: &Name<'a>) {
+    fn visit_local(&mut self, name: &Local<'a>) {
         // The function is recursive if its name is not shadowed in the current scope and we found
         // it somewhere inside its body.
         if !self.is_shadowed && *name == self.name {
             self.is_rec = true;
         }
         // Keep visiting
-        self.super_name(name);
+        self.super_local(name);
     }
 
     fn visit_assign(
         &mut self,
-        annotation: &TyAnnotation<Located<Name<'a>>>,
+        annotation: &TyAnnotation<Located<Local<'a>>>,
         expr: &Located<Expression<'a>>,
     ) {
         // If the binding binds the target name, the latter is being shadowed in the current scope.
@@ -85,8 +85,8 @@ impl<'a> NodeVisitor<'a> for RecursionChecker<'a> {
 
     fn visit_fn_def(
         &mut self,
-        name: &Located<Name<'a>>,
-        args: &[TyAnnotation<Located<Name<'a>>>],
+        name: &Located<Local<'a>>,
+        args: &[TyAnnotation<Located<Local<'a>>>],
         body: &TyAnnotation<Block<'a>>,
     ) {
         if name.content == self.name {
@@ -109,7 +109,7 @@ impl<'a> NodeVisitor<'a> for RecursionChecker<'a> {
 
     fn visit_anon_fn(
         &mut self,
-        args: &[TyAnnotation<Located<Name<'a>>>],
+        args: &[TyAnnotation<Located<Local<'a>>>],
         body: &TyAnnotation<Block<'a>>,
     ) {
         for arg in args {

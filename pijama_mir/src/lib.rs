@@ -1,7 +1,7 @@
 use std::fmt::{Display, Formatter, Result};
 
 use pijama_ast::node::Block;
-use pijama_common::{location::Located, BinOp, Literal, Name, Primitive, UnOp};
+use pijama_common::{location::Located, BinOp, Literal, Local, Primitive, UnOp};
 use pijama_ty::Ty;
 
 pub use lower::{LowerError, LowerResult};
@@ -16,8 +16,8 @@ pub enum LetKind {
 
 #[derive(Debug)]
 pub enum Term<'a> {
-    Var(Name<'a>),
-    Abs(Name<'a>, Ty, Box<Located<Term<'a>>>),
+    Var(Local<'a>),
+    Abs(Local<'a>, Ty, Box<Located<Term<'a>>>),
     UnaryOp(UnOp, Box<Located<Term<'a>>>),
     BinaryOp(BinOp, Box<Located<Term<'a>>>, Box<Located<Term<'a>>>),
     App(Box<Located<Term<'a>>>, Box<Located<Term<'a>>>),
@@ -29,7 +29,7 @@ pub enum Term<'a> {
     ),
     Let(
         LetKind,
-        Located<Name<'a>>,
+        Located<Local<'a>>,
         Box<Located<Term<'a>>>,
         Box<Located<Term<'a>>>,
     ),

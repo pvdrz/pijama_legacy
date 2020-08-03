@@ -5,7 +5,7 @@ use pijama_ast::{
     node::{Block, Branch, Expression as Expr, Node, Statement as Stat},
     ty::{Ty, TyAnnotation},
 };
-use pijama_common::{BinOp::*, Literal, Name, UnOp};
+use pijama_common::{BinOp::*, Literal, Local, UnOp};
 use pijama_parser::parse;
 
 use pijama_driver::LangResult;
@@ -21,17 +21,17 @@ fn name() -> LangResult<()> {
     let input = include_str!("name.pj");
     let mut result = block_into_iter(parse(input)?);
     assert_eq!(
-        Node::Expr(Expr::Name(Name("x")).loc()),
+        Node::Expr(Expr::Local(Local::Name("x")).loc()),
         result.next().unwrap(),
         "single letter"
     );
     assert_eq!(
-        Node::Expr(Expr::Name(Name("foo")).loc()),
+        Node::Expr(Expr::Local(Local::Name("foo")).loc()),
         result.next().unwrap(),
         "word"
     );
     assert_eq!(
-        Node::Expr(Expr::Name(Name("foo_bar")).loc()),
+        Node::Expr(Expr::Local(Local::Name("foo_bar")).loc()),
         result.next().unwrap(),
         "snake case"
     );
@@ -43,7 +43,7 @@ fn single_comment() -> LangResult<()> {
     let input = include_str!("single_comment.pj");
     let mut result = block_into_iter(parse(input)?);
     assert_eq!(
-        Node::Expr(Expr::Name(Name("foo_bar")).loc()),
+        Node::Expr(Expr::Local(Local::Name("foo_bar")).loc()),
         result.next().unwrap(),
         "snake case"
     );
@@ -55,7 +55,7 @@ fn consecutive_comments() -> LangResult<()> {
     let input = include_str!("consecutive_comments.pj");
     let mut result = block_into_iter(parse(input)?);
     assert_eq!(
-        Node::Expr(Expr::Name(Name("foo_bar")).loc()),
+        Node::Expr(Expr::Local(Local::Name("foo_bar")).loc()),
         result.next().unwrap(),
         "snake case"
     );
@@ -127,8 +127,8 @@ fn binary_op() -> LangResult<()> {
         Node::Expr(
             Expr::BinaryOp(
                 Add,
-                Box::new(Expr::Name(Name("a")).loc()),
-                Box::new(Expr::Name(Name("b")).loc()),
+                Box::new(Expr::Local(Local::Name("a")).loc()),
+                Box::new(Expr::Local(Local::Name("b")).loc()),
             )
             .loc(),
         ),
@@ -142,12 +142,12 @@ fn binary_op() -> LangResult<()> {
                 Box::new(
                     Expr::BinaryOp(
                         Add,
-                        Box::new(Expr::Name(Name("a")).loc()),
-                        Box::new(Expr::Name(Name("b")).loc()),
+                        Box::new(Expr::Local(Local::Name("a")).loc()),
+                        Box::new(Expr::Local(Local::Name("b")).loc()),
                     )
                     .loc(),
                 ),
-                Box::new(Expr::Name(Name("c")).loc()),
+                Box::new(Expr::Local(Local::Name("c")).loc()),
             )
             .loc()
         ),
@@ -158,12 +158,12 @@ fn binary_op() -> LangResult<()> {
         Node::Expr(
             Expr::BinaryOp(
                 Add,
-                Box::new(Expr::Name(Name("a")).loc()),
+                Box::new(Expr::Local(Local::Name("a")).loc()),
                 Box::new(
                     Expr::BinaryOp(
                         Add,
-                        Box::new(Expr::Name(Name("b")).loc()),
-                        Box::new(Expr::Name(Name("c")).loc()),
+                        Box::new(Expr::Local(Local::Name("b")).loc()),
+                        Box::new(Expr::Local(Local::Name("c")).loc()),
                     )
                     .loc(),
                 ),
@@ -181,12 +181,12 @@ fn unary_op() -> LangResult<()> {
     let input = include_str!("un_op.pj");
     let mut result = block_into_iter(parse(input)?);
     assert_eq!(
-        Node::Expr(Expr::UnaryOp(UnOp::Neg, Box::new(Expr::Name(Name("x")).loc())).loc(),),
+        Node::Expr(Expr::UnaryOp(UnOp::Neg, Box::new(Expr::Local(Local::Name("x")).loc())).loc(),),
         result.next().unwrap(),
         "minus"
     );
     assert_eq!(
-        Node::Expr(Expr::UnaryOp(UnOp::Not, Box::new(Expr::Name(Name("x")).loc())).loc(),),
+        Node::Expr(Expr::UnaryOp(UnOp::Not, Box::new(Expr::Local(Local::Name("x")).loc())).loc(),),
         result.next().unwrap(),
         "not"
     );
@@ -194,7 +194,7 @@ fn unary_op() -> LangResult<()> {
         Node::Expr(
             Expr::UnaryOp(
                 UnOp::Not,
-                Box::new(Expr::UnaryOp(UnOp::Not, Box::new(Expr::Name(Name("x")).loc())).loc(),),
+                Box::new(Expr::UnaryOp(UnOp::Not, Box::new(Expr::Local(Local::Name("x")).loc())).loc(),),
             )
             .loc(),
         ),
@@ -202,7 +202,7 @@ fn unary_op() -> LangResult<()> {
         "double"
     );
     assert_eq!(
-        Node::Expr(Expr::UnaryOp(UnOp::Not, Box::new(Expr::Name(Name("x")).loc())).loc()),
+        Node::Expr(Expr::UnaryOp(UnOp::Not, Box::new(Expr::Local(Local::Name("x")).loc())).loc()),
         result.next().unwrap(),
         "brackets"
     );
@@ -217,8 +217,8 @@ fn logic_op() -> LangResult<()> {
         Node::Expr(
             Expr::BinaryOp(
                 And,
-                Box::new(Expr::Name(Name("a")).loc()),
-                Box::new(Expr::Name(Name("b")).loc()),
+                Box::new(Expr::Local(Local::Name("a")).loc()),
+                Box::new(Expr::Local(Local::Name("b")).loc()),
             )
             .loc(),
         ),
@@ -232,12 +232,12 @@ fn logic_op() -> LangResult<()> {
                 Box::new(
                     Expr::BinaryOp(
                         And,
-                        Box::new(Expr::Name(Name("a")).loc()),
-                        Box::new(Expr::Name(Name("b")).loc()),
+                        Box::new(Expr::Local(Local::Name("a")).loc()),
+                        Box::new(Expr::Local(Local::Name("b")).loc()),
                     )
                     .loc(),
                 ),
-                Box::new(Expr::Name(Name("c")).loc()),
+                Box::new(Expr::Local(Local::Name("c")).loc()),
             )
             .loc(),
         ),
@@ -248,12 +248,12 @@ fn logic_op() -> LangResult<()> {
         Node::Expr(
             Expr::BinaryOp(
                 And,
-                Box::new(Expr::Name(Name("a")).loc()),
+                Box::new(Expr::Local(Local::Name("a")).loc()),
                 Box::new(
                     Expr::BinaryOp(
                         Or,
-                        Box::new(Expr::Name(Name("b")).loc()),
-                        Box::new(Expr::Name(Name("c")).loc()),
+                        Box::new(Expr::Local(Local::Name("b")).loc()),
+                        Box::new(Expr::Local(Local::Name("c")).loc()),
                     )
                     .loc(),
                 ),
@@ -274,8 +274,8 @@ fn bit_op() -> LangResult<()> {
         Node::Expr(
             Expr::BinaryOp(
                 BitAnd,
-                Box::new(Expr::Name(Name("a")).loc()),
-                Box::new(Expr::Name(Name("b")).loc()),
+                Box::new(Expr::Local(Local::Name("a")).loc()),
+                Box::new(Expr::Local(Local::Name("b")).loc()),
             )
             .loc(),
         ),
@@ -292,16 +292,16 @@ fn bit_op() -> LangResult<()> {
                         Box::new(
                             Expr::BinaryOp(
                                 BitAnd,
-                                Box::new(Expr::Name(Name("a")).loc()),
-                                Box::new(Expr::Name(Name("b")).loc()),
+                                Box::new(Expr::Local(Local::Name("a")).loc()),
+                                Box::new(Expr::Local(Local::Name("b")).loc()),
                             )
                             .loc(),
                         ),
-                        Box::new(Expr::Name(Name("c")).loc()),
+                        Box::new(Expr::Local(Local::Name("c")).loc()),
                     )
                     .loc(),
                 ),
-                Box::new(Expr::Name(Name("d")).loc()),
+                Box::new(Expr::Local(Local::Name("d")).loc()),
             )
             .loc()
         ),
@@ -315,19 +315,19 @@ fn bit_op() -> LangResult<()> {
                 Box::new(
                     Expr::BinaryOp(
                         BitAnd,
-                        Box::new(Expr::Name(Name("a")).loc()),
+                        Box::new(Expr::Local(Local::Name("a")).loc()),
                         Box::new(
                             Expr::BinaryOp(
                                 BitOr,
-                                Box::new(Expr::Name(Name("b")).loc()),
-                                Box::new(Expr::Name(Name("c")).loc()),
+                                Box::new(Expr::Local(Local::Name("b")).loc()),
+                                Box::new(Expr::Local(Local::Name("c")).loc()),
                             )
                             .loc(),
                         ),
                     )
                     .loc(),
                 ),
-                Box::new(Expr::Name(Name("d")).loc()),
+                Box::new(Expr::Local(Local::Name("d")).loc()),
             )
             .loc()
         ),
@@ -345,10 +345,10 @@ fn assign() -> LangResult<()> {
         Node::Stat(
             Stat::Assign(
                 TyAnnotation {
-                    item: Name("x").loc(),
+                    item: Local::Name("x").loc(),
                     ty: Ty::Missing.loc(),
                 },
-                Expr::Name(Name("y")).loc(),
+                Expr::Local(Local::Name("y")).loc(),
             )
             .loc(),
         ),
@@ -359,13 +359,13 @@ fn assign() -> LangResult<()> {
         Node::Stat(
             Stat::Assign(
                 TyAnnotation {
-                    item: Name("x").loc(),
+                    item: Local::Name("x").loc(),
                     ty: Ty::Missing.loc(),
                 },
                 Expr::BinaryOp(
                     Add,
-                    Box::new(Expr::Name(Name("y")).loc()),
-                    Box::new(Expr::Name(Name("z")).loc()),
+                    Box::new(Expr::Local(Local::Name("y")).loc()),
+                    Box::new(Expr::Local(Local::Name("z")).loc()),
                 )
                 .loc(),
             )
@@ -378,10 +378,10 @@ fn assign() -> LangResult<()> {
         Node::Stat(
             Stat::Assign(
                 TyAnnotation {
-                    item: Name("x").loc(),
+                    item: Local::Name("x").loc(),
                     ty: Ty::Int.loc(),
                 },
-                Expr::Name(Name("y")).loc(),
+                Expr::Local(Local::Name("y")).loc(),
             )
             .loc(),
         ),
@@ -392,18 +392,18 @@ fn assign() -> LangResult<()> {
         Node::Stat(
             Stat::Assign(
                 TyAnnotation {
-                    item: Name("foo").loc(),
+                    item: Local::Name("foo").loc(),
                     ty: Ty::Missing.loc(),
                 },
                 Expr::AnonFn(
                     vec![TyAnnotation {
-                        item: Name("x").loc(),
+                        item: Local::Name("x").loc(),
                         ty: Ty::Int.loc(),
                     }],
                     TyAnnotation {
                         item: Block {
                             nodes: Default::default(),
-                            expr: Box::new(Expr::Name(Name("x")).loc()),
+                            expr: Box::new(Expr::Local(Local::Name("x")).loc()),
                         },
                         ty: Ty::Missing.loc(),
                     },
@@ -428,17 +428,17 @@ fn cond() -> LangResult<()> {
                 Branch {
                     cond: Block {
                         nodes: Default::default(),
-                        expr: Box::new(Expr::Name(Name("x")).loc()),
+                        expr: Box::new(Expr::Local(Local::Name("x")).loc()),
                     },
                     body: Block {
                         nodes: Default::default(),
-                        expr: Box::new(Expr::Name(Name("y")).loc()),
+                        expr: Box::new(Expr::Local(Local::Name("y")).loc()),
                     },
                 },
                 vec![],
                 Block {
                     nodes: Default::default(),
-                    expr: Box::new(Expr::Name(Name("z")).loc()),
+                    expr: Box::new(Expr::Local(Local::Name("z")).loc()),
                 },
             )
             .loc(),
@@ -451,24 +451,24 @@ fn cond() -> LangResult<()> {
             Expr::Cond(
                 Branch {
                     cond: Block {
-                        nodes: vec![Node::Expr(Expr::Name(Name("u")).loc())]
+                        nodes: vec![Node::Expr(Expr::Local(Local::Name("u")).loc())]
                             .into_iter()
                             .collect(),
-                        expr: Box::new(Expr::Name(Name("v")).loc()),
+                        expr: Box::new(Expr::Local(Local::Name("v")).loc()),
                     },
                     body: Block {
-                        nodes: vec![Node::Expr(Expr::Name(Name("w")).loc())]
+                        nodes: vec![Node::Expr(Expr::Local(Local::Name("w")).loc())]
                             .into_iter()
                             .collect(),
-                        expr: Box::new(Expr::Name(Name("x")).loc()),
+                        expr: Box::new(Expr::Local(Local::Name("x")).loc()),
                     },
                 },
                 vec![],
                 Block {
-                    nodes: vec![Node::Expr(Expr::Name(Name("y")).loc())]
+                    nodes: vec![Node::Expr(Expr::Local(Local::Name("y")).loc())]
                         .into_iter()
                         .collect(),
-                    expr: Box::new(Expr::Name(Name("z")).loc()),
+                    expr: Box::new(Expr::Local(Local::Name("z")).loc()),
                 },
             )
             .loc(),
@@ -488,26 +488,26 @@ fn elif() -> LangResult<()> {
                 Branch {
                     cond: Block {
                         nodes: Default::default(),
-                        expr: Box::new(Expr::Name(Name("x")).loc()),
+                        expr: Box::new(Expr::Local(Local::Name("x")).loc()),
                     },
                     body: Block {
                         nodes: Default::default(),
-                        expr: Box::new(Expr::Name(Name("y")).loc()),
+                        expr: Box::new(Expr::Local(Local::Name("y")).loc()),
                     },
                 },
                 vec![Branch {
                     cond: Block {
                         nodes: Default::default(),
-                        expr: Box::new(Expr::Name(Name("a")).loc()),
+                        expr: Box::new(Expr::Local(Local::Name("a")).loc()),
                     },
                     body: Block {
                         nodes: Default::default(),
-                        expr: Box::new(Expr::Name(Name("b")).loc()),
+                        expr: Box::new(Expr::Local(Local::Name("b")).loc()),
                     },
                 },],
                 Block {
                     nodes: Default::default(),
-                    expr: Box::new(Expr::Name(Name("z")).loc()),
+                    expr: Box::new(Expr::Local(Local::Name("z")).loc()),
                 },
             )
             .loc(),
@@ -520,53 +520,53 @@ fn elif() -> LangResult<()> {
             Expr::Cond(
                 Branch {
                     cond: Block {
-                        nodes: vec![Node::Expr(Expr::Name(Name("u")).loc())]
+                        nodes: vec![Node::Expr(Expr::Local(Local::Name("u")).loc())]
                             .into_iter()
                             .collect(),
-                        expr: Box::new(Expr::Name(Name("v")).loc()),
+                        expr: Box::new(Expr::Local(Local::Name("v")).loc()),
                     },
                     body: Block {
-                        nodes: vec![Node::Expr(Expr::Name(Name("w")).loc())]
+                        nodes: vec![Node::Expr(Expr::Local(Local::Name("w")).loc())]
                             .into_iter()
                             .collect(),
-                        expr: Box::new(Expr::Name(Name("x")).loc()),
+                        expr: Box::new(Expr::Local(Local::Name("x")).loc()),
                     },
                 },
                 vec![
                     Branch {
                         cond: Block {
-                            nodes: vec![Node::Expr(Expr::Name(Name("a")).loc())]
+                            nodes: vec![Node::Expr(Expr::Local(Local::Name("a")).loc())]
                                 .into_iter()
                                 .collect(),
-                            expr: Box::new(Expr::Name(Name("b")).loc()),
+                            expr: Box::new(Expr::Local(Local::Name("b")).loc()),
                         },
                         body: Block {
-                            nodes: vec![Node::Expr(Expr::Name(Name("c")).loc())]
+                            nodes: vec![Node::Expr(Expr::Local(Local::Name("c")).loc())]
                                 .into_iter()
                                 .collect(),
-                            expr: Box::new(Expr::Name(Name("d")).loc()),
+                            expr: Box::new(Expr::Local(Local::Name("d")).loc()),
                         },
                     },
                     Branch {
                         cond: Block {
-                            nodes: vec![Node::Expr(Expr::Name(Name("e")).loc())]
+                            nodes: vec![Node::Expr(Expr::Local(Local::Name("e")).loc())]
                                 .into_iter()
                                 .collect(),
-                            expr: Box::new(Expr::Name(Name("f")).loc()),
+                            expr: Box::new(Expr::Local(Local::Name("f")).loc()),
                         },
                         body: Block {
-                            nodes: vec![Node::Expr(Expr::Name(Name("g")).loc())]
+                            nodes: vec![Node::Expr(Expr::Local(Local::Name("g")).loc())]
                                 .into_iter()
                                 .collect(),
-                            expr: Box::new(Expr::Name(Name("h")).loc()),
+                            expr: Box::new(Expr::Local(Local::Name("h")).loc()),
                         },
                     },
                 ],
                 Block {
-                    nodes: vec![Node::Expr(Expr::Name(Name("y")).loc())]
+                    nodes: vec![Node::Expr(Expr::Local(Local::Name("y")).loc())]
                         .into_iter()
                         .collect(),
-                    expr: Box::new(Expr::Name(Name("z")).loc()),
+                    expr: Box::new(Expr::Local(Local::Name("z")).loc()),
                 },
             )
             .loc(),
@@ -582,15 +582,15 @@ fn call() -> LangResult<()> {
     let input = include_str!("call.pj");
     let mut result = block_into_iter(parse(input)?);
     assert_eq!(
-        Node::Expr(Expr::Call(Box::new(Expr::Name(Name("x")).loc()), vec![]).loc()),
+        Node::Expr(Expr::Call(Box::new(Expr::Local(Local::Name("x")).loc()), vec![]).loc()),
         result.next().unwrap(),
         "nullary call"
     );
     assert_eq!(
         Node::Expr(
             Expr::Call(
-                Box::new(Expr::Name(Name("x")).loc()),
-                vec![Expr::Name(Name("y")).loc()],
+                Box::new(Expr::Local(Local::Name("x")).loc()),
+                vec![Expr::Local(Local::Name("y")).loc()],
             )
             .loc(),
         ),
@@ -600,8 +600,8 @@ fn call() -> LangResult<()> {
     assert_eq!(
         Node::Expr(
             Expr::Call(
-                Box::new(Expr::Name(Name("x")).loc()),
-                vec![Expr::Name(Name("y")).loc(), Expr::Name(Name("z")).loc()],
+                Box::new(Expr::Local(Local::Name("x")).loc()),
+                vec![Expr::Local(Local::Name("y")).loc(), Expr::Local(Local::Name("z")).loc()],
             )
             .loc(),
         ),
@@ -614,12 +614,12 @@ fn call() -> LangResult<()> {
                 Box::new(
                     Expr::BinaryOp(
                         Add,
-                        Box::new(Expr::Name(Name("x")).loc()),
-                        Box::new(Expr::Name(Name("y")).loc()),
+                        Box::new(Expr::Local(Local::Name("x")).loc()),
+                        Box::new(Expr::Local(Local::Name("y")).loc()),
                     )
                     .loc(),
                 ),
-                vec![Expr::Name(Name("z")).loc()],
+                vec![Expr::Local(Local::Name("z")).loc()],
             )
             .loc(),
         ),
@@ -636,15 +636,15 @@ fn fn_def() -> LangResult<()> {
     assert_eq!(
         Node::Stat(
             Stat::FnDef(
-                Name("foo").loc(),
+                Local::Name("foo").loc(),
                 vec![TyAnnotation {
-                    item: Name("x").loc(),
+                    item: Local::Name("x").loc(),
                     ty: Ty::Int.loc(),
                 }],
                 TyAnnotation {
                     item: Block {
                         nodes: Default::default(),
-                        expr: Box::new(Expr::Name(Name("x")).loc()),
+                        expr: Box::new(Expr::Local(Local::Name("x")).loc()),
                     },
                     ty: Ty::Missing.loc(),
                 },
@@ -657,13 +657,13 @@ fn fn_def() -> LangResult<()> {
     assert_eq!(
         Node::Stat(
             Stat::FnDef(
-                Name("foo").loc(),
+                Local::Name("foo").loc(),
                 vec![],
                 TyAnnotation {
                     item: Block {
                         nodes: Default::default(),
                         expr: Box::new(
-                            Expr::Call(Box::new(Expr::Name(Name("foo")).loc()), vec![]).loc(),
+                            Expr::Call(Box::new(Expr::Local(Local::Name("foo")).loc()), vec![]).loc(),
                         ),
                     },
                     ty: Ty::Unit.loc(),
@@ -677,23 +677,23 @@ fn fn_def() -> LangResult<()> {
     assert_eq!(
         Node::Stat(
             Stat::FnDef(
-                Name("foo").loc(),
+                Local::Name("foo").loc(),
                 vec![
                     TyAnnotation {
-                        item: Name("x").loc(),
+                        item: Local::Name("x").loc(),
                         ty: Ty::Int.loc(),
                     },
                     TyAnnotation {
-                        item: Name("y").loc(),
+                        item: Local::Name("y").loc(),
                         ty: Ty::Int.loc(),
                     },
                 ],
                 TyAnnotation {
                     item: Block {
-                        nodes: vec![Node::Expr(Expr::Name(Name("x")).loc())]
+                        nodes: vec![Node::Expr(Expr::Local(Local::Name("x")).loc())]
                             .into_iter()
                             .collect(),
-                        expr: Box::new(Expr::Name(Name("y")).loc()),
+                        expr: Box::new(Expr::Local(Local::Name("y")).loc()),
                     },
                     ty: Ty::Missing.loc(),
                 },
@@ -707,13 +707,13 @@ fn fn_def() -> LangResult<()> {
         Node::Expr(
             Expr::AnonFn(
                 vec![TyAnnotation {
-                    item: Name("x").loc(),
+                    item: Local::Name("x").loc(),
                     ty: Ty::Int.loc(),
                 }],
                 TyAnnotation {
                     item: Block {
                         nodes: Default::default(),
-                        expr: Box::new(Expr::Name(Name("x")).loc()),
+                        expr: Box::new(Expr::Local(Local::Name("x")).loc()),
                     },
                     ty: Ty::Missing.loc(),
                 },
@@ -727,13 +727,13 @@ fn fn_def() -> LangResult<()> {
         Node::Expr(
             Expr::AnonFn(
                 vec![TyAnnotation {
-                    item: Name("x").loc(),
+                    item: Local::Name("x").loc(),
                     ty: Ty::Int.loc(),
                 }],
                 TyAnnotation {
                     item: Block {
                         nodes: Default::default(),
-                        expr: Box::new(Expr::Name(Name("x")).loc()),
+                        expr: Box::new(Expr::Local(Local::Name("x")).loc()),
                     },
                     ty: Ty::Missing.loc(),
                 },
@@ -754,12 +754,12 @@ fn precedence() -> LangResult<()> {
         Node::Expr(
             Expr::BinaryOp(
                 Add,
-                Box::new(Expr::Name(Name("a")).loc()),
+                Box::new(Expr::Local(Local::Name("a")).loc()),
                 Box::new(
                     Expr::BinaryOp(
                         Mul,
-                        Box::new(Expr::Name(Name("b")).loc()),
-                        Box::new(Expr::Name(Name("c")).loc()),
+                        Box::new(Expr::Local(Local::Name("b")).loc()),
+                        Box::new(Expr::Local(Local::Name("c")).loc()),
                     )
                     .loc(),
                 ),
@@ -773,12 +773,12 @@ fn precedence() -> LangResult<()> {
         Node::Expr(
             Expr::BinaryOp(
                 BitAnd,
-                Box::new(Expr::Name(Name("a")).loc()),
+                Box::new(Expr::Local(Local::Name("a")).loc()),
                 Box::new(
                     Expr::BinaryOp(
                         Add,
-                        Box::new(Expr::Name(Name("b")).loc()),
-                        Box::new(Expr::Name(Name("c")).loc()),
+                        Box::new(Expr::Local(Local::Name("b")).loc()),
+                        Box::new(Expr::Local(Local::Name("c")).loc()),
                     )
                     .loc(),
                 ),
@@ -792,12 +792,12 @@ fn precedence() -> LangResult<()> {
         Node::Expr(
             Expr::BinaryOp(
                 Eq,
-                Box::new(Expr::Name(Name("a")).loc()),
+                Box::new(Expr::Local(Local::Name("a")).loc()),
                 Box::new(
                     Expr::BinaryOp(
                         BitAnd,
-                        Box::new(Expr::Name(Name("b")).loc()),
-                        Box::new(Expr::Name(Name("c")).loc()),
+                        Box::new(Expr::Local(Local::Name("b")).loc()),
+                        Box::new(Expr::Local(Local::Name("c")).loc()),
                     )
                     .loc(),
                 ),
@@ -811,12 +811,12 @@ fn precedence() -> LangResult<()> {
         Node::Expr(
             Expr::BinaryOp(
                 And,
-                Box::new(Expr::Name(Name("a")).loc()),
+                Box::new(Expr::Local(Local::Name("a")).loc()),
                 Box::new(
                     Expr::BinaryOp(
                         Eq,
-                        Box::new(Expr::Name(Name("b")).loc()),
-                        Box::new(Expr::Name(Name("c")).loc()),
+                        Box::new(Expr::Local(Local::Name("b")).loc()),
+                        Box::new(Expr::Local(Local::Name("c")).loc()),
                     )
                     .loc(),
                 ),
@@ -840,16 +840,16 @@ fn cmp_and_shift() -> LangResult<()> {
                 Box::new(
                     Expr::BinaryOp(
                         Shl,
-                        Box::new(Expr::Name(Name("a")).loc()),
-                        Box::new(Expr::Name(Name("b")).loc()),
+                        Box::new(Expr::Local(Local::Name("a")).loc()),
+                        Box::new(Expr::Local(Local::Name("b")).loc()),
                     )
                     .loc(),
                 ),
                 Box::new(
                     Expr::BinaryOp(
                         Shl,
-                        Box::new(Expr::Name(Name("c")).loc()),
-                        Box::new(Expr::Name(Name("d")).loc()),
+                        Box::new(Expr::Local(Local::Name("c")).loc()),
+                        Box::new(Expr::Local(Local::Name("d")).loc()),
                     )
                     .loc(),
                 ),
@@ -866,16 +866,16 @@ fn cmp_and_shift() -> LangResult<()> {
                 Box::new(
                     Expr::BinaryOp(
                         Shr,
-                        Box::new(Expr::Name(Name("a")).loc()),
-                        Box::new(Expr::Name(Name("b")).loc()),
+                        Box::new(Expr::Local(Local::Name("a")).loc()),
+                        Box::new(Expr::Local(Local::Name("b")).loc()),
                     )
                     .loc(),
                 ),
                 Box::new(
                     Expr::BinaryOp(
                         Shr,
-                        Box::new(Expr::Name(Name("c")).loc()),
-                        Box::new(Expr::Name(Name("d")).loc()),
+                        Box::new(Expr::Local(Local::Name("c")).loc()),
+                        Box::new(Expr::Local(Local::Name("d")).loc()),
                     )
                     .loc(),
                 ),
@@ -892,19 +892,19 @@ fn cmp_and_shift() -> LangResult<()> {
                 Box::new(
                     Expr::BinaryOp(
                         Shr,
-                        Box::new(Expr::Name(Name("a")).loc()),
+                        Box::new(Expr::Local(Local::Name("a")).loc()),
                         Box::new(
                             Expr::BinaryOp(
                                 Gt,
-                                Box::new(Expr::Name(Name("b")).loc()),
-                                Box::new(Expr::Name(Name("c")).loc()),
+                                Box::new(Expr::Local(Local::Name("b")).loc()),
+                                Box::new(Expr::Local(Local::Name("c")).loc()),
                             )
                             .loc(),
                         ),
                     )
                     .loc(),
                 ),
-                Box::new(Expr::Name(Name("d")).loc()),
+                Box::new(Expr::Local(Local::Name("d")).loc()),
             )
             .loc()
         ),

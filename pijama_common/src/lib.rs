@@ -141,10 +141,14 @@ impl<'a> Display for Primitive {
 
 /// Represents the name of a variable or non-primitive function in the AST.
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub struct Name<'a>(pub &'a str);
+pub enum Local<'a> {
+    Name(&'a str),
+}
 
-impl<'a> Display for Name<'a> {
+impl<'a> Display for Local<'a> {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        write!(f, "{}", self.0)
+        match self {
+            Local::Name(name) => write!(f, "{}", name),
+        }
     }
 }

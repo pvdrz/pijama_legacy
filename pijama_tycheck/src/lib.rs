@@ -10,7 +10,7 @@ use std::collections::VecDeque;
 
 use pijama_common::{
     location::{Located, Location},
-    BinOp, Literal, Name, Primitive, UnOp,
+    BinOp, Literal, Local, Primitive, UnOp,
 };
 use pijama_mir::{LetKind, Term};
 use pijama_ty::Ty;
@@ -39,10 +39,10 @@ pub fn ty_check(term: &Located<Term<'_>>) -> TyResult<Located<Ty>> {
 
 /// A type binding.
 ///
-/// This represents the binding of a `Name` to a type and is used inside the type-checker to encode
+/// This represents the binding of a `Local` to a type and is used inside the type-checker to encode
 /// that a variable has a type in the current scope.
 struct TyBinding<'a> {
-    name: Name<'a>,
+    name: Local<'a>,
     ty: Ty,
 }
 
@@ -146,13 +146,13 @@ impl<'a> Context<'a> {
     ///
     /// This rule does not add new constraints because the type of a variable is decided by the
     /// bindings done in the current scope.
-    fn type_of_var(&mut self, loc: Location, name: &Name<'a>) -> TyResult<Located<Ty>> {
+    fn type_of_var(&mut self, loc: Location, local: &Local<'a>) -> TyResult<Located<Ty>> {
         let ty = self
             .inner
             .iter()
             .rev() // We iterate in reverse to give priority to the most recent binding.
-            .find(|bind| bind.name == *name)
-            .ok_or_else(|| TyError::Unbounded(loc.with_content(name.0.to_string())))?
+            .find(|bind| bind.name == *local)
+            .ok_or_else(|| TyError::Unbounded(loc.with_content(local.to_string())))?
             .ty
             .clone();
         Ok(loc.with_content(ty))
@@ -175,7 +175,7 @@ impl<'a> Context<'a> {
     fn type_of_abs(
         &mut self,
         _loc: Location,
-        name: Name<'a>,
+        name: Local<'a>,
         ty: &Ty,
         body: &Located<Term<'a>>,
     ) -> TyResult<Located<Ty>> {
@@ -309,7 +309,7 @@ impl<'a> Context<'a> {
         &mut self,
         loc: Location,
         kind: &LetKind,
-        name: &Located<Name<'a>>,
+        name: &Located<Local<'a>>,
         t1: &Located<Term<'a>>,
         t2: &Located<Term<'a>>,
     ) -> TyResult<Located<Ty>> {

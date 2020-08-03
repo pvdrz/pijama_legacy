@@ -18,7 +18,7 @@ pub enum TyError {
     #[error("Type mismatch: expected `{expected}`, found `{found}`")]
     Mismatch { expected: Ty, found: Located<Ty> },
     /// Variant used when a name has not been binded to any type in the current scope.
-    #[error("Name `{0}` is not bounded")]
+    #[error("Local `{0}` is not bounded")]
     Unbounded(Located<String>),
 }
 

@@ -4,7 +4,7 @@ use pijama_ast::{
     node::{Block, Branch, Expression, Node, Statement},
     ty::{Ty, TyAnnotation},
 };
-use pijama_common::{BinOp, Literal, Name, Primitive, UnOp, location::{Located, Location}};
+use pijama_common::{BinOp, Literal, Local, Primitive, UnOp, location::{Located, Location}};
 
 use crate::lexer::{Token, LexError, Keyword, Operator, Symbol};
 
@@ -64,7 +64,7 @@ BaseExpr: Expression<'input> = {
     <AnonFn>,
     <UnaryOp>,
     <Prim> => Expression::PrimFn(<>),
-    <Name> => Expression::Name(<>),
+    <Local> => Expression::Local(<>),
     <Literal> => Expression::Literal(<>),
     "(" <expr:Loc<Expr>> ")" <args:Args<Loc<Expr>>?> => {
         if let Some(args) = args {
@@ -80,7 +80,7 @@ UnaryOp: Expression<'input> = {
 }
 
 AnonFn: Expression<'input> = {
-    <fn_loc:Loc<"fn">> <args:Args<TyAnn<Loc<Name>>>> <opt_ty:(":" <Loc<Ty>>)?> "do" <body:Block> "end" => {
+    <fn_loc:Loc<"fn">> <args:Args<TyAnn<Loc<Local>>>> <opt_ty:(":" <Loc<Ty>>)?> "do" <body:Block> "end" => {
         Expression::AnonFn(
             args,
             TyAnnotation {
@@ -92,8 +92,8 @@ AnonFn: Expression<'input> = {
 }
 
 Call: Expression<'input> = {
-    <func:Loc<Name>> <args:Args<Loc<Expr>>> => {
-        Expression::Call(Box::new(func.map(Expression::Name)), args)
+    <func:Loc<Local>> <args:Args<Loc<Expr>>> => {
+        Expression::Call(Box::new(func.map(Expression::Local)), args)
     },
     <func:Loc<Prim>> <args:Args<Loc<Expr>>> => {
         Expression::Call(Box::new(func.map(Expression::PrimFn)), args)
@@ -111,8 +111,8 @@ Branch<T>: Branch<'input> = {
 }
 
 Stat: Statement<'input> = {
-    <TyAnn<Loc<Name>>> "=" <Loc<Expr>> => Statement::Assign(<>),
-    "fn" <name:Loc<Name>> <args:Args<TyAnn<Loc<Name>>>> <opt_ty:(":" <Loc<Ty>>)?> "do" <body:Block> "end" => {
+    <TyAnn<Loc<Local>>> "=" <Loc<Expr>> => Statement::Assign(<>),
+    "fn" <name:Loc<Local>> <args:Args<TyAnn<Loc<Local>>>> <opt_ty:(":" <Loc<Ty>>)?> "do" <body:Block> "end" => {
         Statement::FnDef(
             name,
             args,
@@ -153,8 +153,8 @@ Literal: Literal = {
     <"int"> => Literal::Number(<>),
 };
 
-Name: Name<'input> = {
-    <"ident"> => Name(<>)
+Local: Local<'input> = {
+    <"ident"> => Local::Name(<>)
 };
 
 Prim: Primitive = {

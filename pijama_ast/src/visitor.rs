@@ -1,5 +1,5 @@
 //! Trait to traverse the AST.
-use pijama_common::{location::Located, BinOp, Literal, Name, Primitive, UnOp};
+use pijama_common::{location::Located, BinOp, Literal, Local, Primitive, UnOp};
 
 use crate::{
     node::{Block, Branch, Expression, Node, Statement},
@@ -61,7 +61,7 @@ pub trait NodeVisitor<'a> {
             Expression::AnonFn(args, body) => self.visit_anon_fn(args, body),
             Expression::Call(func, args) => self.visit_call(func.as_ref(), &args),
             Expression::Literal(literal) => self.visit_literal(literal),
-            Expression::Name(name) => self.visit_name(name),
+            Expression::Local(name) => self.visit_local(name),
             Expression::PrimFn(primitive) => self.visit_prim_fn(*primitive),
         }
     }
@@ -82,10 +82,10 @@ pub trait NodeVisitor<'a> {
     /// Destructures an assignment to visit its children.
     fn super_assign(
         &mut self,
-        annotation: &TyAnnotation<Located<Name<'a>>>,
+        annotation: &TyAnnotation<Located<Local<'a>>>,
         expr: &Located<Expression<'a>>,
     ) {
-        self.visit_name(&annotation.item.content);
+        self.visit_local(&annotation.item.content);
         self.visit_expression(expr);
     }
     /// Destructures a conditional to visit its children.
@@ -106,24 +106,24 @@ pub trait NodeVisitor<'a> {
     /// Destructures a function definition to visit its children.
     fn super_fn_def(
         &mut self,
-        name: &Located<Name<'a>>,
-        args: &[TyAnnotation<Located<Name<'a>>>],
+        name: &Located<Local<'a>>,
+        args: &[TyAnnotation<Located<Local<'a>>>],
         body: &TyAnnotation<Block<'a>>,
     ) {
-        self.visit_name(&name.content);
+        self.visit_local(&name.content);
         for ann in args {
-            self.visit_name(&ann.item.content);
+            self.visit_local(&ann.item.content);
         }
         self.visit_block(&body.item);
     }
     /// Destructures an anonymous function to visit its children.
     fn super_anon_fn(
         &mut self,
-        args: &[TyAnnotation<Located<Name<'a>>>],
+        args: &[TyAnnotation<Located<Local<'a>>>],
         body: &TyAnnotation<Block<'a>>,
     ) {
         for ann in args {
-            self.visit_name(&ann.item.content);
+            self.visit_local(&ann.item.content);
         }
         self.visit_block(&body.item);
     }
@@ -137,7 +137,7 @@ pub trait NodeVisitor<'a> {
     /// Destructures a literal to visit its children.
     fn super_literal(&mut self, _literal: &Literal) {}
     /// Destructures a name to visit its children.
-    fn super_name(&mut self, _name: &Name<'a>) {}
+    fn super_local(&mut self, _name: &Local<'a>) {}
     /// Destructures a primitive function to visit its children.
     fn super_prim_fn(&mut self, _prim: Primitive) {}
     /// Specifies how blocks should be visited.
@@ -172,7 +172,7 @@ pub trait NodeVisitor<'a> {
     /// Specifies how assignments should be visited.
     fn visit_assign(
         &mut self,
-        annotation: &TyAnnotation<Located<Name<'a>>>,
+        annotation: &TyAnnotation<Located<Local<'a>>>,
         expr: &Located<Expression<'a>>,
     ) {
         self.super_assign(annotation, expr);
@@ -188,8 +188,8 @@ pub trait NodeVisitor<'a> {
     /// Specifies how function definitions should be visited.
     fn visit_fn_def(
         &mut self,
-        name: &Located<Name<'a>>,
-        args: &[TyAnnotation<Located<Name<'a>>>],
+        name: &Located<Local<'a>>,
+        args: &[TyAnnotation<Located<Local<'a>>>],
         body: &TyAnnotation<Block<'a>>,
     ) {
         self.super_fn_def(name, args, body);
@@ -197,7 +197,7 @@ pub trait NodeVisitor<'a> {
     /// Specifies how anonymous functions should be visited.
     fn visit_anon_fn(
         &mut self,
-        args: &[TyAnnotation<Located<Name<'a>>>],
+        args: &[TyAnnotation<Located<Local<'a>>>],
         body: &TyAnnotation<Block<'a>>,
     ) {
         self.super_anon_fn(args, body);
@@ -211,8 +211,8 @@ pub trait NodeVisitor<'a> {
         self.super_literal(literal);
     }
     /// Specifies how names should be visited.
-    fn visit_name(&mut self, name: &Name<'a>) {
-        self.super_name(name);
+    fn visit_local(&mut self, name: &Local<'a>) {
+        self.super_local(name);
     }
     /// Specifies how pimitive functions should be visited.
     fn visit_prim_fn(&mut self, prim: Primitive) {
