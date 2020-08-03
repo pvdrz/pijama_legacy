@@ -107,34 +107,35 @@ impl<'a> Context<'a> {
     /// method) as unification has not taken place yet.
     fn type_of(&mut self, term: &Located<Term<'a>>) -> TyResult<Located<Ty>> {
         let loc = term.loc;
-        match &term.content {
-            Term::Lit(lit) => self.type_of_lit(loc, lit),
+        let ty = match &term.content {
+            Term::Lit(lit) => self.type_of_lit(lit),
             Term::Var(name) => self.type_of_var(loc, name),
             Term::Abs(name, ty, body) => self.type_of_abs(loc, *name, ty, body.as_ref()),
             Term::UnaryOp(op, term) => self.type_of_unary_op(loc, *op, term.as_ref()),
             Term::BinaryOp(op, t1, t2) => {
-                self.type_of_binary_op(loc, *op, t1.as_ref(), t2.as_ref())
+                self.type_of_binary_op( *op, t1.as_ref(), t2.as_ref())
             }
-            Term::App(t1, t2) => self.type_of_app(loc, t1.as_ref(), t2.as_ref()),
+            Term::App(t1, t2) => self.type_of_app( t1.as_ref(), t2.as_ref()),
             Term::Let(kind, name, t1, t2) => {
-                self.type_of_let(loc, kind, name, t1.as_ref(), t2.as_ref())
+                self.type_of_let(kind, name, t1.as_ref(), t2.as_ref())
             }
-            Term::Cond(t1, t2, t3) => self.type_of_cond(loc, t1.as_ref(), t2.as_ref(), t3.as_ref()),
-            Term::PrimFn(prim) => self.type_of_prim_fn(loc, *prim),
-        }
+            Term::Cond(t1, t2, t3) => self.type_of_cond(t1.as_ref(), t2.as_ref(), t3.as_ref()),
+            Term::PrimFn(prim) => self.type_of_prim_fn(*prim),
+        };
+        Ok(loc.with_content(ty?))
     }
 
     /// Returns the type of a literal.
     ///
     /// This rule does not add new constraints because the type of a literal is only decided by its
     /// variant.
-    fn type_of_lit(&mut self, loc: Location, lit: &Literal) -> TyResult<Located<Ty>> {
+    fn type_of_lit(&mut self, lit: &Literal) -> TyResult {
         let ty = match lit {
             Literal::Unit => Ty::Unit,
             Literal::Bool(_) => Ty::Bool,
             Literal::Number(_) => Ty::Int,
         };
-        Ok(loc.with_content(ty))
+        Ok(ty)
     }
 
     /// Returns the type of a variable.
@@ -145,7 +146,7 @@ impl<'a> Context<'a> {
     ///
     /// This rule does not add new constraints because the type of a variable is decided by the
     /// bindings done in the current scope.
-    fn type_of_var(&mut self, loc: Location, local: &Local<'a>) -> TyResult<Located<Ty>> {
+    fn type_of_var(&mut self, loc: Location, local: &Local<'a>) -> TyResult {
         let ty = self
             .inner
             .iter()
@@ -154,7 +155,7 @@ impl<'a> Context<'a> {
             .ok_or_else(|| TyError::Unbounded(loc.with_content(local.to_string())))?
             .ty
             .clone();
-        Ok(loc.with_content(ty))
+        Ok(ty)
     }
 
     /// Returns the type of an abstraction.
@@ -177,15 +178,15 @@ impl<'a> Context<'a> {
         name: Local<'a>,
         ty: &Ty,
         body: &Located<Term<'a>>,
-    ) -> TyResult<Located<Ty>> {
+    ) -> TyResult {
         self.inner.push(TyBinding {
             name,
             ty: ty.clone(),
         });
-        let ty = self.type_of(body)?;
+        let ty = self.type_of(body)?.content;
         let bind = self.inner.pop().unwrap();
 
-        Ok(ty.map(|ty| Ty::Arrow(Box::new(bind.ty), Box::new(ty))))
+        Ok(Ty::Arrow(Box::new(bind.ty), Box::new(ty)))
     }
 
     /// Returns the type of an unary operation.
@@ -196,19 +197,14 @@ impl<'a> Context<'a> {
     ///
     /// This rule adds a constraint stating that the type of the operand must match one of the
     /// types stated above. The returned type is the same type as the operand.
-    fn type_of_unary_op(
-        &mut self,
-        loc: Location,
-        op: UnOp,
-        term: &Located<Term<'a>>,
-    ) -> TyResult<Located<Ty>> {
+    fn type_of_unary_op(&mut self, loc: Location, op: UnOp, term: &Located<Term<'a>>) -> TyResult {
         let ty = self.type_of(term)?.content;
         let expected = match op {
             UnOp::Neg => Ty::Int,
             UnOp::Not => Ty::Bool,
         };
         self.add_constraint(expected, ty.clone(), loc);
-        Ok(loc.with_content(ty))
+        Ok(ty)
     }
 
     /// Returns the type of an binary operation.
@@ -223,11 +219,10 @@ impl<'a> Context<'a> {
     /// operation is an arithmetic operation, which has type `Int`.
     fn type_of_binary_op(
         &mut self,
-        loc: Location,
         op: BinOp,
         t1: &Located<Term<'a>>,
         t2: &Located<Term<'a>>,
-    ) -> TyResult<Located<Ty>> {
+    ) -> TyResult {
         let ty1 = self.type_of(t1)?;
         let ty2 = self.type_of(t2)?;
         let ty = match op {
@@ -260,7 +255,7 @@ impl<'a> Context<'a> {
                 Ty::Bool
             }
         };
-        Ok(loc.with_content(ty))
+        Ok(ty)
     }
     /// Returns the type of an application.
     ///
@@ -271,10 +266,9 @@ impl<'a> Context<'a> {
     /// `T1` is `t1`'s type and `T2` is `t2`'s type. The returned type is `X`.
     fn type_of_app(
         &mut self,
-        loc: Location,
         t1: &Located<Term<'a>>,
         t2: &Located<Term<'a>>,
-    ) -> TyResult<Located<Ty>> {
+    ) -> TyResult {
         let ty1 = self.type_of(t1)?.content;
         let ty2 = self.type_of(t2)?;
         let ty = self.new_ty();
@@ -285,7 +279,7 @@ impl<'a> Context<'a> {
             ty2.loc,
         );
 
-        Ok(loc.with_content(ty))
+        Ok(ty)
     }
 
     /// Returns the type of a let binding.
@@ -306,12 +300,11 @@ impl<'a> Context<'a> {
     /// possible to remove such binding.
     fn type_of_let(
         &mut self,
-        loc: Location,
         kind: &LetKind,
         name: &Located<Local<'a>>,
         t1: &Located<Term<'a>>,
         t2: &Located<Term<'a>>,
-    ) -> TyResult<Located<Ty>> {
+    ) -> TyResult {
         match kind {
             LetKind::NonRec(opt_ty) => {
                 let ty1 = self.type_of(t1)?;
@@ -338,7 +331,7 @@ impl<'a> Context<'a> {
 
         let ty2 = self.type_of(t2)?.content;
         self.inner.pop().unwrap();
-        Ok(Located::new(ty2, loc))
+        Ok(ty2)
     }
 
     /// Returns the type of a conditional.
@@ -348,11 +341,10 @@ impl<'a> Context<'a> {
     /// the first branch.
     fn type_of_cond(
         &mut self,
-        loc: Location,
         t1: &Located<Term<'a>>,
         t2: &Located<Term<'a>>,
         t3: &Located<Term<'a>>,
-    ) -> TyResult<Located<Ty>> {
+    ) -> TyResult {
         let ty1 = self.type_of(t1)?;
         let ty2 = self.type_of(t2)?.content;
         let ty3 = self.type_of(t3)?;
@@ -360,7 +352,7 @@ impl<'a> Context<'a> {
         self.add_constraint(Ty::Bool, ty1.content, ty1.loc);
         self.add_constraint(ty2.clone(), ty3.content, ty3.loc);
 
-        Ok(loc.with_content(ty2))
+        Ok(ty2)
     }
 
     /// Returns the type of a primitive function.
@@ -369,13 +361,13 @@ impl<'a> Context<'a> {
     ///
     /// - The `print` function has type `X -> Unit` for any `X`. Thus, a new variable is added to
     /// the typing context to represent this `X`.
-    fn type_of_prim_fn(&mut self, loc: Location, prim: Primitive) -> TyResult<Located<Ty>> {
+    fn type_of_prim_fn(&mut self, prim: Primitive) -> TyResult {
         let ty = match prim {
             Primitive::Print => {
                 let ty = self.new_ty();
                 Ty::Arrow(Box::new(ty), Box::new(Ty::Unit))
             }
         };
-        Ok(loc.with_content(ty))
+        Ok(ty)
     }
 }
