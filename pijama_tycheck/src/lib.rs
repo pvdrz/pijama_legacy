@@ -18,7 +18,7 @@ use pijama_ty::Ty;
 mod result;
 mod unify;
 
-pub use result::{TyError, TyResult};
+pub use result::{TyError, TyErrorKind, TyResult};
 use unify::{Constraint, Unifier};
 
 /// Function that type-checks a term and returns its type.
@@ -110,15 +110,11 @@ impl<'a> Context<'a> {
         let ty = match &term.content {
             Term::Lit(lit) => self.type_of_lit(lit),
             Term::Var(name) => self.type_of_var(loc, name),
-            Term::Abs(name, ty, body) => self.type_of_abs(loc, *name, ty, body.as_ref()),
+            Term::Abs(name, ty, body) => self.type_of_abs(*name, ty, body.as_ref()),
             Term::UnaryOp(op, term) => self.type_of_unary_op(loc, *op, term.as_ref()),
-            Term::BinaryOp(op, t1, t2) => {
-                self.type_of_binary_op( *op, t1.as_ref(), t2.as_ref())
-            }
-            Term::App(t1, t2) => self.type_of_app( t1.as_ref(), t2.as_ref()),
-            Term::Let(kind, name, t1, t2) => {
-                self.type_of_let(kind, name, t1.as_ref(), t2.as_ref())
-            }
+            Term::BinaryOp(op, t1, t2) => self.type_of_binary_op(*op, t1.as_ref(), t2.as_ref()),
+            Term::App(t1, t2) => self.type_of_app(t1.as_ref(), t2.as_ref()),
+            Term::Let(kind, name, t1, t2) => self.type_of_let(kind, name, t1.as_ref(), t2.as_ref()),
             Term::Cond(t1, t2, t3) => self.type_of_cond(t1.as_ref(), t2.as_ref(), t3.as_ref()),
             Term::PrimFn(prim) => self.type_of_prim_fn(*prim),
         };
@@ -152,7 +148,7 @@ impl<'a> Context<'a> {
             .iter()
             .rev() // We iterate in reverse to give priority to the most recent binding.
             .find(|bind| bind.name == *local)
-            .ok_or_else(|| TyError::Unbounded(loc.with_content(local.to_string())))?
+            .ok_or_else(|| TyError::new(TyErrorKind::Unbounded(local.to_string()), loc))?
             .ty
             .clone();
         Ok(ty)
@@ -172,13 +168,7 @@ impl<'a> Context<'a> {
     ///
     /// This rule does not add new constraints because the type of an abstraction can be computed
     /// directly from the type of its body and argument.
-    fn type_of_abs(
-        &mut self,
-        _loc: Location,
-        name: Local<'a>,
-        ty: &Ty,
-        body: &Located<Term<'a>>,
-    ) -> TyResult {
+    fn type_of_abs(&mut self, name: Local<'a>, ty: &Ty, body: &Located<Term<'a>>) -> TyResult {
         self.inner.push(TyBinding {
             name,
             ty: ty.clone(),
@@ -264,11 +254,7 @@ impl<'a> Context<'a> {
     ///
     /// This method introduces a new type variable `X` and adds the constraint `T1 = T2 -> X` where
     /// `T1` is `t1`'s type and `T2` is `t2`'s type. The returned type is `X`.
-    fn type_of_app(
-        &mut self,
-        t1: &Located<Term<'a>>,
-        t2: &Located<Term<'a>>,
-    ) -> TyResult {
+    fn type_of_app(&mut self, t1: &Located<Term<'a>>, t2: &Located<Term<'a>>) -> TyResult {
         let ty1 = self.type_of(t1)?.content;
         let ty2 = self.type_of(t2)?;
         let ty = self.new_ty();

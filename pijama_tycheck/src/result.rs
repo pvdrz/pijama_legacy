@@ -2,32 +2,48 @@
 
 use thiserror::Error;
 
-use pijama_common::location::{Located, Location};
+use pijama_common::location::Location;
 
 use pijama_ty::Ty;
 
 /// The type returned by methods and functions in this module.
 pub type TyResult<T = Ty> = Result<T, TyError>;
 
-/// A typing error.
+/// A kind of typing error.
 ///
 /// Each variant here represents a reason why the type-checker could fail.
 #[derive(Error, Debug, Eq, PartialEq)]
-pub enum TyError {
+pub enum TyErrorKind {
     /// Variant used when two types that should be equal are not.
     #[error("Type mismatch: expected `{expected}`, found `{found}`")]
-    Mismatch { expected: Ty, found: Located<Ty> },
+    Mismatch { expected: Ty, found: Ty },
     /// Variant used when a name has not been binded to any type in the current scope.
     #[error("Local `{0}` is not bounded")]
-    Unbounded(Located<String>),
+    Unbounded(String),
+}
+
+/// A typing error.
+#[derive(Error, Debug)]
+#[error("`{kind}`")]
+pub struct TyError {
+    kind: TyErrorKind,
+    loc: Location,
 }
 
 impl TyError {
-    /// Returns the location of the error.
+    pub fn new(kind: TyErrorKind, loc: Location) -> Self {
+        Self { kind, loc }
+    }
+
     pub fn loc(&self) -> Location {
-        match self {
-            TyError::Mismatch { found, .. } => found.loc,
-            TyError::Unbounded(name) => name.loc,
-        }
+        self.loc
     }
 }
+
+impl PartialEq for TyError {
+    fn eq(&self, other: &Self) -> bool {
+        self.kind == other.kind
+    }
+}
+
+impl Eq for TyError {}
