@@ -16,24 +16,20 @@ pub enum LetKind {
 
 #[derive(Debug)]
 pub enum Term<'a> {
-    Var(Local<'a>),
-    Abs(Local<'a>, Ty, Box<Located<Term<'a>>>),
-    UnaryOp(UnOp, Box<Located<Term<'a>>>),
-    BinaryOp(BinOp, Box<Located<Term<'a>>>, Box<Located<Term<'a>>>),
-    App(Box<Located<Term<'a>>>, Box<Located<Term<'a>>>),
     Lit(Literal),
-    Cond(
-        Box<Located<Term<'a>>>,
-        Box<Located<Term<'a>>>,
-        Box<Located<Term<'a>>>,
-    ),
+    PrimFn(Primitive),
+    Var(Local<'a>),
+    Abs(Local<'a>, Ty, Box<Located<Self>>),
+    App(Box<Located<Self>>, Box<Located<Self>>),
+    UnaryOp(UnOp, Box<Located<Self>>),
+    BinaryOp(BinOp, Box<Located<Self>>, Box<Located<Self>>),
+    Cond(Box<Located<Self>>, Box<Located<Self>>, Box<Located<Self>>),
     Let(
         LetKind,
         Located<Local<'a>>,
-        Box<Located<Term<'a>>>,
-        Box<Located<Term<'a>>>,
+        Box<Located<Self>>,
+        Box<Located<Self>>,
     ),
-    PrimFn(Primitive),
 }
 
 impl<'a> Display for Term<'a> {
