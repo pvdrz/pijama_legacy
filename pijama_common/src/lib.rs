@@ -140,11 +140,29 @@ impl<'a> Display for Primitive {
 }
 
 /// Represents the name of a variable or non-primitive function in the AST.
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub struct Name<'a>(pub &'a str);
+#[derive(Debug, Clone, Copy)]
+pub enum Local<'a> {
+    Name(&'a str),
+    Wildcard,
+}
 
-impl<'a> Display for Name<'a> {
+impl<'a> Display for Local<'a> {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        write!(f, "{}", self.0)
+        match self {
+            Local::Name(name) => write!(f, "{}", name),
+            Local::Wildcard => write!(f, "_"),
+        }
     }
 }
+
+impl<'a> PartialEq for Local<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        if let (Local::Name(n1), Local::Name(n2)) = (self, other) {
+            n1 == n2
+        } else {
+            false
+        }
+    }
+}
+
+impl<'a> Eq for Local<'a> {}

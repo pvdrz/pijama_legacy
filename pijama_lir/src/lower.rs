@@ -1,4 +1,4 @@
-use pijama_common::{location::Located, Name};
+use pijama_common::{location::Located, Local};
 use pijama_mir::{LetKind, Term as MirTerm};
 
 use crate::Term;
@@ -9,7 +9,7 @@ pub fn remove_names(term: Located<MirTerm<'_>>) -> Term {
 
 #[derive(Default)]
 struct Context<'a> {
-    inner: Vec<Name<'a>>,
+    inner: Vec<Local<'a>>,
 }
 
 impl<'a> Context<'a> {
@@ -75,11 +75,6 @@ impl<'a> Context<'a> {
                 let t2 = self.remove_names(t2.content);
                 let t3 = self.remove_names(t3.content);
                 Term::Cond(Box::new(t1), Box::new(t2), Box::new(t3))
-            }
-            MirTerm::Seq(t1, t2) => {
-                let t1 = self.remove_names(t1.content);
-                let t2 = self.remove_names(t2.content);
-                Term::App(Box::new(Term::Abs(Box::new(t2))), Box::new(t1))
             }
             MirTerm::PrimFn(prim) => Term::PrimFn(prim),
         }

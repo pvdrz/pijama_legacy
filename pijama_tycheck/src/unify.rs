@@ -11,7 +11,7 @@ use std::collections::VecDeque;
 use pijama_common::location::Located;
 use pijama_ty::Ty;
 
-use crate::{Context, TyError, TyResult};
+use crate::{Context, TyError, TyErrorKind, TyResult};
 
 /// Solves the constraints created by the `Context` type.
 ///
@@ -120,10 +120,13 @@ impl Unifier {
 
                 // Otherwise, this constraint cannot be satisfied and we raise an error.
                 (lhs, rhs) => {
-                    return Err(TyError::Mismatch {
-                        expected: lhs,
-                        found: Located::new(rhs, loc),
-                    });
+                    return Err(TyError::new(
+                        TyErrorKind::Mismatch {
+                            expected: lhs,
+                            found: rhs,
+                        },
+                        loc,
+                    ));
                 }
             }
         }

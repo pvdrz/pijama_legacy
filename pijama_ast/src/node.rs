@@ -6,7 +6,7 @@ use std::{collections::VecDeque, fmt::Debug};
 
 use pijama_common::{
     location::{Located, Location},
-    BinOp, Literal, Name, Primitive, UnOp,
+    BinOp, Literal, Local, Primitive, UnOp,
 };
 
 use crate::ty::TyAnnotation;
@@ -43,11 +43,11 @@ impl<'a> Node<'a> {
 #[derive(Debug, Eq, PartialEq)]
 pub enum Statement<'a> {
     /// Statement containing an assignment.
-    Assign(TyAnnotation<Located<Name<'a>>>, Located<Expression<'a>>),
+    Assign(TyAnnotation<Located<Local<'a>>>, Located<Expression<'a>>),
     /// Statement containing a function definition.
     FnDef(
-        Located<Name<'a>>,
-        Vec<TyAnnotation<Located<Name<'a>>>>,
+        Located<Local<'a>>,
+        Vec<TyAnnotation<Located<Local<'a>>>>,
         TyAnnotation<Block<'a>>,
     ),
 }
@@ -67,15 +67,15 @@ pub enum Expression<'a> {
     Cond(Branch<'a>, Vec<Branch<'a>>, Block<'a>),
     /// Expression containing an anonymous function.
     AnonFn(
-        Vec<TyAnnotation<Located<Name<'a>>>>,
+        Vec<TyAnnotation<Located<Local<'a>>>>,
         TyAnnotation<Block<'a>>,
     ),
     /// Expression containing a function call.
     Call(Box<Located<Expression<'a>>>, Vec<Located<Expression<'a>>>),
     /// Expression containing a literal.
     Literal(Literal),
-    /// Expression containing a name.
-    Name(Name<'a>),
+    /// Expression containing a local.
+    Local(Local<'a>),
     /// Expression containing a primitive function.
     PrimFn(Primitive),
 }

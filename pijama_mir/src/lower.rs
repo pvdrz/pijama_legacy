@@ -9,7 +9,7 @@ use pijama_ast::{
 };
 use pijama_common::{
     location::{Located, Location},
-    BinOp, Name, UnOp,
+    BinOp, Local, UnOp,
 };
 use pijama_ty::Ty;
 
@@ -48,7 +48,12 @@ pub fn lower_block<'a>(mut block: Block<'a>) -> LowerResult<Located<Term<'a>>> {
                 let head = lower_expression(expr)?;
                 let tail = lower_block(block)?;
                 let loc = head.loc + tail.loc;
-                Ok(loc.with_content(Term::Seq(Box::new(head), Box::new(tail))))
+                Ok(loc.with_content(Term::Let(
+                    LetKind::NonRec(None),
+                    Located::new(Local::Wildcard, loc),
+                    Box::new(head),
+                    Box::new(tail),
+                )))
             }
             Node::Stat(stat) => match stat.content {
                 Statement::Assign(lhs, rhs) => lower_assign(stat.loc, lhs, rhs, block),
@@ -65,7 +70,7 @@ pub fn lower_block<'a>(mut block: Block<'a>) -> LowerResult<Located<Term<'a>>> {
 fn lower_expression(expr: Located<Expression<'_>>) -> LowerResult<Located<Term<'_>>> {
     let loc = expr.loc;
     match expr.content {
-        Expression::Name(name) => Ok(loc.with_content(Term::Var(name))),
+        Expression::Local(local) => Ok(loc.with_content(Term::Var(local))),
         Expression::Literal(lit) => Ok(loc.with_content(Term::Lit(lit))),
         Expression::PrimFn(prim) => Ok(loc.with_content(Term::PrimFn(prim))),
         Expression::Cond(if_branch, branches, el_blk) => {
@@ -139,7 +144,7 @@ fn lower_unary_op(
 
 fn lower_assign<'a>(
     loc: Location,
-    lhs: TyAnnotation<Located<Name<'a>>>,
+    lhs: TyAnnotation<Located<Local<'a>>>,
     rhs: Located<Expression<'a>>,
     tail: Block<'a>,
 ) -> LowerResult<Located<Term<'a>>> {
@@ -163,8 +168,8 @@ fn lower_assign<'a>(
 
 fn lower_fn_def<'a>(
     loc: Location,
-    name: Located<Name<'a>>,
-    args: Vec<TyAnnotation<Located<Name<'a>>>>,
+    name: Located<Local<'a>>,
+    args: Vec<TyAnnotation<Located<Local<'a>>>>,
     body: TyAnnotation<Block<'a>>,
     tail: Block<'a>,
 ) -> LowerResult<Located<Term<'a>>> {
@@ -212,7 +217,7 @@ fn lower_fn_def<'a>(
 
 fn lower_anon_fn<'a>(
     loc: Location,
-    args: Vec<TyAnnotation<Located<Name<'a>>>>,
+    args: Vec<TyAnnotation<Located<Local<'a>>>>,
     body: TyAnnotation<Block<'a>>,
 ) -> LowerResult<Located<Term<'a>>> {
     if Ty::from_ast(body.ty.content).is_some() {
