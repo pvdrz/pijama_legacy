@@ -5,5 +5,5 @@ authors = ["The Pijama Project Developers"]
 edition = "2018"
 
 [dependencies]
-pijama_mir = {path = "../pijama_mir"}
+pijama_hir = {path = "../pijama_hir"}
 pijama_common = { path = "../pijama_common" }

@@ -1,6 +1,6 @@
 //! Pijama's type-checker.
 //!
-//! This module contains all the functions and types required to do type-checking over the MIR of a
+//! This module contains all the functions and types required to do type-checking over the HIR of a
 //! program. Pijama uses constraint-based typing, which is better suited for type
 //! reconstruction/inference than a regular in-place enforcement of the typing rules.
 //!
@@ -12,7 +12,7 @@ use pijama_common::{
     location::{Located, Location},
     BinOp, Literal, Local, Primitive, UnOp,
 };
-use pijama_mir::{LetKind, Term};
+use pijama_hir::{LetKind, Term};
 use pijama_ty::Ty;
 
 mod result;
@@ -48,7 +48,7 @@ struct TyBinding<'a> {
 
 /// A typing context.
 ///
-/// This structure traverses the MIR of a term and generates a set of constraints that must be
+/// This structure traverses the HIR of a term and generates a set of constraints that must be
 /// satisfied by the term to be well-typed.
 ///
 /// A context can only have the variables that have been bound in the scope of the term is typing.

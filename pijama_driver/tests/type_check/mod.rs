@@ -2,7 +2,7 @@ use pijama_parser::parse;
 
 use pijama_ty::Ty;
 
-use pijama_mir::Term;
+use pijama_hir::Term;
 
 use pijama_tycheck::ty_check;
 
@@ -13,8 +13,8 @@ mod pass;
 
 pub fn type_check(input: &str) -> LangResult<Ty> {
     let ast = parse(input)?;
-    let mir = Term::from_ast(ast)?;
-    Ok(ty_check(&mir)?.content)
+    let hir = Term::from_ast(ast)?;
+    Ok(ty_check(&hir)?.content)
 }
 
 /// Create a test with `$name` that type checks a file with `$name`.pj
