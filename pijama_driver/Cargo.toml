@@ -9,6 +9,7 @@ thiserror = "1.0"
 pijama_ast = { path = "../pijama_ast" }
 pijama_parser = { path = "../pijama_parser" }
 pijama_ty = { path = "../pijama_ty" }
+pijama_hir = { path = "../pijama_hir" }
 pijama_mir = { path = "../pijama_mir" }
 pijama_tycheck = { path = "../pijama_tycheck" }
 pijama_lir = { path = "../pijama_lir" }

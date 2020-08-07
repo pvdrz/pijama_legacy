@@ -1,11 +1,9 @@
 [package]
 name = "pijama_mir"
 version = "0.1.0"
-authors = ["The Pijama Project Developers"]
+authors = ["Christian Poveda <git@christianpoveda.xyz>"]
 edition = "2018"
 
 [dependencies]
-thiserror = "1.0"
-pijama_ast = {path = "../pijama_ast"}
-pijama_ty = {path = "../pijama_ty"}
+pijama_hir = { path = "../pijama_hir" }
 pijama_common = { path = "../pijama_common" }

@@ -1,7 +1,7 @@
 use crate::{test_type, util::dummy_loc};
 
 use pijama_driver::LangError;
-use pijama_mir::LowerError;
+use pijama_hir::LowerError;
 
 test_type!(
     detect_indirect_recursion,

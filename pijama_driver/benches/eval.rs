@@ -4,7 +4,7 @@ use std::include_str;
 
 use pijama_parser::parse;
 
-use pijama_mir::Term as MirTerm;
+use pijama_hir::Term as HirTerm;
 
 use pijama_tycheck::ty_check;
 
@@ -16,9 +16,9 @@ use pijama_driver::LangResult;
 
 fn compile(input: &str) -> LangResult<Term> {
     let ast = parse(input)?;
-    let mir = MirTerm::from_ast(ast)?;
-    ty_check(&mir)?;
-    Ok(Term::from_mir(mir))
+    let hir = HirTerm::from_ast(ast)?;
+    ty_check(&hir)?;
+    Ok(Term::from_hir(hir))
 }
 
 fn arithmetic(c: &mut Criterion) {

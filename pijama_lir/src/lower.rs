@@ -1,9 +1,9 @@
 use pijama_common::{location::Located, Local};
-use pijama_mir::{LetKind, Term as MirTerm};
+use pijama_hir::{LetKind, Term as HirTerm};
 
 use crate::Term;
 
-pub fn remove_names(term: Located<MirTerm<'_>>) -> Term {
+pub fn remove_names(term: Located<HirTerm<'_>>) -> Term {
     Context::default().remove_names(term.content)
 }
 
@@ -13,10 +13,10 @@ struct Context<'a> {
 }
 
 impl<'a> Context<'a> {
-    fn remove_names(&mut self, term: MirTerm<'a>) -> Term {
+    fn remove_names(&mut self, term: HirTerm<'a>) -> Term {
         match term {
-            MirTerm::Lit(lit) => lit.into(),
-            MirTerm::Var(name) => {
+            HirTerm::Lit(lit) => lit.into(),
+            HirTerm::Var(name) => {
                 let (index, _) = self
                     .inner
                     .iter()
@@ -26,27 +26,27 @@ impl<'a> Context<'a> {
                     .unwrap();
                 Term::Var(index)
             }
-            MirTerm::Abs(name, _, body) => {
+            HirTerm::Abs(name, _, body) => {
                 self.inner.push(name);
                 let body = self.remove_names(body.content);
                 self.inner.pop().unwrap();
                 Term::Abs(Box::new(body))
             }
-            MirTerm::UnaryOp(op, t1) => {
+            HirTerm::UnaryOp(op, t1) => {
                 let t1 = self.remove_names(t1.content);
                 Term::UnaryOp(op, Box::new(t1))
             }
-            MirTerm::BinaryOp(op, t1, t2) => {
+            HirTerm::BinaryOp(op, t1, t2) => {
                 let t1 = self.remove_names(t1.content);
                 let t2 = self.remove_names(t2.content);
                 Term::BinaryOp(op, Box::new(t1), Box::new(t2))
             }
-            MirTerm::App(t1, t2) => {
+            HirTerm::App(t1, t2) => {
                 let t1 = self.remove_names(t1.content);
                 let t2 = self.remove_names(t2.content);
                 Term::App(Box::new(t1), Box::new(t2))
             }
-            MirTerm::Let(kind, name, t1, t2) => {
+            HirTerm::Let(kind, name, t1, t2) => {
                 let t1 = if let LetKind::Rec(_) = kind {
                     // if the let binding is recursive we are dealing with a recursive function and
                     // we need its name inside the context to lower its body.
@@ -70,13 +70,13 @@ impl<'a> Context<'a> {
                 self.inner.pop().unwrap();
                 Term::App(Box::new(Term::Abs(Box::new(t2))), Box::new(t1))
             }
-            MirTerm::Cond(t1, t2, t3) => {
+            HirTerm::Cond(t1, t2, t3) => {
                 let t1 = self.remove_names(t1.content);
                 let t2 = self.remove_names(t2.content);
                 let t3 = self.remove_names(t3.content);
                 Term::Cond(Box::new(t1), Box::new(t2), Box::new(t3))
             }
-            MirTerm::PrimFn(prim) => Term::PrimFn(prim),
+            HirTerm::PrimFn(prim) => Term::PrimFn(prim),
         }
     }
 }

@@ -74,8 +74,8 @@ impl fmt::Display for Term {
 }
 
 impl Term {
-    pub fn from_mir(mir: Located<pijama_mir::Term>) -> Self {
-        lower::remove_names(mir)
+    pub fn from_hir(hir: Located<pijama_hir::Term>) -> Self {
+        lower::remove_names(hir)
     }
 
     pub fn shift(&mut self, up: bool, cutoff: usize) {

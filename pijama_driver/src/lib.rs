@@ -4,7 +4,7 @@ use std::io::Write;
 
 use pijama_parser::{parse, ParsingError};
 
-use pijama_mir::{LowerError, Term as MirTerm};
+use pijama_hir::{LowerError, Term as HirTerm};
 
 use pijama_tycheck::{ty_check, TyError};
 
@@ -32,9 +32,9 @@ pub fn run_with_machine<W: Write, A: Arithmetic>(
     mut machine: Machine<W, A>,
 ) -> LangResult<()> {
     let ast = parse(input)?;
-    let mir = MirTerm::from_ast(ast)?;
-    let _ty = ty_check(&mir)?;
-    let lir = LirTerm::from_mir(mir);
+    let hir = HirTerm::from_ast(ast)?;
+    let _ty = ty_check(&hir)?;
+    let lir = LirTerm::from_hir(hir);
     let _res = machine.evaluate(lir);
     Ok(())
 }

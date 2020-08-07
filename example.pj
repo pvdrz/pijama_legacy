@@ -6,4 +6,4 @@ fn fact(n: Int): Int do
     end
 end
 
-fact(20)
+print(fact(20))
