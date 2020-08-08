@@ -4,7 +4,7 @@
 //! type-checker.
 use std::fmt;
 
-use pijama_ast::ty::Ty as TyAST;
+use pijama_common::generator::Generator;
 
 /// A type used by the type-checker.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -51,19 +51,6 @@ impl fmt::Display for Ty {
     }
 }
 
-impl Ty {
-    pub fn from_ast(ty_ast: TyAST) -> Option<Self> {
-        match ty_ast {
-            // FIXME: In general we should translate missing types into type variables inside
-            // `ty_check::Context`.
-            TyAST::Missing => None,
-            TyAST::Bool => Some(Ty::Bool),
-            TyAST::Int => Some(Ty::Int),
-            TyAST::Unit => Some(Ty::Unit),
-            TyAST::Arrow(t1, t2) => Some(Ty::Arrow(
-                Box::new(Ty::from_ast(*t1)?),
-                Box::new(Ty::from_ast(*t2)?),
-            )),
-        }
-    }
+pub fn ty_gen() -> Generator<Ty> {
+    Generator::new(Ty::Var)
 }

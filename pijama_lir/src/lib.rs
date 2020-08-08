@@ -1,6 +1,6 @@
 use std::fmt;
 
-use pijama_common::{location::Located, BinOp, Literal, Primitive, UnOp};
+use pijama_common::{BinOp, Literal, Primitive, UnOp};
 
 use Term::*;
 
@@ -74,7 +74,7 @@ impl fmt::Display for Term {
 }
 
 impl Term {
-    pub fn from_hir(hir: Located<pijama_hir::Term>) -> Self {
+    pub fn from_hir(hir: pijama_hir::Term) -> Self {
         lower::remove_names(hir)
     }
 

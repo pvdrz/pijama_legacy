@@ -1,6 +1,6 @@
 //! Types and functions related to type unification.
 //!
-//! This module takes care of resolving the constraints created by the `Context` type and producing
+//! This module takes care of resolving the constraints created by the `Analyzer` type and producing
 //! a set of substitutions that can make our program well-typed. It is perfectly possible that a
 //! well-typed program still has type variables in its types.
 //!
@@ -11,12 +11,12 @@ use std::collections::VecDeque;
 use pijama_common::location::Located;
 use pijama_ty::Ty;
 
-use crate::{Context, TyError, TyErrorKind, TyResult};
+use crate::{TyError, TyErrorKind, TyResult};
 
-/// Solves the constraints created by the `Context` type.
+/// Solves the constraints created by the `Analyzer` type.
 ///
 /// This type is able to find a set of `Substitution`s such that the program that produced the
-/// `Context`'s `Constraint`s is well-typed.
+/// `Analyzer`'s `Constraint`s is well-typed.
 #[derive(Debug)]
 pub struct Unifier {
     /// Substitutions that make the program well-typed.
@@ -26,15 +26,15 @@ pub struct Unifier {
 }
 
 impl Unifier {
-    /// Creates a new `Unifier` from a `Context`.
+    /// Creates a new `Unifier` from a `Analyzer`.
     ///
-    /// Consumes the constraints collected by the `Context` and then tries to unify those
+    /// Consumes the constraints collected by the `Analyzer` and then tries to unify those
     /// constraints using the `unify` method. If this process is successful, a new `Unifier` is
     /// returned ready to be used to replace type variables.
-    pub(super) fn from_ctx(ctx: Context) -> TyResult<Self> {
+    pub(super) fn new(constraints: VecDeque<Located<Constraint>>) -> TyResult<Self> {
         let mut unif = Unifier {
             substitutions: Default::default(),
-            constraints: ctx.constraints,
+            constraints,
         };
         unif.unify()?;
         Ok(unif)
@@ -54,7 +54,7 @@ impl Unifier {
     /// This method applies `subst` over both sides of the `Constraint`s in the `constraints`
     /// field.
     fn apply_substitution(&mut self, subst: &Substitution) {
-        for constr in &mut self.constraints {
+        for constr in self.constraints.iter_mut() {
             let Constraint { lhs, rhs } = &mut constr.content;
             subst.apply(lhs);
             subst.apply(rhs);

@@ -1,6 +1,7 @@
 mod lower;
 
-use pijama_common::{BinOp, Literal, Local, UnOp};
+use pijama_hir::{TermId, LocalId};
+use pijama_common::{BinOp, Literal, UnOp};
 
 #[derive(Debug)]
 pub enum LetKind {
@@ -16,18 +17,24 @@ pub enum PrimFn {
 }
 
 #[derive(Debug)]
-pub enum Term<'ast> {
-    Lit(Literal),
-    Var(Local<'ast>),
-    Abs(Vec<Local<'ast>>, Box<Self>),
-    App(Box<Self>, Vec<Self>),
-    PrimApp(PrimFn, Vec<Self>),
-    Cond(Box<Self>, Box<Self>, Box<Self>),
-    Let(LetKind, Local<'ast>, Box<Self>, Box<Self>),
+pub struct Term {
+    id: TermId,
+    kind: TermKind,
 }
 
-impl<'ast> Term<'ast> {
-    pub fn from_hir(term: &pijama_common::location::Located<pijama_hir::Term<'ast>>) -> Term<'ast> {
+#[derive(Debug)]
+pub enum TermKind {
+    Lit(Literal),
+    Var(LocalId),
+    Abs(Vec<LocalId>, Box<Term>),
+    App(Box<Term>, Vec<Term>),
+    PrimApp(PrimFn, Vec<Term>),
+    Cond(Box<Term>, Box<Term>, Box<Term>),
+    Let(LetKind, LocalId, Box<Term>, Box<Term>),
+}
+
+impl<'ast> Term {
+    pub fn from_hir(term: &pijama_hir::Term) -> Term {
         lower::lower_term(term)
     }
 }

@@ -4,9 +4,9 @@ use std::include_str;
 
 use pijama_parser::parse;
 
-use pijama_hir::Term as HirTerm;
-
 use pijama_tycheck::ty_check;
+
+use pijama_ty::ty_gen;
 
 use pijama_lir::Term;
 
@@ -16,8 +16,8 @@ use pijama_driver::LangResult;
 
 fn compile(input: &str) -> LangResult<Term> {
     let ast = parse(input)?;
-    let hir = HirTerm::from_ast(ast)?;
-    ty_check(&hir)?;
+    let (hir, ctx) = pijama_hir::lower_block(ast, ty_gen())?;
+    ty_check(&hir, ctx)?;
     Ok(Term::from_hir(hir))
 }
 
