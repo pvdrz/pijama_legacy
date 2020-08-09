@@ -1,5 +1,4 @@
 pub mod location;
-pub mod generator;
 
 use std::fmt::{Debug, Display, Formatter, Result};
 

@@ -1,6 +1,6 @@
-use std::{fmt::Debug, hash::Hash, collections::HashMap};
+use std::{collections::HashMap, fmt::Debug, hash::Hash};
 
-use pijama_common::{location::Location, generator::Generator};
+use pijama_common::location::Location;
 
 use crate::Ty;
 
@@ -91,3 +91,19 @@ impl Context {
     }
 }
 
+struct Generator<T> {
+    count: usize,
+    f: fn(usize) -> T,
+}
+
+impl<T> Generator<T> {
+    pub fn new(f: fn(usize) -> T) -> Self {
+        Self { count: 0, f }
+    }
+
+    pub fn gen(&mut self) -> T {
+        let item = (self.f)(self.count);
+        self.count += 1;
+        item
+    }
+}
