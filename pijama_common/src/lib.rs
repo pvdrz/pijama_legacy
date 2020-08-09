@@ -144,6 +144,7 @@ impl<'a> Display for Primitive {
 pub enum Local<'a> {
     Name(&'a str),
     Wildcard,
+    Temp(usize),
 }
 
 impl<'a> Display for Local<'a> {
@@ -151,6 +152,7 @@ impl<'a> Display for Local<'a> {
         match self {
             Local::Name(name) => write!(f, "{}", name),
             Local::Wildcard => write!(f, "_"),
+            Local::Temp(id) => write!(f, "#{}", id),
         }
     }
 }

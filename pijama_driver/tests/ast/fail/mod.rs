@@ -1,24 +1,24 @@
-use crate::{test_type, util::dummy_loc};
+use crate::test_type;
 
-use pijama_driver::LangError;
-use pijama_hir::LowerError;
+use pijama_driver::LangErrorKind;
+use pijama_hir::LowerErrorKind;
 
 test_type!(
     detect_indirect_recursion,
-    Err(LangError::Lower(LowerError::RequiredTy(dummy_loc())))
+    Err(&LangErrorKind::Lower(LowerErrorKind::RequiredTy))
 );
 
 test_type!(
     detect_recursion_after_shadowing,
-    Err(LangError::Lower(LowerError::RequiredTy(dummy_loc())))
+    Err(&LangErrorKind::Lower(LowerErrorKind::RequiredTy))
 );
 
 test_type!(
     detect_recursion_after_shadowing_2,
-    Err(LangError::Lower(LowerError::RequiredTy(dummy_loc())))
+    Err(&LangErrorKind::Lower(LowerErrorKind::RequiredTy))
 );
 
 test_type!(
     detect_recursion_inside_functions,
-    Err(LangError::Lower(LowerError::RequiredTy(dummy_loc())))
+    Err(&LangErrorKind::Lower(LowerErrorKind::RequiredTy))
 );

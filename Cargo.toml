@@ -2,6 +2,7 @@
 
 members = [
     "pijama_common",
+    "pijama_ctx",
     "pijama_ast",
     "pijama_parser",
     "pijama_ty",

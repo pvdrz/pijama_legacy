@@ -2,7 +2,7 @@
 
 use thiserror::Error;
 
-use pijama_common::location::Location;
+use pijama_common::location::LocatedError;
 
 use pijama_ty::Ty;
 
@@ -20,30 +20,10 @@ pub enum TyErrorKind {
     /// Variant used when a name has not been binded to any type in the current scope.
     #[error("Local `{0}` is not bounded")]
     Unbounded(String),
+    /// Variant used when a type still has type variables in it.
+    #[error("Type cannot be reconstructed")]
+    NotConcrete,
 }
 
 /// A typing error.
-#[derive(Error, Debug)]
-#[error("`{kind}`")]
-pub struct TyError {
-    kind: TyErrorKind,
-    loc: Location,
-}
-
-impl TyError {
-    pub fn new(kind: TyErrorKind, loc: Location) -> Self {
-        Self { kind, loc }
-    }
-
-    pub fn loc(&self) -> Location {
-        self.loc
-    }
-}
-
-impl PartialEq for TyError {
-    fn eq(&self, other: &Self) -> bool {
-        self.kind == other.kind
-    }
-}
-
-impl Eq for TyError {}
+pub type TyError = LocatedError<TyErrorKind>;

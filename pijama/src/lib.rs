@@ -8,7 +8,7 @@ use codespan_reporting::{
 };
 use structopt::StructOpt;
 
-use pijama_driver::LangError;
+use pijama_driver::{LangError, LangErrorKind};
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "pijama", about = "The Pijama compiler")]
@@ -36,10 +36,11 @@ pub fn display_error(input: &str, path: &str, error: &LangError) {
 
     let file_id = files.add(path, input);
 
-    let (msg, loc) = match &error {
-        LangError::Ty(error) => ("Type error", error.loc()),
-        LangError::Parse(error) => ("Parsing error", error.loc()),
-        LangError::Lower(error) => ("Lowering error", error.loc()),
+    let loc = error.loc();
+    let msg = match error.kind() {
+        LangErrorKind::Ty(_) => "Type error",
+        LangErrorKind::Parse(_) => "Parsing error",
+        LangErrorKind::Lower(_) => "Lowering error",
     };
 
     let diagnostic = Diagnostic::error()

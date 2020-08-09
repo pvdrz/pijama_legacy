@@ -1,25 +1,21 @@
-use thiserror::Error;
-
-use lalrpop_util::{lalrpop_mod, ParseError};
-
-use pijama_ast::node::Block;
-use pijama_common::location::{Located, Location};
-
 mod lexer;
 lalrpop_mod!(
     #[allow(unused_imports)]
     parser
 );
 
-use lexer::{LexError, Lexer, Token};
+use thiserror::Error;
+
+use lalrpop_util::{lalrpop_mod, ParseError};
+
+use pijama_ast::node::Block;
+use pijama_common::location::{LocatedError, Location};
+
+use lexer::{LexError, Lexer};
 use parser::ProgParser;
 
-#[derive(Error, Debug, Eq, PartialEq)]
-#[error("{kind}")]
-pub struct ParsingError {
-    loc: Location,
-    kind: ParsingErrorKind,
-}
+pub type ParsingResult<T> = Result<T, ParsingError>;
+pub type ParsingError = LocatedError<ParsingErrorKind>;
 
 #[derive(Error, Debug, Eq, PartialEq)]
 pub enum ParsingErrorKind {
@@ -36,62 +32,44 @@ pub enum ParsingErrorKind {
     Custom(&'static str),
 }
 
-impl ParsingError {
-    pub fn loc(&self) -> Location {
-        self.loc
-    }
-}
-
-impl<'a> From<ParseError<usize, Token<'a>, Located<LexError>>> for ParsingError {
-    fn from(error: ParseError<usize, Token<'a>, Located<LexError>>) -> Self {
-        match error {
-            ParseError::InvalidToken { location } => ParsingError {
-                loc: Location::new(location, location),
-                kind: ParsingErrorKind::InvalidToken,
-            },
-            ParseError::UnrecognizedEOF { location, expected } => ParsingError {
-                loc: Location::new(location, location),
-                kind: ParsingErrorKind::UnexpectedToken {
-                    found: "EOF".to_string(),
-                    expected,
-                },
-            },
-            ParseError::UnrecognizedToken {
-                token: (start, token, end),
-                expected,
-            } => ParsingError {
-                loc: Location::new(start, end),
-                kind: ParsingErrorKind::UnexpectedToken {
-                    found: token.to_string(),
-                    expected,
-                },
-            },
-            ParseError::ExtraToken {
-                token: (start, _, end),
-            } => ParsingError {
-                loc: Location::new(start, end),
-                kind: ParsingErrorKind::ExtraToken,
-            },
-            ParseError::User { error } => {
-                let msg = match error.content {
-                    LexError::Internal => "Unrecognized token",
-                    LexError::Custom(msg) => msg,
-                };
-                ParsingError {
-                    loc: error.loc,
-                    kind: ParsingErrorKind::Custom(msg),
-                }
-            }
-        }
-    }
-}
-
-pub fn parse(input: &str) -> Result<Block, ParsingError> {
+pub fn parse(input: &str) -> ParsingResult<Block> {
     let lexer = Lexer::from_input(input);
     let result = ProgParser::new().parse(input, lexer);
 
     match result {
         Ok(block) => Ok(block),
-        Err(err) => Err(err.into()),
+        Err(err) => Err(match err {
+            ParseError::InvalidToken { location } => ParsingError::new(
+                ParsingErrorKind::InvalidToken,
+                Location::new(location, location),
+            ),
+            ParseError::UnrecognizedEOF { location, expected } => ParsingError::new(
+                ParsingErrorKind::UnexpectedToken {
+                    found: "EOF".to_string(),
+                    expected,
+                },
+                Location::new(location, location),
+            ),
+            ParseError::UnrecognizedToken {
+                token: (start, token, end),
+                expected,
+            } => ParsingError::new(
+                ParsingErrorKind::UnexpectedToken {
+                    found: token.to_string(),
+                    expected,
+                },
+                Location::new(start, end),
+            ),
+            ParseError::ExtraToken {
+                token: (start, _, end),
+            } => ParsingError::new(ParsingErrorKind::ExtraToken, Location::new(start, end)),
+            ParseError::User { error } => {
+                let msg = match error.content {
+                    LexError::Internal => "Unrecognized token",
+                    LexError::Custom(msg) => msg,
+                };
+                ParsingError::new(ParsingErrorKind::Custom(msg), error.loc)
+            }
+        }),
     }
 }

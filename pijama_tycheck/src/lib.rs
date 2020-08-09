@@ -5,14 +5,16 @@
 //! reconstruction/inference than a regular in-place enforcement of the typing rules.
 //!
 //! The entry-point for this module is the `ty_check` method which does the type checking of a
-//! whole program. However, most of the heavy lifting is done by the `Context` and `Unifier` types.
+//! whole program. However, most of the heavy lifting is done by the `Analyzer` and `Unifier` types.
 use std::collections::VecDeque;
 
 use pijama_common::{
     location::{Located, Location},
-    BinOp, Literal, Local, Primitive, UnOp,
+    BinOp, Literal, Primitive, UnOp,
 };
-use pijama_hir::{LetKind, Term};
+
+use pijama_ctx::{Context, ContextExt, LocalId, TypeInfo};
+use pijama_hir::{BindKind, Term, TermKind};
 use pijama_ty::Ty;
 
 mod result;
@@ -25,45 +27,51 @@ use unify::{Constraint, Unifier};
 ///
 /// This function must always be called in the "root" term of the program. Otherwise, the type
 /// checker might not have all the bindings required to do its job.
-pub fn ty_check(term: &Located<Term<'_>>) -> TyResult<Located<Ty>> {
-    // Create a new, empty context.
-    let mut ctx = Context::default();
+pub fn ty_check(term: &Term, ctx: &mut Context) -> TyResult<Located<Ty>> {
+    // Create a new, empty analyzer.
+    let mut analyzer = Analyzer::new(ctx);
     // Obtain typing constraints and the type of `term`.
-    let mut ty = ctx.type_of(&term)?;
+    let mut ty = analyzer.type_of(&term)?;
     // Solve the constraints using unification.
-    let unif = Unifier::from_ctx(ctx)?;
+    let unif = Unifier::new(analyzer.constraints)?;
     // Apply the substitutions found during unification over the type of `term`.
     unif.replace(&mut ty.content);
+
+    let mut id = None;
+    for (local_id, ty) in ctx.iter_mut_local_types() {
+        unif.replace(ty);
+        if !ty.is_concrete() {
+            id = Some(local_id);
+            break;
+        }
+    }
+    if let Some(id) = id {
+        let loc = ctx.get_location(id).unwrap();
+        return Err(TyError::new(TyErrorKind::NotConcrete, loc));
+    }
+
+    let mut id = None;
+    for (term_id, ty) in ctx.iter_mut_term_types() {
+        unif.replace(ty);
+        if !ty.is_concrete() {
+            id = Some(term_id);
+            break;
+        }
+    }
+    if let Some(id) = id {
+        let loc = ctx.get_location(id).unwrap();
+        return Err(TyError::new(TyErrorKind::NotConcrete, loc));
+    }
+
     Ok(ty)
 }
 
-/// A type binding.
-///
-/// This represents the binding of a `Local` to a type and is used inside the type-checker to encode
-/// that a variable has a type in the current scope.
-struct TyBinding<'a> {
-    name: Local<'a>,
-    ty: Ty,
-}
-
-/// A typing context.
+/// A typing analyzer.
 ///
 /// This structure traverses the HIR of a term and generates a set of constraints that must be
 /// satisfied by the term to be well-typed.
-///
-/// A context can only have the variables that have been bound in the scope of the term is typing.
-#[derive(Default)]
-struct Context<'a> {
-    /// Stack for the type bindings done in the current scope.
-    ///
-    /// Ever time a new binding is done via an abstraction or let binding term it is required to push
-    /// that binding into this stack, and pop it after traversing the term.
-    inner: Vec<TyBinding<'a>>,
-    /// Number of created type variables.
-    ///
-    /// Every time a new variable is created with the `new_ty` method, this number is increased to
-    /// guarantee all type variables are different.
-    count: usize,
+struct Analyzer<'ast, 'ctx> {
+    ctx: &'ctx mut Context<'ast>,
     /// Typing constraints.
     ///
     /// Each typing constraint is introduced by a particular `type_of_*` method with a suitable
@@ -71,21 +79,25 @@ struct Context<'a> {
     constraints: VecDeque<Located<Constraint>>,
 }
 
-impl<'a> Context<'a> {
+impl<'ast, 'ctx> Analyzer<'ast, 'ctx> {
+    fn new(ctx: &'ctx mut Context<'ast>) -> Self {
+        Self {
+            ctx,
+            constraints: VecDeque::default(),
+        }
+    }
     /// Returns a new type variable.
     ///
     /// This variable is guaranteed to be different from all the other types introduced before.
     fn new_ty(&mut self) -> Ty {
-        let ty = Ty::Var(self.count);
-        self.count += 1;
-        ty
+        self.ctx.new_ty()
     }
 
     /// Adds a new `Constraint`.
     ///
     /// A new constraint must be added when it is required to enforce an specific typing rule.
     /// Calling this method will not enforce the rule instantly. It only stores the restriction
-    /// inside the `Context` to be solved by the `Unifier` in a posterior stage. This constraint
+    /// inside the `Analyzer` to be solved by the `Unifier` in a posterior stage. This constraint
     /// has a location that will be used as the location of the error if the constraint is
     /// impossible to satisfy.
     pub fn add_constraint(&mut self, expected: Ty, found: Ty, loc: Location) {
@@ -105,20 +117,36 @@ impl<'a> Context<'a> {
     ///
     /// Typing variables can appear in the type returned by this method (and any other type_of_*
     /// method) as unification has not taken place yet.
-    fn type_of(&mut self, term: &Located<Term<'a>>) -> TyResult<Located<Ty>> {
-        let loc = term.loc;
-        let ty = match &term.content {
-            Term::Lit(lit) => self.type_of_lit(lit),
-            Term::Var(name) => self.type_of_var(loc, name),
-            Term::Abs(name, ty, body) => self.type_of_abs(*name, ty, body.as_ref()),
-            Term::UnaryOp(op, term) => self.type_of_unary_op(loc, *op, term.as_ref()),
-            Term::BinaryOp(op, t1, t2) => self.type_of_binary_op(*op, t1.as_ref(), t2.as_ref()),
-            Term::App(t1, t2) => self.type_of_app(t1.as_ref(), t2.as_ref()),
-            Term::Let(kind, name, t1, t2) => self.type_of_let(kind, name, t1.as_ref(), t2.as_ref()),
-            Term::Cond(t1, t2, t3) => self.type_of_cond(t1.as_ref(), t2.as_ref(), t3.as_ref()),
-            Term::PrimFn(prim) => self.type_of_prim_fn(*prim),
-        };
-        Ok(loc.with_content(ty?))
+    fn type_of(&mut self, term: &Term) -> TyResult<Located<Ty>> {
+        let loc = self.ctx.get_location(term.id).unwrap();
+        let ty = match &term.kind {
+            TermKind::Lit(lit) => self.type_of_lit(lit),
+            TermKind::Var(name) => self.type_of_var(*name),
+            TermKind::Abs(name, body) => self.type_of_abs(*name, body.as_ref()),
+            TermKind::UnaryOp(op, term) => self.type_of_unary_op(*op, term.as_ref()),
+            TermKind::BinaryOp(op, t1, t2) => self.type_of_binary_op(*op, t1.as_ref(), t2.as_ref()),
+            TermKind::App(t1, t2) => self.type_of_app(t1.as_ref(), t2.as_ref()),
+            TermKind::Let(kind, name, t1, t2) => {
+                self.type_of_let(*kind, *name, t1.as_ref(), t2.as_ref())
+            }
+            TermKind::Cond(t1, t2, t3) => self.type_of_cond(t1.as_ref(), t2.as_ref(), t3.as_ref()),
+            TermKind::PrimFn(prim) => self.type_of_prim_fn(*prim),
+        }?;
+
+        if let Some(info) = self.ctx.get_type_info(term.id) {
+            let info_ty = info.ty.clone();
+            self.add_constraint(info_ty, ty.clone(), loc);
+        } else {
+            self.ctx.insert_type_info(
+                term.id,
+                TypeInfo {
+                    ty: ty.clone(),
+                    loc,
+                },
+            )
+        }
+
+        Ok(loc.with_content(ty))
     }
 
     /// Returns the type of a literal.
@@ -142,16 +170,12 @@ impl<'a> Context<'a> {
     ///
     /// This rule does not add new constraints because the type of a variable is decided by the
     /// bindings done in the current scope.
-    fn type_of_var(&mut self, loc: Location, local: &Local<'a>) -> TyResult {
-        let ty = self
-            .inner
-            .iter()
-            .rev() // We iterate in reverse to give priority to the most recent binding.
-            .find(|bind| bind.name == *local)
-            .ok_or_else(|| TyError::new(TyErrorKind::Unbounded(local.to_string()), loc))?
-            .ty
-            .clone();
-        Ok(ty)
+    fn type_of_var(&mut self, local: LocalId) -> TyResult {
+        if let Some(info) = self.ctx.get_type_info(local) {
+            Ok(info.ty.clone())
+        } else {
+            panic!("Missing type info for {:?}", local)
+        }
     }
 
     /// Returns the type of an abstraction.
@@ -168,15 +192,14 @@ impl<'a> Context<'a> {
     ///
     /// This rule does not add new constraints because the type of an abstraction can be computed
     /// directly from the type of its body and argument.
-    fn type_of_abs(&mut self, name: Local<'a>, ty: &Ty, body: &Located<Term<'a>>) -> TyResult {
-        self.inner.push(TyBinding {
-            name,
-            ty: ty.clone(),
-        });
-        let ty = self.type_of(body)?.content;
-        let bind = self.inner.pop().unwrap();
-
-        Ok(Ty::Arrow(Box::new(bind.ty), Box::new(ty)))
+    fn type_of_abs(&mut self, arg: LocalId, body: &Term) -> TyResult {
+        if let Some(info) = self.ctx.get_type_info(arg) {
+            let arg_ty = info.ty.clone();
+            let body_ty = self.type_of(body)?.content;
+            Ok(Ty::Arrow(Box::new(arg_ty), Box::new(body_ty)))
+        } else {
+            panic!("Missing type info for {:?}", arg)
+        }
     }
 
     /// Returns the type of an unary operation.
@@ -187,14 +210,14 @@ impl<'a> Context<'a> {
     ///
     /// This rule adds a constraint stating that the type of the operand must match one of the
     /// types stated above. The returned type is the same type as the operand.
-    fn type_of_unary_op(&mut self, loc: Location, op: UnOp, term: &Located<Term<'a>>) -> TyResult {
-        let ty = self.type_of(term)?.content;
+    fn type_of_unary_op(&mut self, op: UnOp, term: &Term) -> TyResult {
+        let ty = self.type_of(term)?;
         let expected = match op {
             UnOp::Neg => Ty::Int,
             UnOp::Not => Ty::Bool,
         };
-        self.add_constraint(expected, ty.clone(), loc);
-        Ok(ty)
+        self.add_constraint(expected, ty.content.clone(), ty.loc);
+        Ok(ty.content)
     }
 
     /// Returns the type of an binary operation.
@@ -207,12 +230,7 @@ impl<'a> Context<'a> {
     ///
     /// This rule adds one of the constraints stated above. The returned type is `Bool`, unless the
     /// operation is an arithmetic operation, which has type `Int`.
-    fn type_of_binary_op(
-        &mut self,
-        op: BinOp,
-        t1: &Located<Term<'a>>,
-        t2: &Located<Term<'a>>,
-    ) -> TyResult {
+    fn type_of_binary_op(&mut self, op: BinOp, t1: &Term, t2: &Term) -> TyResult {
         let ty1 = self.type_of(t1)?;
         let ty2 = self.type_of(t2)?;
         let ty = match op {
@@ -254,7 +272,7 @@ impl<'a> Context<'a> {
     ///
     /// This method introduces a new type variable `X` and adds the constraint `T1 = T2 -> X` where
     /// `T1` is `t1`'s type and `T2` is `t2`'s type. The returned type is `X`.
-    fn type_of_app(&mut self, t1: &Located<Term<'a>>, t2: &Located<Term<'a>>) -> TyResult {
+    fn type_of_app(&mut self, t1: &Term, t2: &Term) -> TyResult {
         let ty1 = self.type_of(t1)?.content;
         let ty2 = self.type_of(t2)?;
         let ty = self.new_ty();
@@ -284,40 +302,26 @@ impl<'a> Context<'a> {
     /// Like when typing abstractions, the type binding added to the context must be removed to
     /// avoid leaking the binding to the outer scopes. This function returns an error if it is not
     /// possible to remove such binding.
-    fn type_of_let(
-        &mut self,
-        kind: &LetKind,
-        name: &Located<Local<'a>>,
-        t1: &Located<Term<'a>>,
-        t2: &Located<Term<'a>>,
-    ) -> TyResult {
+    fn type_of_let(&mut self, kind: BindKind, lhs: LocalId, rhs: &Term, tail: &Term) -> TyResult {
         match kind {
-            LetKind::NonRec(opt_ty) => {
-                let ty1 = self.type_of(t1)?;
+            BindKind::NonRec => {
+                let rhs_ty = self.type_of(rhs)?;
 
-                if let Some(ty) = opt_ty {
-                    self.add_constraint(ty.content.clone(), ty1.content.clone(), ty1.loc);
-                }
+                let lhs_ty = self.ctx.get_type_info(lhs).unwrap().ty.clone();
 
-                self.inner.push(TyBinding {
-                    name: name.content,
-                    ty: ty1.content,
-                });
+                self.add_constraint(lhs_ty, rhs_ty.content.clone(), rhs_ty.loc);
             }
-            LetKind::Rec(ty) => {
-                self.inner.push(TyBinding {
-                    name: name.content,
-                    ty: ty.content.clone(),
-                });
+            BindKind::Rec => {
+                let lhs_ty = self.ctx.get_type_info(lhs).unwrap().ty.clone();
 
-                let found_ty = self.type_of(t1)?;
-                self.add_constraint(ty.content.clone(), found_ty.content, found_ty.loc);
+                let rhs_ty = self.type_of(rhs)?;
+
+                self.add_constraint(lhs_ty, rhs_ty.content.clone(), rhs_ty.loc);
             }
         };
 
-        let ty2 = self.type_of(t2)?.content;
-        self.inner.pop().unwrap();
-        Ok(ty2)
+        let tail_ty = self.type_of(tail)?.content;
+        Ok(tail_ty)
     }
 
     /// Returns the type of a conditional.
@@ -325,12 +329,7 @@ impl<'a> Context<'a> {
     /// Typing a conditional requires that the condition has type `Bool` and that both branches
     /// have the same type, both constraints are added accordingly. The returned type is the one of
     /// the first branch.
-    fn type_of_cond(
-        &mut self,
-        t1: &Located<Term<'a>>,
-        t2: &Located<Term<'a>>,
-        t3: &Located<Term<'a>>,
-    ) -> TyResult {
+    fn type_of_cond(&mut self, t1: &Term, t2: &Term, t3: &Term) -> TyResult {
         let ty1 = self.type_of(t1)?;
         let ty2 = self.type_of(t2)?.content;
         let ty3 = self.type_of(t3)?;

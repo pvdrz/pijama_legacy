@@ -4,8 +4,6 @@
 //! type-checker.
 use std::fmt;
 
-use pijama_ast::ty::Ty as TyAST;
-
 /// A type used by the type-checker.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Ty {
@@ -30,6 +28,29 @@ impl Ty {
             Ty::Var(inner) => *inner == index,
         }
     }
+
+    pub fn is_concrete(&self) -> bool {
+        match self {
+            Ty::Bool | Ty::Int | Ty::Unit => true,
+            Ty::Arrow(ty1, ty2) => ty1.is_concrete() && ty2.is_concrete(),
+            Ty::Var(_) => false,
+        }
+    }
+
+    pub fn arity(&self) -> Option<usize> {
+        match self {
+            Ty::Bool | Ty::Int | Ty::Unit => Some(0),
+            Ty::Arrow(ty1, ty2) => {
+                ty1.arity()?;
+                Some(ty2.arity()? + 1)
+            }
+            Ty::Var(_) => None,
+        }
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &Ty> {
+        TyIter { ty: Some(self) }
+    }
 }
 
 impl fmt::Display for Ty {
@@ -51,19 +72,21 @@ impl fmt::Display for Ty {
     }
 }
 
-impl Ty {
-    pub fn from_ast(ty_ast: TyAST) -> Option<Self> {
-        match ty_ast {
-            // FIXME: In general we should translate missing types into type variables inside
-            // `ty_check::Context`.
-            TyAST::Missing => None,
-            TyAST::Bool => Some(Ty::Bool),
-            TyAST::Int => Some(Ty::Int),
-            TyAST::Unit => Some(Ty::Unit),
-            TyAST::Arrow(t1, t2) => Some(Ty::Arrow(
-                Box::new(Ty::from_ast(*t1)?),
-                Box::new(Ty::from_ast(*t2)?),
-            )),
+struct TyIter<'ty> {
+    ty: Option<&'ty Ty>,
+}
+
+impl<'ty> Iterator for TyIter<'ty> {
+    type Item = &'ty Ty;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let ty = self.ty.take()?;
+        match ty  {
+            Ty::Arrow(t1, t2) => {
+                self.ty = Some(t2.as_ref());
+                Some(t1.as_ref())
+            }
+            Ty::Int | Ty::Bool | Ty::Unit | Ty::Var(_) => Some(ty)
         }
     }
 }

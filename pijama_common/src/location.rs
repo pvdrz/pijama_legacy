@@ -1,6 +1,8 @@
 //! Utilities for capturing and representing the location of tokens in the source code file.
 use std::fmt::{Debug, Display, Formatter, Result as FmtResult};
 
+use thiserror::Error;
+
 /// Represents a location in the source code file.
 ///
 /// Both the start and end correspond to locations reported by `nom_locate`.
@@ -109,3 +111,37 @@ impl<T: Clone> Clone for Located<T> {
 }
 
 impl<T: Copy + Debug> Copy for Located<T> {}
+
+#[derive(Error, Debug)]
+#[error("{kind}")]
+pub struct LocatedError<K: Debug + Display> {
+    kind: K,
+    loc: Location,
+}
+
+impl<K: Debug + Display> LocatedError<K> {
+    pub fn new(kind: K, loc: Location) -> Self {
+        Self { loc, kind }
+    }
+
+    pub fn loc(&self) -> Location {
+        self.loc
+    }
+
+    pub fn kind(&self) -> &K {
+        &self.kind
+    }
+
+    pub fn kind_into<L: Debug + Display + From<K>>(self) -> LocatedError<L> {
+        LocatedError::new(self.kind.into(), self.loc)
+    }
+}
+
+/// `LocatedError`s are compared by their content only.
+impl<K: Eq + Debug + Display> Eq for LocatedError<K> {}
+/// `LocatedLocated`s are compared by their content only.
+impl<K: PartialEq + Debug + Display> PartialEq for LocatedError<K> {
+    fn eq(&self, other: &Self) -> bool {
+        self.kind == other.kind
+    }
+}

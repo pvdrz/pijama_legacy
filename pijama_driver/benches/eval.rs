@@ -3,21 +3,18 @@ use criterion::{criterion_group, criterion_main, Criterion};
 use std::include_str;
 
 use pijama_parser::parse;
-
-use pijama_hir::Term as HirTerm;
-
 use pijama_tycheck::ty_check;
-
 use pijama_lir::Term;
-
 use pijama_machine::MachineBuilder;
-
 use pijama_driver::LangResult;
+use pijama_common::location::LocatedError;
+use pijama_ctx::Context;
 
 fn compile(input: &str) -> LangResult<Term> {
-    let ast = parse(input)?;
-    let hir = HirTerm::from_ast(ast)?;
-    ty_check(&hir)?;
+    let mut ctx = Context::new();
+    let ast = parse(input).map_err(LocatedError::kind_into)?;
+    let hir = pijama_hir::lower_ast(&mut ctx, ast).map_err(LocatedError::kind_into)?;
+    ty_check(&hir, &mut ctx).map_err(LocatedError::kind_into)?;
     Ok(Term::from_hir(hir))
 }
 
