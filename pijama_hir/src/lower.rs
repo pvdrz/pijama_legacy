@@ -45,12 +45,12 @@ fn require_ty(ty: &AstTy, loc: Location) -> LowerResult<()> {
 }
 
 struct Scope<'ast> {
-    ctx: Context,
+    ctx: Context<'ast>,
     locals: Vec<(Local<'ast>, LocalId)>,
 }
 
 impl<'ast> Scope<'ast> {
-    fn new(ctx: Context) -> Self {
+    fn new(ctx: Context<'ast>) -> Self {
         Self {
             ctx,
             locals: vec![],
@@ -76,6 +76,7 @@ impl<'ast> Scope<'ast> {
         let local = local.item.content;
 
         let id: LocalId = self.ctx.new_id();
+        self.ctx.save_local(id, local);
 
         self.ctx.insert_location(id, loc);
         self.ctx.insert_type_info(id, TypeInfo { ty, loc: ty_loc });
@@ -104,6 +105,7 @@ impl<'ast> Scope<'ast> {
 
                     let local_id: LocalId = self.ctx.new_id();
                     let local_ty = self.ctx.new_ty();
+                    self.ctx.save_local(local_id, Local::Wildcard);
                     self.ctx.insert_location(local_id, head_loc);
                     self.ctx.insert_type_info(
                         local_id,
@@ -180,7 +182,7 @@ impl<'ast> Scope<'ast> {
         let mut else_term = self.lower_block(else_block)?;
 
         for branch in branches.into_iter().rev() {
-            let term_id = self.ctx.new_id();
+            let term_id: TermId = self.ctx.new_id();
             self.ctx.insert_location(term_id, loc);
 
             else_term = Term::new(
@@ -270,7 +272,7 @@ impl<'ast> Scope<'ast> {
         rhs: Located<Expression<'ast>>,
         tail: Block<'ast>,
     ) -> LowerResult<Term> {
-        let term_id = self.ctx.new_id();
+        let term_id: TermId = self.ctx.new_id();
         self.ctx.insert_location(term_id, loc);
 
         let rhs = self.lower_expression(rhs)?;
@@ -313,7 +315,7 @@ impl<'ast> Scope<'ast> {
             let loc = name.loc;
             let local = name.content;
             let id: LocalId = self.ctx.new_id();
-
+            self.ctx.save_local(id, local);
             self.ctx.insert_location(id, loc);
 
             self.locals.push((local, id));
@@ -356,7 +358,7 @@ impl<'ast> Scope<'ast> {
             let loc = name.loc;
             let local = name.content;
             let id: LocalId = self.ctx.new_id();
-
+            self.ctx.save_local(id, local);
             self.ctx.insert_location(id, loc);
 
             self.locals.push((local, id));

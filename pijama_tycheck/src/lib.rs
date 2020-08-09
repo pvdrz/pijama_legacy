@@ -70,8 +70,8 @@ pub fn ty_check(term: &Term, ctx: &mut Context) -> TyResult<Located<Ty>> {
 ///
 /// This structure traverses the HIR of a term and generates a set of constraints that must be
 /// satisfied by the term to be well-typed.
-struct Analyzer<'ctx> {
-    ctx: &'ctx mut Context,
+struct Analyzer<'ast, 'ctx> {
+    ctx: &'ctx mut Context<'ast>,
     /// Typing constraints.
     ///
     /// Each typing constraint is introduced by a particular `type_of_*` method with a suitable
@@ -79,8 +79,8 @@ struct Analyzer<'ctx> {
     constraints: VecDeque<Located<Constraint>>,
 }
 
-impl<'ctx> Analyzer<'ctx> {
-    fn new(ctx: &'ctx mut Context) -> Self {
+impl<'ast, 'ctx> Analyzer<'ast, 'ctx> {
+    fn new(ctx: &'ctx mut Context<'ast>) -> Self {
         Self {
             ctx,
             constraints: VecDeque::default(),

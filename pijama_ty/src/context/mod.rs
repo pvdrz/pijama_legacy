@@ -3,8 +3,9 @@ mod store;
 
 use std::{collections::HashMap, fmt::Debug, hash::Hash};
 
-use pijama_common::{location::Location, Local};
-use pijama_ty::Ty;
+use pijama_common::location::Location;
+
+use crate::Ty;
 
 use generator::Generator;
 use store::Store;
@@ -19,6 +20,14 @@ pub struct TermId(usize);
 pub struct TypeInfo {
     pub ty: Ty,
     pub loc: Location,
+}
+
+pub trait ContextExt<Id: Debug + Hash + Eq + Copy> {
+    fn new_id(&mut self) -> Id;
+    fn insert_location(&mut self, id: Id, loc: Location);
+    fn insert_type_info(&mut self, id: Id, info: TypeInfo);
+    fn get_location(&self, id: Id) -> Option<Location>;
+    fn get_type_info(&self, id: Id) -> Option<&TypeInfo>;
 }
 
 pub struct Context<'ast> {
@@ -46,6 +55,10 @@ impl<'ast> Context<'ast> {
         }
     }
 
+    pub fn save_local(&mut self, id: LocalId, local: Local<'ast>) {
+        self.locals.insert(id, local);
+    }
+
     pub fn new_ty(&mut self) -> Ty {
         self.ty_gen.gen()
     }
@@ -63,26 +76,6 @@ impl<'ast> Context<'ast> {
             .iter_mut()
             .map(|(id, info)| (*id, &mut info.ty))
     }
-
-    pub fn save_local(&mut self, id: LocalId, local: Local<'ast>) {
-        assert!(
-            self.locals.insert(id, local).is_none(),
-            "Local with {:?} already exists",
-            id
-        );
-    }
-
-    pub fn get_local(&self, id: LocalId) -> Option<Local<'ast>> {
-        self.locals.get(&id).copied()
-    }
-}
-
-pub trait ContextExt<Id: Debug + Hash + Eq + Copy> {
-    fn new_id(&mut self) -> Id;
-    fn insert_location(&mut self, id: Id, loc: Location);
-    fn insert_type_info(&mut self, id: Id, info: TypeInfo);
-    fn get_location(&self, id: Id) -> Option<Location>;
-    fn get_type_info(&self, id: Id) -> Option<&TypeInfo>;
 }
 
 impl<'ast> ContextExt<TermId> for Context<'ast> {
