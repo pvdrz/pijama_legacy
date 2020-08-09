@@ -1,6 +1,6 @@
 mod lower;
 
-use pijama_ty::context::{TermId, LocalId};
+use pijama_ty::context::{TermId, LocalId, Context};
 use pijama_common::{BinOp, Literal, UnOp};
 
 #[derive(Debug)]
@@ -34,7 +34,7 @@ pub enum TermKind {
 }
 
 impl<'ast> Term {
-    pub fn from_hir(term: &pijama_hir::Term) -> Term {
-        lower::lower_term(term)
+    pub fn from_hir(term: &pijama_hir::Term, ctx: &mut Context) -> Term {
+        lower::lower_term(term, ctx)
     }
 }

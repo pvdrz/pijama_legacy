@@ -38,6 +38,14 @@ impl Ty {
             Ty::Var(_) => false,
         }
     }
+
+    pub fn arity(&self) -> Option<usize> {
+        match self {
+            Ty::Bool | Ty::Int | Ty::Unit => Some(0),
+            Ty::Arrow(ty1, ty2) => Some(ty1.arity()? + ty2.arity()? + 1),
+            Ty::Var(_) => None,
+        }
+    }
 }
 
 impl fmt::Display for Ty {
