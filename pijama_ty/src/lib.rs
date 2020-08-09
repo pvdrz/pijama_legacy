@@ -2,9 +2,9 @@
 //!
 //! This module exposes the `Ty` type which is the type representation used by the
 //! type-checker.
-use std::fmt;
+pub mod context;
 
-use pijama_common::generator::Generator;
+use std::fmt;
 
 /// A type used by the type-checker.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -49,8 +49,4 @@ impl fmt::Display for Ty {
             Var(index) => write!(f, "?X{}", index),
         }
     }
-}
-
-pub fn ty_gen() -> Generator<Ty> {
-    Generator::new(Ty::Var)
 }

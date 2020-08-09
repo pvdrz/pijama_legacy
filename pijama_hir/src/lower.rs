@@ -11,9 +11,12 @@ use pijama_common::{
     location::{Located, Location},
     BinOp, Local, UnOp,
 };
-use pijama_ty::Ty;
+use pijama_ty::{
+    context::{Context, LocalId, TypeInfo},
+    Ty,
+};
 
-use crate::{BindKind, Context, LocalId, Term, TermKind, TypeInfo};
+use crate::{BindKind, Term, TermKind};
 
 pub fn lower_ast(block: Block) -> LowerResult<(Term, Context)> {
     let ctx = Context::new();

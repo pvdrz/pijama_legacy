@@ -12,8 +12,12 @@ use pijama_common::{
     location::{Located, Location},
     BinOp, Literal, Primitive, UnOp,
 };
-use pijama_hir::{BindKind, Context, LocalId, Term, TermKind, TypeInfo};
-use pijama_ty::Ty;
+
+use pijama_hir::{BindKind, TermKind, Term};
+use pijama_ty::{
+    context::{Context, LocalId, TypeInfo},
+    Ty,
+};
 
 mod result;
 mod unify;
@@ -119,7 +123,13 @@ impl Analyzer {
             let info_ty = info.ty.clone();
             self.add_constraint(info_ty, ty.clone(), loc);
         } else {
-            self.ctx.term().insert_type_info(term.id, TypeInfo{ ty: ty.clone(), loc })
+            self.ctx.term().insert_type_info(
+                term.id,
+                TypeInfo {
+                    ty: ty.clone(),
+                    loc,
+                },
+            )
         }
 
         Ok(loc.with_content(ty))
