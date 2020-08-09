@@ -1,6 +1,7 @@
 use std::fmt;
 
-use pijama_common::{BinOp, Literal, Primitive, UnOp};
+use pijama_common::{BinOp, Literal, UnOp};
+use pijama_ctx::Context;
 
 use Term::*;
 
@@ -16,7 +17,7 @@ pub enum Term {
     App(Box<Term>, Box<Term>),
     Cond(Box<Term>, Box<Term>, Box<Term>),
     Fix(Box<Term>),
-    PrimFn(Primitive),
+    PrimFn(PrimFn),
 }
 
 impl Term {
@@ -25,6 +26,23 @@ impl Term {
             Lit(0) => false,
             Lit(1) => true,
             _ => panic!("Non-boolean literal {}", self),
+        }
+    }
+}
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub enum PrimFn {
+    PrintInt,
+    PrintBool,
+    PrintUnit,
+    PrintFunc,
+}
+
+impl fmt::Display for PrimFn {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            PrimFn::PrintInt | PrimFn::PrintBool | PrimFn::PrintUnit | PrimFn::PrintFunc => {
+                write!(f, "print")
+            }
         }
     }
 }
@@ -74,8 +92,8 @@ impl fmt::Display for Term {
 }
 
 impl Term {
-    pub fn from_hir(hir: pijama_hir::Term) -> Self {
-        lower::remove_names(hir)
+    pub fn from_hir<'ast>(ctx: &Context, hir: pijama_hir::Term) -> Self {
+        lower::remove_names(ctx, hir)
     }
 
     pub fn shift(&mut self, up: bool, cutoff: usize) {
