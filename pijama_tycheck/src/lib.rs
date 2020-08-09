@@ -43,10 +43,14 @@ pub fn ty_check(term: &Term, ctx: Context) -> TyResult<(Located<Ty>, Context)> {
 
     for ty in ctx.local().types_mut() {
         unif.replace(ty);
+        // FIXME this should be a proper error.
+        assert!(ty.is_concrete());
     }
 
     for ty in ctx.term().types_mut() {
         unif.replace(ty);
+        // FIXME this should be a proper error.
+        assert!(ty.is_concrete());
     }
 
     Ok((ty, ctx))
