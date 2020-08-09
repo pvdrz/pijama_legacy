@@ -3,16 +3,15 @@ use thiserror::Error;
 use std::io::Write;
 
 use pijama_common::location::LocatedError;
+use pijama_ctx::Context;
 use pijama_hir::LowerErrorKind;
-use pijama_parser::{parse, ParsingErrorKind};
-use pijama_tycheck::{ty_check, TyErrorKind};
-
 use pijama_lir::Term as LirTerm;
-
 use pijama_machine::{
     arithmetic::{Arithmetic, CheckedArithmetic, OverflowArithmetic},
     Machine, MachineBuilder,
 };
+use pijama_parser::{parse, ParsingErrorKind};
+use pijama_tycheck::{ty_check, TyErrorKind};
 
 pub type LangResult<T> = Result<T, LangError>;
 
@@ -33,7 +32,8 @@ pub fn run_with_machine<W: Write, A: Arithmetic>(
     mut machine: Machine<W, A>,
 ) -> LangResult<()> {
     let ast = parse(input).map_err(LocatedError::kind_into)?;
-    let (hir, mut ctx) = pijama_hir::lower_ast(ast).map_err(LocatedError::kind_into)?;
+    let mut ctx = Context::new();
+    let hir = pijama_hir::lower_ast(&mut ctx, ast).map_err(LocatedError::kind_into)?;
     let _ty = ty_check(&hir, &mut ctx).map_err(LocatedError::kind_into)?;
     let _mir = pijama_mir::Term::from_hir(&hir, &mut ctx);
     let lir = LirTerm::from_hir(hir);

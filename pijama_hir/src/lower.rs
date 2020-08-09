@@ -14,12 +14,13 @@ use pijama_ty::Ty;
 
 use crate::{BindKind, Term, TermKind};
 
-pub fn lower_ast(block: Block) -> LowerResult<(Term, Context)> {
-    let ctx = Context::new();
+pub fn lower_ast<'ast, 'ctx>(
+    ctx: &'ctx mut Context<'ast>,
+    block: Block<'ast>,
+) -> LowerResult<Term> {
     let mut scope = Scope::new(ctx);
     let term = scope.lower_block(block)?;
-    let ctx = scope.ctx;
-    Ok((term, ctx))
+    Ok(term)
 }
 
 pub type LowerResult<T> = Result<T, LowerError>;
@@ -44,13 +45,13 @@ fn require_ty(ty: &AstTy, loc: Location) -> LowerResult<()> {
     }
 }
 
-struct Scope<'ast> {
-    ctx: Context<'ast>,
+struct Scope<'ast, 'ctx> {
+    ctx: &'ctx mut Context<'ast>,
     locals: Vec<(Local<'ast>, LocalId)>,
 }
 
-impl<'ast> Scope<'ast> {
-    fn new(ctx: Context<'ast>) -> Self {
+impl<'ast, 'ctx> Scope<'ast, 'ctx> {
+    fn new(ctx: &'ctx mut Context<'ast>) -> Self {
         Self {
             ctx,
             locals: vec![],
