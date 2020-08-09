@@ -34,10 +34,8 @@ pub fn run_with_machine<W: Write, A: Arithmetic>(
     let ast = parse(input).map_err(LocatedError::kind_into)?;
     let mut ctx = Context::new();
     let hir = pijama_hir::lower_ast(&mut ctx, ast).map_err(LocatedError::kind_into)?;
-    hir.show(&ctx);
     let _ty = ty_check(&hir, &mut ctx).map_err(LocatedError::kind_into)?;
-    let mir = pijama_mir::Term::from_hir(&hir, &mut ctx);
-    mir.show(&ctx);
+    let _mir = pijama_mir::Term::from_hir(&hir, &mut ctx);
     let lir = LirTerm::from_hir(hir);
     let _res = machine.evaluate(lir);
     Ok(())

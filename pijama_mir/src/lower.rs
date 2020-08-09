@@ -57,7 +57,7 @@ pub(crate) fn lower_term(term: &HirTerm, ctx: &mut Context) -> Term {
                 .cloned()
                 .collect::<Vec<Ty>>();
 
-            let ret_ty = new_args_ty.pop();
+            let ret_ty = new_args_ty.pop().unwrap();
 
             for ty in &new_args_ty {
                 let local = ctx.new_local();
@@ -98,7 +98,7 @@ pub(crate) fn lower_term(term: &HirTerm, ctx: &mut Context) -> Term {
                 TermKind::App(Box::new(lower_term(func, ctx)), args)
             };
 
-            if let Some(ret_ty) = ret_ty {
+            if new_args.len() > 0 {
                 let term_id: TermId = ctx.new_id();
                 ctx.insert_location(term_id, loc);
                 ctx.insert_type_info(term_id, TypeInfo { ty: ret_ty, loc });
