@@ -1,18 +1,24 @@
+use pijama_common::Primitive;
+use pijama_ctx::{Context, ContextExt, LocalId};
 use pijama_hir::{BindKind, Term as HirTerm, TermKind};
-use pijama_ctx::LocalId;
+use pijama_ty::Ty;
 
-use crate::Term;
+use crate::{PrimFn, Term};
 
-pub fn remove_names(term: HirTerm) -> Term {
-    Context::default().remove_names(term)
+pub fn remove_names(ctx: &Context, term: HirTerm) -> Term {
+    Scope::new(ctx).remove_names(term)
 }
 
-#[derive(Default)]
-struct Context {
+struct Scope<'ast, 'ctx> {
     inner: Vec<LocalId>,
+    ctx: &'ctx Context<'ast>,
 }
 
-impl Context {
+impl<'ast, 'ctx> Scope<'ast, 'ctx> {
+    fn new(ctx: &'ctx Context<'ast>) -> Self {
+        Self { inner: vec![], ctx }
+    }
+
     fn remove_names(&mut self, term: HirTerm) -> Term {
         match term.kind {
             TermKind::Lit(lit) => lit.into(),
@@ -76,7 +82,26 @@ impl Context {
                 let t3 = self.remove_names(*t3);
                 Term::Cond(Box::new(t1), Box::new(t2), Box::new(t3))
             }
-            TermKind::PrimFn(prim) => Term::PrimFn(prim),
+            TermKind::PrimFn(prim) => {
+                let prim = match prim {
+                    Primitive::Print => match self
+                        .ctx
+                        .get_type_info(term.id)
+                        .unwrap()
+                        .ty
+                        .iter()
+                        .next()
+                        .unwrap()
+                    {
+                        Ty::Int => PrimFn::PrintInt,
+                        Ty::Bool => PrimFn::PrintBool,
+                        Ty::Unit => PrimFn::PrintUnit,
+                        Ty::Arrow(_, _) => PrimFn::PrintFunc,
+                        Ty::Var(_) => unreachable!(),
+                    },
+                };
+                Term::PrimFn(prim)
+            }
         }
     }
 }

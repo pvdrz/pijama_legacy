@@ -8,3 +8,4 @@ edition = "2018"
 pijama_hir = {path = "../pijama_hir"}
 pijama_common = { path = "../pijama_common" }
 pijama_ctx = { path = "../pijama_ctx" }
+pijama_ty = { path = "../pijama_ty" }

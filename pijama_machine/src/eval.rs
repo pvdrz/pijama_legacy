@@ -1,8 +1,11 @@
 use std::{borrow::Borrow, io::Write};
 
-use pijama_common::{BinOp, Literal, Primitive, UnOp};
+use pijama_common::{BinOp, Literal, UnOp};
 
-use pijama_lir::Term::{self, *};
+use pijama_lir::{
+    PrimFn as Primitive,
+    Term::{self, *},
+};
 
 use crate::{arithmetic::Arithmetic, Machine};
 
@@ -131,13 +134,16 @@ impl<W: Write, A: Arithmetic> Machine<W, A> {
     }
     /// Evaluation step for application of primitive functions (prim arg)
     fn step_primitive_app(&mut self, prim: Primitive, arg: Term) -> (bool, Term) {
+        // Evaluate argument
+        let (_, arg) = self.eval(arg);
+        let stdout = self.env.stdout();
         match prim {
-            Primitive::Print => {
-                // Evaluate argument
-                let (_, arg) = self.eval(arg);
-                writeln!(self.env.stdout(), "{}", arg).expect("Primitive print failed");
-                (true, Literal::Unit.into())
-            }
+            Primitive::PrintInt => writeln!(stdout, "{}", arg),
+            Primitive::PrintBool => writeln!(stdout, "{}", arg != Term::Lit(0)),
+            Primitive::PrintUnit => writeln!(stdout, "unit"),
+            Primitive::PrintFunc => writeln!(stdout, "<function>"),
         }
+        .expect("Primitive print failed");
+        (true, Literal::Unit.into())
     }
 }

@@ -16,7 +16,7 @@ fn arithmetic() -> LangResult<()> {
 fn logic() -> LangResult<()> {
     let input = include_str!("logic.pj");
     let output = run(input)?;
-    assert_eq!("0\n", output);
+    assert_eq!("false\n", output);
     Ok(())
 }
 
@@ -145,7 +145,7 @@ fn or_short_circuit() -> LangResult<()> {
     panic_after(Duration::from_secs(1), || {
         let input = include_str!("or_short_circuit.pj");
         let output = run(input)?;
-        assert_eq!("1\n", output);
+        assert_eq!("true\n", output);
         Ok(())
     })
 }
@@ -155,7 +155,7 @@ fn and_short_circuit() -> LangResult<()> {
     panic_after(Duration::from_secs(1), || {
         let input = include_str!("and_short_circuit.pj");
         let output = run(input)?;
-        assert_eq!("0\n", output);
+        assert_eq!("false\n", output);
         Ok(())
     })
 }
@@ -172,7 +172,7 @@ fn print_simple() -> LangResult<()> {
 fn print_simple_fn() -> LangResult<()> {
     let input = include_str!("print_simple_fn.pj");
     let output = run(input)?;
-    assert_eq!("(λ. _0)\n", output);
+    assert_eq!("<function>\n", output);
     Ok(())
 }
 
@@ -188,7 +188,7 @@ fn print_complex_fn() -> LangResult<()> {
 fn print_print() -> LangResult<()> {
     let input = include_str!("print_print.pj");
     let output = run(input)?;
-    assert_eq!("10\n0\n", output);
+    assert_eq!("10\nunit\n", output);
     Ok(())
 }
 
@@ -203,7 +203,7 @@ fn print_redefine() {
 fn number_bases_cmp() -> LangResult<()> {
     let input = include_str!("number_bases_cmp.pj");
     let output = run(input)?;
-    assert_eq!("1\n", output);
+    assert_eq!("true\n", output);
     Ok(())
 }
 
@@ -233,7 +233,7 @@ fn neg_overflow_panics() {
 fn short_circuit() -> LangResult<()> {
     let input = include_str!("short_circuit.pj");
     let output = run(input)?;
-    assert_eq!("1\n", output);
+    assert_eq!("true\n", output);
     Ok(())
 }
 
@@ -241,7 +241,7 @@ fn short_circuit() -> LangResult<()> {
 fn cond_chain() -> LangResult<()> {
     let input = include_str!("cond_chain.pj");
     let output = run(input)?;
-    assert_eq!("1\n", output);
+    assert_eq!("true\n", output);
     Ok(())
 }
 
