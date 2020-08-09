@@ -40,9 +40,16 @@ impl Ty {
     pub fn arity(&self) -> Option<usize> {
         match self {
             Ty::Bool | Ty::Int | Ty::Unit => Some(0),
-            Ty::Arrow(ty1, ty2) => Some(ty1.arity()? + ty2.arity()? + 1),
+            Ty::Arrow(ty1, ty2) => {
+                ty1.arity()?;
+                Some(ty2.arity()? + 1)
+            }
             Ty::Var(_) => None,
         }
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &Ty> {
+        TyIter { ty: Some(self) }
     }
 }
 
@@ -61,6 +68,25 @@ impl fmt::Display for Ty {
                 }
             }
             Var(index) => write!(f, "?X{}", index),
+        }
+    }
+}
+
+struct TyIter<'ty> {
+    ty: Option<&'ty Ty>,
+}
+
+impl<'ty> Iterator for TyIter<'ty> {
+    type Item = &'ty Ty;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let ty = self.ty.take()?;
+        match ty  {
+            Ty::Arrow(t1, t2) => {
+                self.ty = Some(t2.as_ref());
+                Some(t1.as_ref())
+            }
+            Ty::Int | Ty::Bool | Ty::Unit | Ty::Var(_) => Some(ty)
         }
     }
 }

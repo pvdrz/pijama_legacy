@@ -26,6 +26,7 @@ pub struct Context<'ast> {
     term_store: Store<TermId>,
     locals: HashMap<LocalId, Local<'ast>>,
     ty_gen: Generator<Ty>,
+    local_gen: Generator<Local<'ast>>,
 }
 
 impl<'ast> Context<'ast> {
@@ -43,11 +44,16 @@ impl<'ast> Context<'ast> {
             },
             locals: HashMap::default(),
             ty_gen: Generator::new(Ty::Var),
+            local_gen: Generator::new(Local::Temp),
         }
     }
 
     pub fn new_ty(&mut self) -> Ty {
         self.ty_gen.gen()
+    }
+
+    pub fn new_local(&mut self) -> Local<'ast> {
+        self.local_gen.gen()
     }
 
     pub fn iter_mut_local_types(&mut self) -> impl Iterator<Item = (LocalId, &mut Ty)> {

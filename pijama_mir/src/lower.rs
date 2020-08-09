@@ -1,8 +1,9 @@
 use pijama_common::Primitive;
+use pijama_ctx::{Context, ContextExt, LocalId, TermId, TypeInfo};
 use pijama_hir::{BindKind as HirBindKind, Term as HirTerm, TermKind as HirTermKind};
-use pijama_ctx::{ContextExt, Context};
+use pijama_ty::Ty;
 
-use crate::{LetKind, PrimFn, Term, TermKind};
+use crate::{BindKind, PrimFn, Term, TermKind};
 
 pub(crate) fn lower_term(term: &HirTerm, ctx: &mut Context) -> Term {
     let kind = match &term.kind {
@@ -41,17 +42,69 @@ pub(crate) fn lower_term(term: &HirTerm, ctx: &mut Context) -> Term {
                 args.push(lower_term(arg, ctx));
             }
 
-            let arity = ctx.get_type_info(func.id).unwrap().ty.arity().unwrap();
-
             args.reverse();
 
-            if let HirTermKind::PrimFn(prim) = &func.kind {
+            let func_info = ctx.get_type_info(func.id).unwrap();
+            let count = args.len();
+
+            let loc = ctx.get_location(func.id).unwrap();
+
+            let mut new_args = vec![];
+            let mut new_args_ty = func_info
+                .ty
+                .iter()
+                .skip(count)
+                .cloned()
+                .collect::<Vec<Ty>>();
+
+            let ret_ty = new_args_ty.pop();
+
+            for ty in &new_args_ty {
+                let local = ctx.new_local();
+                let local_id: LocalId = ctx.new_id();
+                ctx.save_local(local_id, local);
+                ctx.insert_location(local_id, loc);
+                ctx.insert_type_info(
+                    local_id,
+                    TypeInfo {
+                        ty: ty.clone(),
+                        loc,
+                    },
+                );
+
+                let term_id: TermId = ctx.new_id();
+                ctx.insert_location(term_id, loc);
+                ctx.insert_type_info(
+                    term_id,
+                    TypeInfo {
+                        ty: ty.clone(),
+                        loc,
+                    },
+                );
+
+                new_args.push(local_id);
+                args.push(Term {
+                    id: term_id,
+                    kind: TermKind::Var(local_id),
+                });
+            }
+
+            let kind = if let HirTermKind::PrimFn(prim) = &func.kind {
                 let prim = match prim {
                     Primitive::Print => PrimFn::Print,
                 };
                 TermKind::PrimApp(prim, args)
             } else {
                 TermKind::App(Box::new(lower_term(func, ctx)), args)
+            };
+
+            if let Some(ret_ty) = ret_ty {
+                let term_id: TermId = ctx.new_id();
+                ctx.insert_location(term_id, loc);
+                ctx.insert_type_info(term_id, TypeInfo { ty: ret_ty, loc });
+                TermKind::Abs(new_args, Box::new(Term { id: term_id, kind }))
+            } else {
+                kind
             }
         }
         HirTermKind::Cond(if_term, do_term, el_term) => TermKind::Cond(
@@ -61,8 +114,8 @@ pub(crate) fn lower_term(term: &HirTerm, ctx: &mut Context) -> Term {
         ),
         HirTermKind::Let(kind, lhs, rhs, tail) => {
             let kind = match kind {
-                HirBindKind::NonRec => LetKind::NonRec,
-                HirBindKind::Rec => LetKind::Rec,
+                HirBindKind::NonRec => BindKind::NonRec,
+                HirBindKind::Rec => BindKind::Rec,
             };
             TermKind::Let(
                 kind,
