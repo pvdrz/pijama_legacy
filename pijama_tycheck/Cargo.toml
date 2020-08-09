@@ -9,3 +9,4 @@ thiserror = "1.0"
 pijama_hir = {path = "../pijama_hir"}
 pijama_ty = {path = "../pijama_ty"}
 pijama_common = {path = "../pijama_common"}
+pijama_ctx = {path = "../pijama_ctx"}

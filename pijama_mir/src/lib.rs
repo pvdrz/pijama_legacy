@@ -1,6 +1,6 @@
 mod lower;
 
-use pijama_ty::context::{TermId, LocalId, Context};
+use pijama_ctx::{TermId, LocalId, Context};
 use pijama_common::{BinOp, Literal, UnOp};
 
 #[derive(Debug)]

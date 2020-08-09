@@ -13,11 +13,9 @@ use pijama_common::{
     BinOp, Literal, Primitive, UnOp,
 };
 
+use pijama_ctx::{Context, ContextExt, LocalId, TypeInfo};
 use pijama_hir::{BindKind, Term, TermKind};
-use pijama_ty::{
-    context::{Context, ContextExt, LocalId, TypeInfo},
-    Ty,
-};
+use pijama_ty::Ty;
 
 mod result;
 mod unify;

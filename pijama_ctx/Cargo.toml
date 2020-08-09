@@ -1,11 +1,9 @@
 [package]
-name = "pijama_mir"
+name = "pijama_ctx"
 version = "0.1.0"
 authors = ["Christian Poveda <git@christianpoveda.xyz>"]
 edition = "2018"
 
 [dependencies]
-pijama_hir = { path = "../pijama_hir" }
 pijama_common = { path = "../pijama_common" }
-pijama_ctx = { path = "../pijama_ctx" }
 pijama_ty = { path = "../pijama_ty" }

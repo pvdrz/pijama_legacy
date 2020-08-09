@@ -1,8 +1,13 @@
+mod generator;
+mod store;
+
 use std::{collections::HashMap, fmt::Debug, hash::Hash};
 
 use pijama_common::location::Location;
+use pijama_ty::Ty;
 
-use crate::Ty;
+use generator::Generator;
+use store::Store;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct LocalId(usize);
@@ -22,41 +27,6 @@ pub trait ContextExt<Id: Debug + Hash + Eq + Copy> {
     fn insert_type_info(&mut self, id: Id, info: TypeInfo);
     fn get_location(&self, id: Id) -> Option<Location>;
     fn get_type_info(&self, id: Id) -> Option<&TypeInfo>;
-}
-
-pub struct Store<Id> {
-    gen_id: Generator<Id>,
-    locations: HashMap<Id, Location>,
-    type_info: HashMap<Id, TypeInfo>,
-}
-
-impl<Id: Debug + Hash + Eq + Copy> ContextExt<Id> for Store<Id> {
-    fn new_id(&mut self) -> Id {
-        self.gen_id.gen()
-    }
-
-    fn insert_location(&mut self, id: Id, loc: Location) {
-        assert!(
-            self.locations.insert(id, loc).is_none(),
-            "Overwrote location for {:?}",
-            id
-        );
-    }
-    fn insert_type_info(&mut self, id: Id, info: TypeInfo) {
-        assert!(
-            self.type_info.insert(id, info).is_none(),
-            "Overwrote type information for {:?}",
-            id
-        );
-    }
-
-    fn get_location(&self, id: Id) -> Option<Location> {
-        self.locations.get(&id).cloned()
-    }
-
-    fn get_type_info(&self, id: Id) -> Option<&TypeInfo> {
-        self.type_info.get(&id)
-    }
 }
 
 pub struct Context {
@@ -142,22 +112,5 @@ impl ContextExt<LocalId> for Context {
 
     fn get_type_info(&self, id: LocalId) -> Option<&TypeInfo> {
         self.local.get_type_info(id)
-    }
-}
-
-struct Generator<T> {
-    count: usize,
-    f: fn(usize) -> T,
-}
-
-impl<T> Generator<T> {
-    pub fn new(f: fn(usize) -> T) -> Self {
-        Self { count: 0, f }
-    }
-
-    pub fn gen(&mut self) -> T {
-        let item = (self.f)(self.count);
-        self.count += 1;
-        item
     }
 }

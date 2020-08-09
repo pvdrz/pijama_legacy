@@ -1,6 +1,6 @@
 use pijama_common::Primitive;
 use pijama_hir::{BindKind as HirBindKind, Term as HirTerm, TermKind as HirTermKind};
-use pijama_ty::context::{ContextExt, Context};
+use pijama_ctx::{ContextExt, Context};
 
 use crate::{LetKind, PrimFn, Term, TermKind};
 

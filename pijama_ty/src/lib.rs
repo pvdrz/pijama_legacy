@@ -2,8 +2,6 @@
 //!
 //! This module exposes the `Ty` type which is the type representation used by the
 //! type-checker.
-pub mod context;
-
 use std::fmt;
 
 /// A type used by the type-checker.

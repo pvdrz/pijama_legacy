@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use pijama_common::{BinOp, Literal, Primitive, UnOp};
 
-use pijama_ty::context::{LocalId, TermId};
+use pijama_ctx::{LocalId, TermId};
 
 pub use lower::{lower_ast, LowerError, LowerErrorKind, LowerResult};
 

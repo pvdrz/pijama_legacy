@@ -9,10 +9,8 @@ use pijama_common::{
     location::{Located, LocatedError, Location},
     BinOp, Local, UnOp,
 };
-use pijama_ty::{
-    context::{Context, ContextExt, LocalId, TermId, TypeInfo},
-    Ty,
-};
+use pijama_ctx::{Context, ContextExt, LocalId, TermId, TypeInfo};
+use pijama_ty::Ty;
 
 use crate::{BindKind, Term, TermKind};
 

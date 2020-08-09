@@ -7,4 +7,4 @@ edition = "2018"
 [dependencies]
 pijama_hir = {path = "../pijama_hir"}
 pijama_common = { path = "../pijama_common" }
-pijama_ty = { path = "../pijama_ty" }
+pijama_ctx = { path = "../pijama_ctx" }

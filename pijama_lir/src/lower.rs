@@ -1,5 +1,5 @@
 use pijama_hir::{BindKind, Term as HirTerm, TermKind};
-use pijama_ty::context::LocalId;
+use pijama_ctx::LocalId;
 
 use crate::Term;
 
