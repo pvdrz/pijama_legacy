@@ -13,9 +13,9 @@ use pijama_common::{
     BinOp, Literal, Primitive, UnOp,
 };
 
-use pijama_hir::{BindKind, TermKind, Term};
+use pijama_hir::{BindKind, Term, TermKind};
 use pijama_ty::{
-    context::{Context, LocalId, TypeInfo},
+    context::{Context, ContextExt, LocalId, TypeInfo},
     Ty,
 };
 
@@ -41,13 +41,13 @@ pub fn ty_check(term: &Term, ctx: Context) -> TyResult<(Located<Ty>, Context)> {
 
     let mut ctx = analyzer.ctx;
 
-    for ty in ctx.local().types_mut() {
+    for (local_id, ty) in ctx.iter_mut_local_types() {
         unif.replace(ty);
         // FIXME this should be a proper error.
         assert!(ty.is_concrete());
     }
 
-    for ty in ctx.term().types_mut() {
+    for (term_id, ty) in ctx.iter_mut_term_types() {
         unif.replace(ty);
         // FIXME this should be a proper error.
         assert!(ty.is_concrete());
@@ -108,7 +108,7 @@ impl Analyzer {
     /// Typing variables can appear in the type returned by this method (and any other type_of_*
     /// method) as unification has not taken place yet.
     fn type_of(&mut self, term: &Term) -> TyResult<Located<Ty>> {
-        let loc = self.ctx.term().get_location(term.id).unwrap();
+        let loc = self.ctx.get_location(term.id).unwrap();
         let ty = match &term.kind {
             TermKind::Lit(lit) => self.type_of_lit(lit),
             TermKind::Var(name) => self.type_of_var(*name),
@@ -123,11 +123,11 @@ impl Analyzer {
             TermKind::PrimFn(prim) => self.type_of_prim_fn(*prim),
         }?;
 
-        if let Some(info) = self.ctx.term().get_type_info(term.id) {
+        if let Some(info) = self.ctx.get_type_info(term.id) {
             let info_ty = info.ty.clone();
             self.add_constraint(info_ty, ty.clone(), loc);
         } else {
-            self.ctx.term().insert_type_info(
+            self.ctx.insert_type_info(
                 term.id,
                 TypeInfo {
                     ty: ty.clone(),
@@ -161,7 +161,7 @@ impl Analyzer {
     /// This rule does not add new constraints because the type of a variable is decided by the
     /// bindings done in the current scope.
     fn type_of_var(&mut self, local: LocalId) -> TyResult {
-        if let Some(info) = self.ctx.local().get_type_info(local) {
+        if let Some(info) = self.ctx.get_type_info(local) {
             Ok(info.ty.clone())
         } else {
             panic!("Missing type info for {:?}", local)
@@ -183,7 +183,7 @@ impl Analyzer {
     /// This rule does not add new constraints because the type of an abstraction can be computed
     /// directly from the type of its body and argument.
     fn type_of_abs(&mut self, arg: LocalId, body: &Term) -> TyResult {
-        if let Some(info) = self.ctx.local().get_type_info(arg) {
+        if let Some(info) = self.ctx.get_type_info(arg) {
             let arg_ty = info.ty.clone();
             let body_ty = self.type_of(body)?.content;
             Ok(Ty::Arrow(Box::new(arg_ty), Box::new(body_ty)))
@@ -297,12 +297,12 @@ impl Analyzer {
             BindKind::NonRec => {
                 let rhs_ty = self.type_of(rhs)?;
 
-                let lhs_ty = self.ctx.local().get_type_info(lhs).unwrap().ty.clone();
+                let lhs_ty = self.ctx.get_type_info(lhs).unwrap().ty.clone();
 
                 self.add_constraint(lhs_ty, rhs_ty.content.clone(), rhs_ty.loc);
             }
             BindKind::Rec => {
-                let lhs_ty = self.ctx.local().get_type_info(lhs).unwrap().ty.clone();
+                let lhs_ty = self.ctx.get_type_info(lhs).unwrap().ty.clone();
 
                 let rhs_ty = self.type_of(rhs)?;
 

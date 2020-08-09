@@ -6,11 +6,11 @@ use pijama_ast::{
     ty::{Ty as AstTy, TyAnnotation},
 };
 use pijama_common::{
-    location::{Located, Location, LocatedError},
+    location::{Located, LocatedError, Location},
     BinOp, Local, UnOp,
 };
 use pijama_ty::{
-    context::{Context, LocalId, TypeInfo},
+    context::{Context, ContextExt, LocalId, TermId, TypeInfo},
     Ty,
 };
 
@@ -77,12 +77,10 @@ impl<'ast> Scope<'ast> {
         let loc = local.item.loc;
         let local = local.item.content;
 
-        let store = self.ctx.local();
+        let id: LocalId = self.ctx.new_id();
 
-        let id = store.new_id();
-
-        store.insert_location(id, loc);
-        store.insert_type_info(id, TypeInfo { ty, loc: ty_loc });
+        self.ctx.insert_location(id, loc);
+        self.ctx.insert_type_info(id, TypeInfo { ty, loc: ty_loc });
 
         self.locals.push((local, id));
 
@@ -101,17 +99,15 @@ impl<'ast> Scope<'ast> {
                     let head = self.lower_expression(expr)?;
                     let tail = self.lower_block(block)?;
 
-                    let term_store = self.ctx.term();
+                    let loc = head_loc + self.ctx.get_location(tail.id).unwrap();
 
-                    let loc = head_loc + term_store.get_location(tail.id).unwrap();
+                    let term_id: TermId = self.ctx.new_id();
+                    self.ctx.insert_location(term_id, loc);
 
-                    let term_id = term_store.new_id();
-                    term_store.insert_location(term_id, loc);
-
-                    let local_id = self.ctx.local().new_id();
+                    let local_id: LocalId = self.ctx.new_id();
                     let local_ty = self.ctx.new_ty();
-                    self.ctx.local().insert_location(local_id, head_loc);
-                    self.ctx.local().insert_type_info(
+                    self.ctx.insert_location(local_id, head_loc);
+                    self.ctx.insert_type_info(
                         local_id,
                         TypeInfo {
                             ty: local_ty,
@@ -141,24 +137,24 @@ impl<'ast> Scope<'ast> {
             Expression::Local(local) => {
                 for &(local2, local_id) in self.locals.iter().rev() {
                     if local == local2 {
-                        let term_store = self.ctx.term();
-                        let term_id = term_store.new_id();
-                        term_store.insert_location(term_id, loc);
+                        let term_id: TermId = self.ctx.new_id();
+                        self.ctx.insert_location(term_id, loc);
                         return Ok(Term::new(term_id, TermKind::Var(local_id)));
                     }
                 }
-                Err(LowerError::new(LowerErrorKind::Unbounded(local.to_string()), loc))
+                Err(LowerError::new(
+                    LowerErrorKind::Unbounded(local.to_string()),
+                    loc,
+                ))
             }
             Expression::Literal(lit) => {
-                let term_store = self.ctx.term();
-                let term_id = term_store.new_id();
-                term_store.insert_location(term_id, loc);
+                let term_id: TermId = self.ctx.new_id();
+                self.ctx.insert_location(term_id, loc);
                 Ok(Term::new(term_id, TermKind::Lit(lit)))
             }
             Expression::PrimFn(prim) => {
-                let term_store = self.ctx.term();
-                let term_id = term_store.new_id();
-                term_store.insert_location(term_id, loc);
+                let term_id: TermId = self.ctx.new_id();
+                self.ctx.insert_location(term_id, loc);
                 Ok(Term::new(term_id, TermKind::PrimFn(prim)))
             }
             Expression::Cond(if_branch, branches, else_block) => {
@@ -180,16 +176,14 @@ impl<'ast> Scope<'ast> {
         branches: Vec<Branch<'ast>>,
         else_block: Block<'ast>,
     ) -> LowerResult<Term> {
-        let term_store = self.ctx.term();
-        let term_id = term_store.new_id();
-        term_store.insert_location(term_id, loc);
+        let term_id: TermId = self.ctx.new_id();
+        self.ctx.insert_location(term_id, loc);
 
         let mut else_term = self.lower_block(else_block)?;
 
         for branch in branches.into_iter().rev() {
-            let term_store = self.ctx.term();
-            let term_id = term_store.new_id();
-            term_store.insert_location(term_id, loc);
+            let term_id = self.ctx.new_id();
+            self.ctx.insert_location(term_id, loc);
 
             else_term = Term::new(
                 term_id,
@@ -220,15 +214,13 @@ impl<'ast> Scope<'ast> {
         func: Located<Expression<'ast>>,
         args: Vec<Located<Expression<'ast>>>,
     ) -> LowerResult<Term> {
-        let term_store = self.ctx.term();
-        let term_id = term_store.new_id();
-        term_store.insert_location(term_id, loc);
+        let term_id: TermId = self.ctx.new_id();
+        self.ctx.insert_location(term_id, loc);
 
         let mut term = self.lower_expression(func)?;
         for arg in args {
-            let term_store = self.ctx.term();
-            let term_id = term_store.new_id();
-            term_store.insert_location(term_id, loc);
+            let term_id = self.ctx.new_id();
+            self.ctx.insert_location(term_id, loc);
             term = Term::new(
                 term_id,
                 TermKind::App(Box::new(term), Box::new(self.lower_expression(arg)?)),
@@ -245,9 +237,8 @@ impl<'ast> Scope<'ast> {
         expr1: Located<Expression<'ast>>,
         expr2: Located<Expression<'ast>>,
     ) -> LowerResult<Term> {
-        let term_store = self.ctx.term();
-        let term_id = term_store.new_id();
-        term_store.insert_location(term_id, loc);
+        let term_id: TermId = self.ctx.new_id();
+        self.ctx.insert_location(term_id, loc);
 
         Ok(Term::new(
             term_id,
@@ -265,9 +256,8 @@ impl<'ast> Scope<'ast> {
         un_op: UnOp,
         expr: Located<Expression<'ast>>,
     ) -> LowerResult<Term> {
-        let term_store = self.ctx.term();
-        let term_id = term_store.new_id();
-        term_store.insert_location(term_id, loc);
+        let term_id: TermId = self.ctx.new_id();
+        self.ctx.insert_location(term_id, loc);
 
         Ok(Term::new(
             term_id,
@@ -282,9 +272,8 @@ impl<'ast> Scope<'ast> {
         rhs: Located<Expression<'ast>>,
         tail: Block<'ast>,
     ) -> LowerResult<Term> {
-        let term_store = self.ctx.term();
-        let term_id = term_store.new_id();
-        term_store.insert_location(term_id, loc);
+        let term_id = self.ctx.new_id();
+        self.ctx.insert_location(term_id, loc);
 
         let rhs = self.lower_expression(rhs)?;
 
@@ -308,9 +297,8 @@ impl<'ast> Scope<'ast> {
         body: TyAnnotation<Block<'ast>>,
         tail: Block<'ast>,
     ) -> LowerResult<Term> {
-        let term_store = self.ctx.term();
-        let term_id = term_store.new_id();
-        term_store.insert_location(term_id, loc);
+        let term_id: TermId = self.ctx.new_id();
+        self.ctx.insert_location(term_id, loc);
 
         let is_recursive = is_fn_def_recursive(name.content, &body.item);
 
@@ -324,13 +312,11 @@ impl<'ast> Scope<'ast> {
             // FIXME this restriction is artificial now.
             require_ty(&body_ty, loc)?;
 
-            let local_store = self.ctx.local();
-
             let loc = name.loc;
             let local = name.content;
-            let id = local_store.new_id();
+            let id: LocalId = self.ctx.new_id();
 
-            local_store.insert_location(id, loc);
+            self.ctx.insert_location(id, loc);
 
             self.locals.push((local, id));
 
@@ -346,7 +332,7 @@ impl<'ast> Scope<'ast> {
         let mut term = self.lower_block(body.item)?;
 
         let mut term_ty = self.lower_ty(body_ty);
-        self.ctx.term().insert_type_info(
+        self.ctx.insert_type_info(
             term.id,
             TypeInfo {
                 ty: term_ty.clone(),
@@ -357,26 +343,23 @@ impl<'ast> Scope<'ast> {
         for _ in 0..arity {
             let (_, arg_id) = self.pop_local();
 
-            let mut term_info = self.ctx.local().get_type_info(arg_id).unwrap().clone();
+            let mut term_info = self.ctx.get_type_info(arg_id).unwrap().clone();
             term_ty = Ty::Arrow(Box::new(term_info.ty), Box::new(term_ty));
             term_info.ty = term_ty.clone();
 
-            let term_store = self.ctx.term();
-            let term_id = term_store.new_id();
-            term_store.insert_location(term_id, loc);
-            term_store.insert_type_info(term_id, term_info);
+            let term_id: TermId = self.ctx.new_id();
+            self.ctx.insert_location(term_id, loc);
+            self.ctx.insert_type_info(term_id, term_info);
 
             term = Term::new(term_id, TermKind::Abs(arg_id, Box::new(term)));
         }
 
         if !is_recursive {
-            let local_store = self.ctx.local();
-
             let loc = name.loc;
             let local = name.content;
-            let id = local_store.new_id();
+            let id: LocalId = self.ctx.new_id();
 
-            local_store.insert_location(id, loc);
+            self.ctx.insert_location(id, loc);
 
             self.locals.push((local, id));
         }
@@ -385,7 +368,7 @@ impl<'ast> Scope<'ast> {
 
         let (_, local_id) = self.pop_local();
 
-        self.ctx.local().insert_type_info(
+        self.ctx.insert_type_info(
             local_id,
             TypeInfo {
                 ty: term_ty,
@@ -423,7 +406,7 @@ impl<'ast> Scope<'ast> {
         let mut term = self.lower_block(body.item)?;
 
         let mut term_ty = self.ctx.new_ty();
-        self.ctx.term().insert_type_info(
+        self.ctx.insert_type_info(
             term.id,
             TypeInfo {
                 ty: term_ty.clone(),
@@ -434,14 +417,13 @@ impl<'ast> Scope<'ast> {
         for _ in 0..arity {
             let (_, arg_id) = self.pop_local();
 
-            let mut term_info = self.ctx.local().get_type_info(arg_id).unwrap().clone();
+            let mut term_info = self.ctx.get_type_info(arg_id).unwrap().clone();
             term_ty = Ty::Arrow(Box::new(term_info.ty), Box::new(term_ty));
             term_info.ty = term_ty.clone();
 
-            let term_store = self.ctx.term();
-            let term_id = term_store.new_id();
-            term_store.insert_location(term_id, loc);
-            term_store.insert_type_info(term_id, term_info);
+            let term_id: TermId = self.ctx.new_id();
+            self.ctx.insert_location(term_id, loc);
+            self.ctx.insert_type_info(term_id, term_info);
 
             term = Term::new(term_id, TermKind::Abs(arg_id, Box::new(term)));
         }
