@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1597014831957,
+  "lastUpdate": 1597017111886,
   "repoUrl": "https://github.com/christianpoveda/pijama",
   "entries": {
     "Rust Benchmark": [
@@ -3929,6 +3929,120 @@ window.BENCHMARK_DATA = {
             "name": "adler32",
             "value": 15661,
             "range": "± 1253",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "31802960+christianpoveda@users.noreply.github.com",
+            "name": "Christian Poveda",
+            "username": "christianpoveda"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "458e5777c94894b4ad371cef21e8820bdb8feb62",
+          "message": "Merge pull request #124 from christianpoveda/specialize-print\n\nSpecialize print behaviour using type information",
+          "timestamp": "2020-08-09T18:42:47-05:00",
+          "tree_id": "5c7c85d0570029916e3b8baf1eb10670d9c46cd6",
+          "url": "https://github.com/christianpoveda/pijama/commit/458e5777c94894b4ad371cef21e8820bdb8feb62"
+        },
+        "date": 1597017111468,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "arithmetic",
+            "value": 5971,
+            "range": "± 446",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "logic",
+            "value": 7853,
+            "range": "± 214",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "factorial",
+            "value": 34826,
+            "range": "± 2426",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "factorial_tail",
+            "value": 96673,
+            "range": "± 7130",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fibonacci",
+            "value": 356395,
+            "range": "± 25722",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fibonacci_tail",
+            "value": 85626,
+            "range": "± 6703",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "gcd",
+            "value": 585752,
+            "range": "± 36155",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "ackermann",
+            "value": 358614,
+            "range": "± 23293",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "calling",
+            "value": 153505,
+            "range": "± 13640",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "complex_calling",
+            "value": 164099,
+            "range": "± 12283",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fancy_max",
+            "value": 1515,
+            "range": "± 93",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "step",
+            "value": 1209,
+            "range": "± 107",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cond_chain",
+            "value": 19132,
+            "range": "± 1762",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "short_circuit",
+            "value": 9132,
+            "range": "± 752",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "adler32",
+            "value": 17493,
+            "range": "± 1350",
             "unit": "ns/iter"
           }
         ]
