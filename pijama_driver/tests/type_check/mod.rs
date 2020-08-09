@@ -1,18 +1,20 @@
 use pijama_parser::parse;
 
-use pijama_ty::Ty;
-
-use pijama_tycheck::ty_check;
-
+use pijama_common::location::LocatedError;
 use pijama_driver::LangResult;
+use pijama_ty::Ty;
+use pijama_tycheck::ty_check;
 
 mod fail;
 mod pass;
 
 pub fn type_check(input: &str) -> LangResult<Ty> {
-    let ast = parse(input)?;
-    let (hir, ctx) = pijama_hir::lower_ast(ast)?;
-    Ok(ty_check(&hir, ctx)?.0.content)
+    let ast = parse(input).map_err(LocatedError::kind_into)?;
+    let (hir, ctx) = pijama_hir::lower_ast(ast).map_err(LocatedError::kind_into)?;
+    Ok(ty_check(&hir, ctx)
+        .map_err(LocatedError::kind_into)?
+        .0
+        .content)
 }
 
 /// Create a test with `$name` that type checks a file with `$name`.pj
@@ -24,7 +26,11 @@ macro_rules! test_type {
         fn $name() {
             let input = include_str!(concat!(stringify!($name), ".pj"));
             let ty = crate::type_check::type_check(input);
-            assert_eq!(ty, $pattern, "{:#?}", ty);
+            let ty2 = match &ty {
+                Ok(ty) => Ok(ty),
+                Err(err) => Err(err.kind()),
+            };
+            assert_eq!(ty2, $pattern, "{:#?}", ty);
         }
     };
 }
@@ -46,7 +52,11 @@ macro_rules! test_type_with_placeholder {
             for replacement in &replacements {
                 let input = input.replace(stringify!($placeholder), replacement);
                 let ty = crate::type_check::type_check(&input);
-                assert_eq!(ty, $pattern,
+                let ty2 = match &ty {
+                    Ok(ty) => Ok(ty),
+                    Err(err) => Err(err.kind()),
+                };
+                assert_eq!(ty2, $pattern,
                     "failed with replacement {}\n{:#?}",
                     replacement, ty);
             }

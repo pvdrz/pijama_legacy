@@ -6,9 +6,7 @@ use pijama_ast::{
     ty::{Ty, TyAnnotation},
 };
 use pijama_common::{BinOp::*, Literal, Local, UnOp};
-use pijama_parser::parse;
-
-use pijama_driver::LangResult;
+use pijama_parser::{parse, ParsingResult};
 
 use crate::util::DummyLoc;
 
@@ -17,7 +15,7 @@ fn block_into_iter<'a>(block: Block<'a>) -> impl Iterator<Item = Node<'a>> {
 }
 
 #[test]
-fn name() -> LangResult<()> {
+fn name() -> ParsingResult<()> {
     let input = include_str!("name.pj");
     let mut result = block_into_iter(parse(input)?);
     assert_eq!(
@@ -39,7 +37,7 @@ fn name() -> LangResult<()> {
 }
 
 #[test]
-fn single_comment() -> LangResult<()> {
+fn single_comment() -> ParsingResult<()> {
     let input = include_str!("single_comment.pj");
     let mut result = block_into_iter(parse(input)?);
     assert_eq!(
@@ -51,7 +49,7 @@ fn single_comment() -> LangResult<()> {
 }
 
 #[test]
-fn consecutive_comments() -> LangResult<()> {
+fn consecutive_comments() -> ParsingResult<()> {
     let input = include_str!("consecutive_comments.pj");
     let mut result = block_into_iter(parse(input)?);
     assert_eq!(
@@ -63,7 +61,7 @@ fn consecutive_comments() -> LangResult<()> {
 }
 
 #[test]
-fn literal() -> LangResult<()> {
+fn literal() -> ParsingResult<()> {
     let input = include_str!("literal.pj");
     let mut result = block_into_iter(parse(input)?);
     assert_eq!(
@@ -120,7 +118,7 @@ fn literal() -> LangResult<()> {
 }
 
 #[test]
-fn binary_op() -> LangResult<()> {
+fn binary_op() -> ParsingResult<()> {
     let input = include_str!("bin_op.pj");
     let mut result = block_into_iter(parse(input)?);
     assert_eq!(
@@ -177,7 +175,7 @@ fn binary_op() -> LangResult<()> {
 }
 
 #[test]
-fn unary_op() -> LangResult<()> {
+fn unary_op() -> ParsingResult<()> {
     let input = include_str!("un_op.pj");
     let mut result = block_into_iter(parse(input)?);
     assert_eq!(
@@ -194,7 +192,9 @@ fn unary_op() -> LangResult<()> {
         Node::Expr(
             Expr::UnaryOp(
                 UnOp::Not,
-                Box::new(Expr::UnaryOp(UnOp::Not, Box::new(Expr::Local(Local::Name("x")).loc())).loc(),),
+                Box::new(
+                    Expr::UnaryOp(UnOp::Not, Box::new(Expr::Local(Local::Name("x")).loc())).loc(),
+                ),
             )
             .loc(),
         ),
@@ -210,7 +210,7 @@ fn unary_op() -> LangResult<()> {
 }
 
 #[test]
-fn logic_op() -> LangResult<()> {
+fn logic_op() -> ParsingResult<()> {
     let input = include_str!("logic_op.pj");
     let mut result = block_into_iter(parse(input)?);
     assert_eq!(
@@ -267,7 +267,7 @@ fn logic_op() -> LangResult<()> {
 }
 
 #[test]
-fn bit_op() -> LangResult<()> {
+fn bit_op() -> ParsingResult<()> {
     let input = include_str!("bit_op.pj");
     let mut result = block_into_iter(parse(input)?);
     assert_eq!(
@@ -338,7 +338,7 @@ fn bit_op() -> LangResult<()> {
 }
 
 #[test]
-fn assign() -> LangResult<()> {
+fn assign() -> ParsingResult<()> {
     let input = include_str!("let_bind.pj");
     let mut result = block_into_iter(parse(input)?);
     assert_eq!(
@@ -419,7 +419,7 @@ fn assign() -> LangResult<()> {
 }
 
 #[test]
-fn cond() -> LangResult<()> {
+fn cond() -> ParsingResult<()> {
     let input = include_str!("cond.pj");
     let mut result = block_into_iter(parse(input)?);
     assert_eq!(
@@ -479,7 +479,7 @@ fn cond() -> LangResult<()> {
     Ok(())
 }
 #[test]
-fn elif() -> LangResult<()> {
+fn elif() -> ParsingResult<()> {
     let input = include_str!("elif.pj");
     let mut result = block_into_iter(parse(input)?);
     assert_eq!(
@@ -578,7 +578,7 @@ fn elif() -> LangResult<()> {
 }
 
 #[test]
-fn call() -> LangResult<()> {
+fn call() -> ParsingResult<()> {
     let input = include_str!("call.pj");
     let mut result = block_into_iter(parse(input)?);
     assert_eq!(
@@ -601,7 +601,10 @@ fn call() -> LangResult<()> {
         Node::Expr(
             Expr::Call(
                 Box::new(Expr::Local(Local::Name("x")).loc()),
-                vec![Expr::Local(Local::Name("y")).loc(), Expr::Local(Local::Name("z")).loc()],
+                vec![
+                    Expr::Local(Local::Name("y")).loc(),
+                    Expr::Local(Local::Name("z")).loc()
+                ],
             )
             .loc(),
         ),
@@ -630,7 +633,7 @@ fn call() -> LangResult<()> {
 }
 
 #[test]
-fn fn_def() -> LangResult<()> {
+fn fn_def() -> ParsingResult<()> {
     let input = include_str!("fn_def.pj");
     let mut result = block_into_iter(parse(input)?);
     assert_eq!(
@@ -663,7 +666,8 @@ fn fn_def() -> LangResult<()> {
                     item: Block {
                         nodes: Default::default(),
                         expr: Box::new(
-                            Expr::Call(Box::new(Expr::Local(Local::Name("foo")).loc()), vec![]).loc(),
+                            Expr::Call(Box::new(Expr::Local(Local::Name("foo")).loc()), vec![])
+                                .loc(),
                         ),
                     },
                     ty: Ty::Unit.loc(),
@@ -747,7 +751,7 @@ fn fn_def() -> LangResult<()> {
 }
 
 #[test]
-fn precedence() -> LangResult<()> {
+fn precedence() -> ParsingResult<()> {
     let input = include_str!("precedence.pj");
     let mut result = block_into_iter(parse(input)?);
     assert_eq!(
@@ -830,7 +834,7 @@ fn precedence() -> LangResult<()> {
 }
 
 #[test]
-fn cmp_and_shift() -> LangResult<()> {
+fn cmp_and_shift() -> ParsingResult<()> {
     let input = include_str!("cmp_and_shift.pj");
     let mut result = block_into_iter(parse(input)?);
     assert_eq!(

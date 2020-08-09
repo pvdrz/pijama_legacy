@@ -1,6 +1,6 @@
 use std::{include_str, time::Duration};
 
-use pijama_driver::{LangError, LangResult};
+use pijama_driver::{LangErrorKind, LangResult};
 
 use crate::{panic_after, run};
 
@@ -196,7 +196,7 @@ fn print_print() -> LangResult<()> {
 fn print_redefine() {
     let input = include_str!("print_redefine.pj");
     let err = run(input).unwrap_err();
-    assert!(matches!(err, LangError::Parse(_)))
+    assert!(matches!(err.kind(), LangErrorKind::Parse(_)))
 }
 
 #[test]

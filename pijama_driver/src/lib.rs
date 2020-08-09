@@ -2,11 +2,10 @@ use thiserror::Error;
 
 use std::io::Write;
 
-use pijama_parser::{parse, ParsingError};
-
-use pijama_hir::LowerError;
-
-use pijama_tycheck::{ty_check, TyError};
+use pijama_common::location::LocatedError;
+use pijama_hir::LowerErrorKind;
+use pijama_parser::{parse, ParsingErrorKind};
+use pijama_tycheck::{ty_check, TyErrorKind};
 
 use pijama_lir::Term as LirTerm;
 
@@ -17,23 +16,25 @@ use pijama_machine::{
 
 pub type LangResult<T> = Result<T, LangError>;
 
+pub type LangError = LocatedError<LangErrorKind>;
+
 #[derive(Error, Debug, Eq, PartialEq)]
-pub enum LangError {
+pub enum LangErrorKind {
     #[error("{0}")]
-    Ty(#[from] TyError),
+    Ty(#[from] TyErrorKind),
     #[error("{0}")]
-    Parse(#[from] ParsingError),
+    Parse(#[from] ParsingErrorKind),
     #[error("{0}")]
-    Lower(#[from] LowerError),
+    Lower(#[from] LowerErrorKind),
 }
 
 pub fn run_with_machine<W: Write, A: Arithmetic>(
     input: &str,
     mut machine: Machine<W, A>,
 ) -> LangResult<()> {
-    let ast = parse(input)?;
-    let (hir, ctx) = pijama_hir::lower_ast(ast)?;
-    let _ty = ty_check(&hir, ctx)?;
+    let ast = parse(input).map_err(LocatedError::kind_into)?;
+    let (hir, ctx) = pijama_hir::lower_ast(ast).map_err(LocatedError::kind_into)?;
+    let _ty = ty_check(&hir, ctx).map_err(LocatedError::kind_into)?;
     let lir = LirTerm::from_hir(hir);
     let _res = machine.evaluate(lir);
     Ok(())

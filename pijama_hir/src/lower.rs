@@ -1,14 +1,12 @@
 use thiserror::Error;
 
-use std::mem::discriminant;
-
 use pijama_ast::{
     analysis::is_fn_def_recursive,
     node::{Block, Branch, Expression, Node, Statement},
     ty::{Ty as AstTy, TyAnnotation},
 };
 use pijama_common::{
-    location::{Located, Location},
+    location::{Located, Location, LocatedError},
     BinOp, Local, UnOp,
 };
 use pijama_ty::{
@@ -28,37 +26,21 @@ pub fn lower_ast(block: Block) -> LowerResult<(Term, Context)> {
 
 pub type LowerResult<T> = Result<T, LowerError>;
 
-#[derive(Error, Debug)]
-pub enum LowerError {
+#[derive(Error, Debug, Eq, PartialEq)]
+pub enum LowerErrorKind {
     #[error("Required type annotation is missing")]
-    RequiredTy(Location),
+    RequiredTy,
     #[error("Anonymous functions cannot have a return type annotation")]
-    AnonWithTy(Location),
+    AnonWithTy,
     #[error("Local {0} is not bounded in the current scope")]
-    Unbounded(String, Location),
+    Unbounded(String),
 }
 
-impl LowerError {
-    pub fn loc(&self) -> Location {
-        match self {
-            LowerError::RequiredTy(loc)
-            | LowerError::AnonWithTy(loc)
-            | LowerError::Unbounded(_, loc) => *loc,
-        }
-    }
-}
-
-impl PartialEq for LowerError {
-    fn eq(&self, other: &Self) -> bool {
-        discriminant(self) == discriminant(other)
-    }
-}
-
-impl Eq for LowerError {}
+pub type LowerError = LocatedError<LowerErrorKind>;
 
 fn require_ty(ty: &AstTy, loc: Location) -> LowerResult<()> {
     if let AstTy::Missing = ty {
-        Err(LowerError::RequiredTy(loc))
+        Err(LowerError::new(LowerErrorKind::RequiredTy, loc))
     } else {
         Ok(())
     }
@@ -165,7 +147,7 @@ impl<'ast> Scope<'ast> {
                         return Ok(Term::new(term_id, TermKind::Var(local_id)));
                     }
                 }
-                Err(LowerError::Unbounded(local.to_string(), loc))
+                Err(LowerError::new(LowerErrorKind::Unbounded(local.to_string()), loc))
             }
             Expression::Literal(lit) => {
                 let term_store = self.ctx.term();
@@ -429,7 +411,7 @@ impl<'ast> Scope<'ast> {
         if let AstTy::Missing = body.ty.content {
             ()
         } else {
-            return Err(LowerError::AnonWithTy(body.ty.loc));
+            return Err(LowerError::new(LowerErrorKind::AnonWithTy, body.ty.loc));
         };
 
         let arity = args.len();
