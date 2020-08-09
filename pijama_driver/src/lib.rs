@@ -33,8 +33,8 @@ pub fn run_with_machine<W: Write, A: Arithmetic>(
     mut machine: Machine<W, A>,
 ) -> LangResult<()> {
     let ast = parse(input).map_err(LocatedError::kind_into)?;
-    let (hir, ctx) = pijama_hir::lower_ast(ast).map_err(LocatedError::kind_into)?;
-    let (_ty, mut ctx) = ty_check(&hir, ctx).map_err(LocatedError::kind_into)?;
+    let (hir, mut ctx) = pijama_hir::lower_ast(ast).map_err(LocatedError::kind_into)?;
+    let _ty = ty_check(&hir, &mut ctx).map_err(LocatedError::kind_into)?;
     let _mir = pijama_mir::Term::from_hir(&hir, &mut ctx);
     let lir = LirTerm::from_hir(hir);
     let _res = machine.evaluate(lir);

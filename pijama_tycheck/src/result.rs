@@ -20,6 +20,9 @@ pub enum TyErrorKind {
     /// Variant used when a name has not been binded to any type in the current scope.
     #[error("Local `{0}` is not bounded")]
     Unbounded(String),
+    /// Variant used when a type still has type variables in it.
+    #[error("Type cannot be reconstructed")]
+    NotConcrete,
 }
 
 /// A typing error.

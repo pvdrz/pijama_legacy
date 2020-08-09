@@ -87,11 +87,17 @@ impl Context {
     }
 
     pub fn iter_mut_local_types(&mut self) -> impl Iterator<Item = (LocalId, &mut Ty)> {
-        self.local.type_info.iter_mut().map(|(id, info)| (*id, &mut info.ty))
+        self.local
+            .type_info
+            .iter_mut()
+            .map(|(id, info)| (*id, &mut info.ty))
     }
 
     pub fn iter_mut_term_types(&mut self) -> impl Iterator<Item = (TermId, &mut Ty)> {
-        self.term.type_info.iter_mut().map(|(id, info)| (*id, &mut info.ty))
+        self.term
+            .type_info
+            .iter_mut()
+            .map(|(id, info)| (*id, &mut info.ty))
     }
 }
 

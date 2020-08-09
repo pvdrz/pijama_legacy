@@ -34,7 +34,7 @@ impl Ty {
     pub fn is_concrete(&self) -> bool {
         match self {
             Ty::Bool | Ty::Int | Ty::Unit => true,
-            Ty::Arrow(ty1, ty2) => ty1.is_concrete() || ty2.is_concrete(),
+            Ty::Arrow(ty1, ty2) => ty1.is_concrete() && ty2.is_concrete(),
             Ty::Var(_) => false,
         }
     }

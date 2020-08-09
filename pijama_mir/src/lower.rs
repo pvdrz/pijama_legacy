@@ -41,9 +41,9 @@ pub(crate) fn lower_term(term: &HirTerm, ctx: &mut Context) -> Term {
                 args.push(lower_term(arg, ctx));
             }
 
-            args.reverse();
-
             let arity = ctx.get_type_info(func.id).unwrap().ty.arity().unwrap();
+
+            args.reverse();
 
             if let HirTermKind::PrimFn(prim) = &func.kind {
                 let prim = match prim {

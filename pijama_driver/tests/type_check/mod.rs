@@ -10,10 +10,9 @@ mod pass;
 
 pub fn type_check(input: &str) -> LangResult<Ty> {
     let ast = parse(input).map_err(LocatedError::kind_into)?;
-    let (hir, ctx) = pijama_hir::lower_ast(ast).map_err(LocatedError::kind_into)?;
-    Ok(ty_check(&hir, ctx)
+    let (hir, mut ctx) = pijama_hir::lower_ast(ast).map_err(LocatedError::kind_into)?;
+    Ok(ty_check(&hir, &mut ctx)
         .map_err(LocatedError::kind_into)?
-        .0
         .content)
 }
 

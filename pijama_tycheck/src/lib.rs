@@ -29,7 +29,7 @@ use unify::{Constraint, Unifier};
 ///
 /// This function must always be called in the "root" term of the program. Otherwise, the type
 /// checker might not have all the bindings required to do its job.
-pub fn ty_check(term: &Term, ctx: Context) -> TyResult<(Located<Ty>, Context)> {
+pub fn ty_check(term: &Term, ctx: &mut Context) -> TyResult<Located<Ty>> {
     // Create a new, empty analyzer.
     let mut analyzer = Analyzer::new(ctx);
     // Obtain typing constraints and the type of `term`.
@@ -39,29 +39,41 @@ pub fn ty_check(term: &Term, ctx: Context) -> TyResult<(Located<Ty>, Context)> {
     // Apply the substitutions found during unification over the type of `term`.
     unif.replace(&mut ty.content);
 
-    let mut ctx = analyzer.ctx;
-
+    let mut id = None;
     for (local_id, ty) in ctx.iter_mut_local_types() {
         unif.replace(ty);
-        // FIXME this should be a proper error.
-        assert!(ty.is_concrete());
+        if !ty.is_concrete() {
+            id = Some(local_id);
+            break;
+        }
+    }
+    if let Some(id) = id {
+        let loc = ctx.get_location(id).unwrap();
+        return Err(TyError::new(TyErrorKind::NotConcrete, loc));
     }
 
+    let mut id = None;
     for (term_id, ty) in ctx.iter_mut_term_types() {
         unif.replace(ty);
-        // FIXME this should be a proper error.
-        assert!(ty.is_concrete());
+        if !ty.is_concrete() {
+            id = Some(term_id);
+            break;
+        }
+    }
+    if let Some(id) = id {
+        let loc = ctx.get_location(id).unwrap();
+        return Err(TyError::new(TyErrorKind::NotConcrete, loc));
     }
 
-    Ok((ty, ctx))
+    Ok(ty)
 }
 
 /// A typing analyzer.
 ///
 /// This structure traverses the HIR of a term and generates a set of constraints that must be
 /// satisfied by the term to be well-typed.
-struct Analyzer {
-    ctx: Context,
+struct Analyzer<'ctx> {
+    ctx: &'ctx mut Context,
     /// Typing constraints.
     ///
     /// Each typing constraint is introduced by a particular `type_of_*` method with a suitable
@@ -69,8 +81,8 @@ struct Analyzer {
     constraints: VecDeque<Located<Constraint>>,
 }
 
-impl Analyzer {
-    fn new(ctx: Context) -> Self {
+impl<'ctx> Analyzer<'ctx> {
+    fn new(ctx: &'ctx mut Context) -> Self {
         Self {
             ctx,
             constraints: VecDeque::default(),

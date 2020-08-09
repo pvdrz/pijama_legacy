@@ -11,8 +11,8 @@ use pijama_common::location::LocatedError;
 
 fn compile(input: &str) -> LangResult<Term> {
     let ast = parse(input).map_err(LocatedError::kind_into)?;
-    let (hir, ctx) = pijama_hir::lower_ast(ast).map_err(LocatedError::kind_into)?;
-    ty_check(&hir, ctx).map_err(LocatedError::kind_into)?;
+    let (hir, mut ctx) = pijama_hir::lower_ast(ast).map_err(LocatedError::kind_into)?;
+    ty_check(&hir, &mut ctx).map_err(LocatedError::kind_into)?;
     Ok(Term::from_hir(hir))
 }
 
