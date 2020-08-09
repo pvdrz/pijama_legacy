@@ -6,8 +6,6 @@ use pijama_parser::parse;
 
 use pijama_tycheck::ty_check;
 
-use pijama_ty::ty_gen;
-
 use pijama_lir::Term;
 
 use pijama_machine::MachineBuilder;
@@ -16,7 +14,7 @@ use pijama_driver::LangResult;
 
 fn compile(input: &str) -> LangResult<Term> {
     let ast = parse(input)?;
-    let (hir, ctx) = pijama_hir::lower_block(ast, ty_gen())?;
+    let (hir, ctx) = pijama_hir::lower_ast(ast)?;
     ty_check(&hir, ctx)?;
     Ok(Term::from_hir(hir))
 }

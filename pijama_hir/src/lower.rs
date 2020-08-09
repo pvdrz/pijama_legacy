@@ -8,7 +8,6 @@ use pijama_ast::{
     ty::{Ty as AstTy, TyAnnotation},
 };
 use pijama_common::{
-    generator::Generator,
     location::{Located, Location},
     BinOp, Local, UnOp,
 };
@@ -16,8 +15,8 @@ use pijama_ty::Ty;
 
 use crate::{BindKind, Context, LocalId, Term, TermKind, TypeInfo};
 
-pub fn lower_block(block: Block, ty_gen: Generator<Ty>) -> LowerResult<(Term, Context)> {
-    let ctx = Context::new(ty_gen);
+pub fn lower_ast(block: Block) -> LowerResult<(Term, Context)> {
+    let ctx = Context::new();
     let mut scope = Scope::new(ctx);
     let term = scope.lower_block(block)?;
     let ctx = scope.ctx;

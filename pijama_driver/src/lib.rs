@@ -6,8 +6,6 @@ use pijama_parser::{parse, ParsingError};
 
 use pijama_hir::LowerError;
 
-use pijama_ty::ty_gen;
-
 use pijama_tycheck::{ty_check, TyError};
 
 use pijama_lir::Term as LirTerm;
@@ -34,7 +32,7 @@ pub fn run_with_machine<W: Write, A: Arithmetic>(
     mut machine: Machine<W, A>,
 ) -> LangResult<()> {
     let ast = parse(input)?;
-    let (hir, ctx) = pijama_hir::lower_block(ast, ty_gen())?;
+    let (hir, ctx) = pijama_hir::lower_ast(ast)?;
     let _ty = ty_check(&hir, ctx)?;
     let lir = LirTerm::from_hir(hir);
     let _res = machine.evaluate(lir);

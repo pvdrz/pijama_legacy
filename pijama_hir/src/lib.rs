@@ -6,7 +6,7 @@ use pijama_common::{generator::Generator, location::Location, BinOp, Literal, Pr
 
 use pijama_ty::Ty;
 
-pub use lower::{LowerError, LowerResult, lower_block};
+pub use lower::{lower_ast, LowerError, LowerResult};
 
 mod lower;
 
@@ -111,7 +111,7 @@ impl<Id: Debug + Hash + Eq + Copy> Store<Id> {
         self.type_info.get(&id)
     }
 
-    pub fn types_mut<'ty>(&'ty mut self) -> impl Iterator<Item=&'ty mut Ty> {
+    pub fn types_mut<'ty>(&'ty mut self) -> impl Iterator<Item = &'ty mut Ty> {
         self.type_info.values_mut().map(|info| &mut info.ty)
     }
 }
@@ -119,11 +119,11 @@ impl<Id: Debug + Hash + Eq + Copy> Store<Id> {
 pub struct Context {
     local: Store<LocalId>,
     term: Store<TermId>,
-    ty_gen: Generator<Ty>
+    ty_gen: Generator<Ty>,
 }
 
 impl Context {
-    pub fn new(ty_gen: Generator<Ty>) -> Self {
+    pub fn new() -> Self {
         Self {
             local: Store {
                 gen_id: Generator::new(LocalId),
@@ -135,7 +135,7 @@ impl Context {
                 locations: HashMap::default(),
                 type_info: HashMap::default(),
             },
-            ty_gen
+            ty_gen: pijama_ty::ty_gen(),
         }
     }
 

@@ -1,6 +1,6 @@
 use pijama_parser::parse;
 
-use pijama_ty::{Ty, ty_gen};
+use pijama_ty::Ty;
 
 use pijama_tycheck::ty_check;
 
@@ -11,7 +11,7 @@ mod pass;
 
 pub fn type_check(input: &str) -> LangResult<Ty> {
     let ast = parse(input)?;
-    let (hir, ctx) = pijama_hir::lower_block(ast, ty_gen())?;
+    let (hir, ctx) = pijama_hir::lower_ast(ast)?;
     Ok(ty_check(&hir, ctx)?.0.content)
 }
 
