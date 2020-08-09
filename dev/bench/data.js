@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1596821749483,
+  "lastUpdate": 1597014831957,
   "repoUrl": "https://github.com/christianpoveda/pijama",
   "entries": {
     "Rust Benchmark": [
@@ -3815,6 +3815,120 @@ window.BENCHMARK_DATA = {
             "name": "adler32",
             "value": 19909,
             "range": "± 721",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "31802960+christianpoveda@users.noreply.github.com",
+            "name": "Christian Poveda",
+            "username": "christianpoveda"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "32ffc2fd943090331ac0004f631e54f3b6b7c749",
+          "message": "Merge pull request #123 from christianpoveda/tag_terms\n\nAdd context structure to hold all the term metadata",
+          "timestamp": "2020-08-09T18:05:15-05:00",
+          "tree_id": "525ca2bd113e89d87f8903fe7aec9cf4f2ae4d29",
+          "url": "https://github.com/christianpoveda/pijama/commit/32ffc2fd943090331ac0004f631e54f3b6b7c749"
+        },
+        "date": 1597014831579,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "arithmetic",
+            "value": 5109,
+            "range": "± 364",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "logic",
+            "value": 6643,
+            "range": "± 494",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "factorial",
+            "value": 32099,
+            "range": "± 2927",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "factorial_tail",
+            "value": 86653,
+            "range": "± 8345",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fibonacci",
+            "value": 319443,
+            "range": "± 26019",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fibonacci_tail",
+            "value": 77494,
+            "range": "± 5786",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "gcd",
+            "value": 526517,
+            "range": "± 41118",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "ackermann",
+            "value": 322409,
+            "range": "± 22453",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "calling",
+            "value": 138906,
+            "range": "± 10187",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "complex_calling",
+            "value": 154097,
+            "range": "± 12399",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "fancy_max",
+            "value": 1392,
+            "range": "± 150",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "step",
+            "value": 1141,
+            "range": "± 76",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "cond_chain",
+            "value": 17114,
+            "range": "± 1198",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "short_circuit",
+            "value": 7693,
+            "range": "± 532",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "adler32",
+            "value": 15661,
+            "range": "± 1253",
             "unit": "ns/iter"
           }
         ]
