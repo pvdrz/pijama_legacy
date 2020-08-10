@@ -9,6 +9,7 @@ pub fn run(ctx: &Context, term: &Term) {
     heap.push(main);
     let mut compiler = Compiler::new(ctx, &mut heap, 0);
     compiler.compile(term);
+    // println!("main: {:?}", compiler.func.chunk);
     *heap.get_mut(0).unwrap() = compiler.func;
     let mut interpreter = Interpreter::new(0, heap);
     interpreter.run();
@@ -45,6 +46,8 @@ enum OpCode {
     PrintUnit,
     PrintFunc,
     Add,
+    Mul,
+    Rem,
     Eq,
     Neg,
     Local(usize),
@@ -128,6 +131,8 @@ impl<'ast, 'ctx, 'heap> Compiler<'ast, 'ctx, 'heap> {
                         Ty::Var(_) => unreachable!(),
                     },
                     PrimFn::BinOp(BinOp::Add) => OpCode::Add,
+                    PrimFn::BinOp(BinOp::Mul) => OpCode::Mul,
+                    PrimFn::BinOp(BinOp::Rem) => OpCode::Rem,
                     PrimFn::BinOp(BinOp::Eq) => OpCode::Eq,
                     PrimFn::UnOp(UnOp::Neg) => OpCode::Neg,
                     _ => todo!(),
@@ -256,8 +261,8 @@ impl ArgStack {
     }
 
     fn truncate(&mut self, base_ptr: usize) {
-        self.base_ptr -= base_ptr;
-        self.stack.truncate(self.len());
+        self.stack.truncate(self.base_ptr);
+        self.base_ptr = base_ptr;
     }
 }
 
@@ -292,7 +297,6 @@ impl Interpreter {
         // println!("{:?}", self.arg_stack);
         while let Some(op) = self.read_op() {
             // println!("{:?}", op);
-            // println!("{:?}", self.arg_stack);
             match op {
                 OpCode::PrintInt => {
                     let int = self.arg_stack.pop().unwrap().assert_int();
@@ -319,6 +323,16 @@ impl Interpreter {
                     let int2 = self.arg_stack.pop().unwrap().assert_int();
                     let int1 = self.arg_stack.pop().unwrap().assert_int();
                     self.arg_stack.push(Value::Int(int1 + int2));
+                }
+                OpCode::Mul => {
+                    let int2 = self.arg_stack.pop().unwrap().assert_int();
+                    let int1 = self.arg_stack.pop().unwrap().assert_int();
+                    self.arg_stack.push(Value::Int(int1 * int2));
+                }
+                OpCode::Rem => {
+                    let int2 = self.arg_stack.pop().unwrap().assert_int();
+                    let int1 = self.arg_stack.pop().unwrap().assert_int();
+                    self.arg_stack.push(Value::Int(int1 % int2));
                 }
                 OpCode::Eq => {
                     let int2 = self.arg_stack.pop().unwrap().assert_int();
@@ -354,11 +368,13 @@ impl Interpreter {
                 }
                 OpCode::Return => {
                     let ret_value = self.arg_stack.pop().unwrap();
-                    let frame = self.call_stack.pop().unwrap();
-                    self.arg_stack.truncate(frame.base_ptr);
+                    self.call_stack.pop().unwrap();
+                    self.arg_stack.truncate(self.call_stack.head().base_ptr);
+                    self.arg_stack.pop().unwrap();
                     self.arg_stack.push(ret_value);
                 }
             }
+            // println!("{:?}", self.arg_stack);
         }
     }
 }
