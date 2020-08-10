@@ -17,6 +17,16 @@ pub enum PrimFn {
     BinOp(BinOp),
     UnOp(UnOp),
 }
+
+impl PrimFn {
+    pub fn arity(&self) -> usize {
+        match self {
+            Self::Print | Self::UnOp(_) => 1,
+            Self::BinOp(_) => 2,
+        }
+    }
+}
+
 impl fmt::Display for PrimFn {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -29,8 +39,8 @@ impl fmt::Display for PrimFn {
 
 #[derive(Debug)]
 pub struct Term {
-    id: TermId,
-    kind: TermKind,
+    pub id: TermId,
+    pub kind: TermKind,
 }
 
 #[derive(Debug)]
