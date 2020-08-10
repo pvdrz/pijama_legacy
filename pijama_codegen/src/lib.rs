@@ -1,5 +1,5 @@
 use pijama_common::{BinOp, Literal, UnOp};
-use pijama_ctx::{Context, ContextExt};
+use pijama_ctx::{Context, ContextExt, LocalId};
 use pijama_mir::{BindKind, PrimFn, Term, TermKind};
 use pijama_ty::Ty;
 
@@ -34,8 +34,12 @@ impl Value {
     }
 }
 
+#[derive(Debug, Clone)]
 enum OpCode {
     PrintInt,
+    PrintBool,
+    PrintUnit,
+    PrintFunc,
     Add,
     Eq,
     Neg,
@@ -48,6 +52,7 @@ enum OpCode {
 struct Compiler<'ast, 'ctx> {
     ctx: &'ctx Context<'ast>,
     chunk: Chunk,
+    locals: Vec<LocalId>,
 }
 
 impl<'ast, 'ctx> Compiler<'ast, 'ctx> {
@@ -55,6 +60,7 @@ impl<'ast, 'ctx> Compiler<'ast, 'ctx> {
         Self {
             ctx,
             chunk: Chunk::default(),
+            locals: vec![],
         }
     }
     fn compile(&mut self, term: &Term) {
@@ -68,6 +74,15 @@ impl<'ast, 'ctx> Compiler<'ast, 'ctx> {
                 };
                 self.chunk.write(OpCode::Push(Value::Int(int)));
             }
+            TermKind::Var(id) => {
+                for (index, id2) in self.locals.iter().enumerate().rev() {
+                    if id2 == id {
+                        self.chunk.write(OpCode::Local(index));
+                        return;
+                    }
+                }
+                panic!()
+            }
             TermKind::PrimApp(prim, args) => {
                 for arg in args.iter().take(prim.arity()) {
                     self.compile(arg);
@@ -75,7 +90,10 @@ impl<'ast, 'ctx> Compiler<'ast, 'ctx> {
                 let opcode = match prim {
                     PrimFn::Print => match self.ctx.get_type_info(args[0].id).unwrap().ty {
                         Ty::Int => OpCode::PrintInt,
-                        _ => todo!(),
+                        Ty::Bool => OpCode::PrintBool,
+                        Ty::Unit => OpCode::PrintUnit,
+                        Ty::Arrow(_, _) => OpCode::PrintFunc,
+                        Ty::Var(_) => unreachable!(),
                     },
                     PrimFn::BinOp(BinOp::Add) => OpCode::Add,
                     PrimFn::BinOp(BinOp::Eq) => OpCode::Eq,
@@ -83,6 +101,12 @@ impl<'ast, 'ctx> Compiler<'ast, 'ctx> {
                     _ => todo!(),
                 };
                 self.chunk.write(opcode);
+            }
+            TermKind::Let(BindKind::NonRec, lhs_id, rhs, tail) => {
+                self.compile(rhs);
+                self.locals.push(*lhs_id);
+                self.compile(tail);
+                self.locals.pop().unwrap();
             }
             _ => todo!(),
         }
@@ -118,27 +142,46 @@ impl Interpreter {
             ins_ptr: 0,
         }
     }
-    fn read_op(&mut self) -> Option<&OpCode> {
-        let op = self.chunk.read(self.ins_ptr)?;
+    fn read_op(&mut self) -> Option<OpCode> {
+        let op = self.chunk.read(self.ins_ptr)?.clone();
         self.ins_ptr += 1;
         Some(op)
     }
 
     fn run(&mut self) {
         while let Some(op) = self.read_op() {
+            // println!("{:?}", self.stack);
+            // println!("{:?}", op);
             match op {
                 OpCode::PrintInt => {
                     let int = self.stack.pop().unwrap().assert_int();
                     println!("{}", int);
+                    self.stack.push(Value::Int(0));
+                }
+                OpCode::PrintBool => {
+                    let int = self.stack.pop().unwrap().assert_int();
+                    println!("{}", int != 0);
+                    self.stack.push(Value::Int(0));
+                }
+                OpCode::PrintUnit => {
+                    let int = self.stack.pop().unwrap().assert_int();
+                    assert_eq!(int, 0);
+                    println!("unit");
+                    self.stack.push(Value::Int(0));
+                }
+                OpCode::PrintFunc => {
+                    let ptr = self.stack.pop().unwrap().assert_ptr();
+                    println!("<function@{:x}", ptr);
+                    self.stack.push(Value::Int(0));
                 }
                 OpCode::Add => {
-                    let int1 = self.stack.pop().unwrap().assert_int();
                     let int2 = self.stack.pop().unwrap().assert_int();
+                    let int1 = self.stack.pop().unwrap().assert_int();
                     self.stack.push(Value::Int(int1 + int2));
                 }
                 OpCode::Eq => {
-                    let int1 = self.stack.pop().unwrap().assert_int();
                     let int2 = self.stack.pop().unwrap().assert_int();
+                    let int1 = self.stack.pop().unwrap().assert_int();
                     self.stack.push(Value::Int((int1 == int2).into()));
                 }
                 OpCode::Neg => {
@@ -147,6 +190,10 @@ impl Interpreter {
                 }
                 OpCode::Push(value) => {
                     let value = value.clone();
+                    self.stack.push(value);
+                }
+                OpCode::Local(index) => {
+                    let value = self.stack.get(index).unwrap().clone();
                     self.stack.push(value);
                 }
                 _ => todo!(),
