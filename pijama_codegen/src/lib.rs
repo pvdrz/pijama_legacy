@@ -80,6 +80,8 @@ enum OpCode {
     Call(usize),
     Push(Value),
     Return,
+    JumpIfFalse(usize),
+    Skip(usize),
 }
 
 #[derive(Debug, Clone)]
@@ -212,8 +214,28 @@ impl<'ast, 'ctx, 'heap> Compiler<'ast, 'ctx, 'heap> {
                 }
                 self.func.write(OpCode::Call(args.len()));
             }
+            TermKind::Cond(if_term, do_term, else_term) => {
+                self.compile(if_term.as_ref());
+                self.func.write(OpCode::JumpIfFalse(usize::max_value()));
 
-            _ => todo!(),
+                let start_do = self.func.chunk.code.len();
+                self.compile(do_term.as_ref());
+                self.func.write(OpCode::Skip(usize::max_value()));
+                let end_do = self.func.chunk.code.len();
+
+                self.func.chunk.code[start_do - 1] = OpCode::JumpIfFalse(end_do - start_do);
+
+                let start_else = end_do;
+                self.compile(else_term.as_ref());
+                let end_else = self.func.chunk.code.len();
+
+                self.func.chunk.code[start_else - 1] = OpCode::Skip(end_else - start_else);
+            }
+            _ => {
+                print!("Cannot compile ");
+                term.show(self.ctx);
+                panic!()
+            }
         }
     }
 }
@@ -493,6 +515,16 @@ impl Interpreter {
                     self.arg_stack.truncate(self.call_stack.head().base_ptr);
                     self.arg_stack.pop().unwrap();
                     self.arg_stack.push(ret_value);
+                }
+                OpCode::JumpIfFalse(offset) => {
+                    let cond = self.arg_stack.pop().unwrap().assert_int();
+
+                    if cond == 0 {
+                        self.call_stack.head_mut().ins_ptr += offset;
+                    }
+                }
+                OpCode::Skip(offset) => {
+                    self.call_stack.head_mut().ins_ptr += offset;
                 }
             }
             // println!("{:?}", self.arg_stack);
