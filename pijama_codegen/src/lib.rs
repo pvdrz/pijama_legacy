@@ -116,7 +116,7 @@ impl<'ast, 'ctx, 'heap> Compiler<'ast, 'ctx, 'heap> {
                         return;
                     }
                 }
-                panic!()
+                panic!("could not find {:?}", id)
             }
             TermKind::PrimApp(prim, args) => {
                 for arg in args.iter().take(prim.arity()) {
@@ -149,6 +149,7 @@ impl<'ast, 'ctx, 'heap> Compiler<'ast, 'ctx, 'heap> {
                 let function = Function::new(args.len());
                 let ptr = self.heap.len();
                 self.heap.push(function);
+
                 let mut compiler = Compiler::new(self.ctx, self.heap, ptr);
                 for arg in args {
                     compiler.locals.push(*arg);
@@ -158,6 +159,7 @@ impl<'ast, 'ctx, 'heap> Compiler<'ast, 'ctx, 'heap> {
                 for _ in args {
                     compiler.locals.pop().unwrap();
                 }
+
                 let func = compiler.func;
                 *self.heap.get_mut(ptr).unwrap() = func;
 
