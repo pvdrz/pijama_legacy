@@ -45,11 +45,26 @@ enum OpCode {
     PrintBool,
     PrintUnit,
     PrintFunc,
-    Add,
-    Mul,
-    Rem,
-    Eq,
+    Not,
     Neg,
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Rem,
+    And,
+    Or,
+    BitAnd,
+    BitOr,
+    BitXor,
+    Shr,
+    Shl,
+    Eq,
+    Neq,
+    Lt,
+    Gt,
+    Lte,
+    Gte,
     Local(usize),
     Call(usize),
     Push(Value),
@@ -130,12 +145,26 @@ impl<'ast, 'ctx, 'heap> Compiler<'ast, 'ctx, 'heap> {
                         Ty::Arrow(_, _) => OpCode::PrintFunc,
                         Ty::Var(_) => unreachable!(),
                     },
-                    PrimFn::BinOp(BinOp::Add) => OpCode::Add,
-                    PrimFn::BinOp(BinOp::Mul) => OpCode::Mul,
-                    PrimFn::BinOp(BinOp::Rem) => OpCode::Rem,
-                    PrimFn::BinOp(BinOp::Eq) => OpCode::Eq,
                     PrimFn::UnOp(UnOp::Neg) => OpCode::Neg,
-                    _ => todo!(),
+                    PrimFn::UnOp(UnOp::Not) => OpCode::Not,
+                    PrimFn::BinOp(BinOp::Add) => OpCode::Add,
+                    PrimFn::BinOp(BinOp::Sub) => OpCode::Sub,
+                    PrimFn::BinOp(BinOp::Mul) => OpCode::Mul,
+                    PrimFn::BinOp(BinOp::Div) => OpCode::Div,
+                    PrimFn::BinOp(BinOp::Rem) => OpCode::Rem,
+                    PrimFn::BinOp(BinOp::And) => OpCode::And,
+                    PrimFn::BinOp(BinOp::Or) => OpCode::Or,
+                    PrimFn::BinOp(BinOp::BitAnd) => OpCode::BitAnd,
+                    PrimFn::BinOp(BinOp::BitOr) => OpCode::BitOr,
+                    PrimFn::BinOp(BinOp::BitXor) => OpCode::BitXor,
+                    PrimFn::BinOp(BinOp::Shr) => OpCode::Shr,
+                    PrimFn::BinOp(BinOp::Shl) => OpCode::Shl,
+                    PrimFn::BinOp(BinOp::Eq) => OpCode::Eq,
+                    PrimFn::BinOp(BinOp::Neq) => OpCode::Neq,
+                    PrimFn::BinOp(BinOp::Lt) => OpCode::Lt,
+                    PrimFn::BinOp(BinOp::Gt) => OpCode::Gt,
+                    PrimFn::BinOp(BinOp::Lte) => OpCode::Lte,
+                    PrimFn::BinOp(BinOp::Gte) => OpCode::Gte,
                 };
                 self.func.write(opcode);
             }
@@ -321,29 +350,105 @@ impl Interpreter {
                     println!("<function at 0x{:x}>", ptr);
                     self.arg_stack.push(Value::Int(0));
                 }
+                OpCode::Not => {
+                    let int = self.arg_stack.pop().unwrap().assert_int();
+                    self.arg_stack.push(Value::Int(int ^ 0));
+                }
+                OpCode::Neg => {
+                    let int = self.arg_stack.pop().unwrap().assert_int();
+                    self.arg_stack.push(Value::Int(-int));
+                }
                 OpCode::Add => {
                     let int2 = self.arg_stack.pop().unwrap().assert_int();
                     let int1 = self.arg_stack.pop().unwrap().assert_int();
                     self.arg_stack.push(Value::Int(int1 + int2));
+                }
+                OpCode::Sub => {
+                    let int2 = self.arg_stack.pop().unwrap().assert_int();
+                    let int1 = self.arg_stack.pop().unwrap().assert_int();
+                    self.arg_stack.push(Value::Int(int1 - int2));
                 }
                 OpCode::Mul => {
                     let int2 = self.arg_stack.pop().unwrap().assert_int();
                     let int1 = self.arg_stack.pop().unwrap().assert_int();
                     self.arg_stack.push(Value::Int(int1 * int2));
                 }
+                OpCode::Div => {
+                    let int2 = self.arg_stack.pop().unwrap().assert_int();
+                    let int1 = self.arg_stack.pop().unwrap().assert_int();
+                    self.arg_stack.push(Value::Int(int1 / int2));
+                }
                 OpCode::Rem => {
                     let int2 = self.arg_stack.pop().unwrap().assert_int();
                     let int1 = self.arg_stack.pop().unwrap().assert_int();
                     self.arg_stack.push(Value::Int(int1 % int2));
+                }
+                OpCode::And => {
+                    // FIXME this need short-circuiting
+                    let int2 = self.arg_stack.pop().unwrap().assert_int() != 0;
+                    let int1 = self.arg_stack.pop().unwrap().assert_int() != 0;
+                    self.arg_stack.push(Value::Int((int1 && int2).into()));
+                }
+                OpCode::Or => {
+                    // FIXME this need short-circuiting
+                    let int2 = self.arg_stack.pop().unwrap().assert_int() != 0;
+                    let int1 = self.arg_stack.pop().unwrap().assert_int() != 0;
+                    self.arg_stack.push(Value::Int((int1 || int2).into()));
+                }
+                OpCode::BitAnd => {
+                    let int2 = self.arg_stack.pop().unwrap().assert_int();
+                    let int1 = self.arg_stack.pop().unwrap().assert_int();
+                    self.arg_stack.push(Value::Int(int1 & int2));
+                }
+                OpCode::BitOr => {
+                    let int2 = self.arg_stack.pop().unwrap().assert_int();
+                    let int1 = self.arg_stack.pop().unwrap().assert_int();
+                    self.arg_stack.push(Value::Int(int1 | int2));
+                }
+                OpCode::BitXor => {
+                    let int2 = self.arg_stack.pop().unwrap().assert_int();
+                    let int1 = self.arg_stack.pop().unwrap().assert_int();
+                    self.arg_stack.push(Value::Int(int1 ^ int2));
+                }
+                OpCode::Shr => {
+                    let int2 = self.arg_stack.pop().unwrap().assert_int();
+                    let int1 = self.arg_stack.pop().unwrap().assert_int();
+                    self.arg_stack.push(Value::Int(int1 >> int2));
+                }
+                OpCode::Shl => {
+                    let int2 = self.arg_stack.pop().unwrap().assert_int();
+                    let int1 = self.arg_stack.pop().unwrap().assert_int();
+                    self.arg_stack.push(Value::Int(int1 << int2));
                 }
                 OpCode::Eq => {
                     let int2 = self.arg_stack.pop().unwrap().assert_int();
                     let int1 = self.arg_stack.pop().unwrap().assert_int();
                     self.arg_stack.push(Value::Int((int1 == int2).into()));
                 }
-                OpCode::Neg => {
-                    let int = self.arg_stack.pop().unwrap().assert_int();
-                    self.arg_stack.push(Value::Int(-int));
+                OpCode::Neq => {
+                    let int2 = self.arg_stack.pop().unwrap().assert_int();
+                    let int1 = self.arg_stack.pop().unwrap().assert_int();
+                    self.arg_stack.push(Value::Int((int1 != int2).into()));
+                }
+                OpCode::Lt => {
+                    let int2 = self.arg_stack.pop().unwrap().assert_int();
+                    let int1 = self.arg_stack.pop().unwrap().assert_int();
+                    self.arg_stack.push(Value::Int((int1 < int2).into()));
+                }
+                OpCode::Gt => {
+                    let int2 = self.arg_stack.pop().unwrap().assert_int();
+                    let int1 = self.arg_stack.pop().unwrap().assert_int();
+                    self.arg_stack.push(Value::Int((int1 > int2).into()));
+                }
+                OpCode::Lte => {
+                    let int2 = self.arg_stack.pop().unwrap().assert_int();
+                    let int1 = self.arg_stack.pop().unwrap().assert_int();
+                    self.arg_stack.push(Value::Int((int1 <= int2).into()));
+                }
+                OpCode::Gte => {
+                    let int2 = self.arg_stack.pop().unwrap().assert_int();
+                    let int1 = self.arg_stack.pop().unwrap().assert_int();
+                    self.arg_stack.push(Value::Int((int1 >= int2).into()));
                 }
                 OpCode::Push(value) => {
                     let value = value.clone();
