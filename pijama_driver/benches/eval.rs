@@ -4,131 +4,109 @@ use std::include_str;
 
 use pijama_parser::parse;
 use pijama_tycheck::ty_check;
-use pijama_lir::Term;
-use pijama_machine::MachineBuilder;
 use pijama_driver::LangResult;
 use pijama_common::location::LocatedError;
 use pijama_ctx::Context;
+use pijama_codegen::Interpreter;
 
-fn compile(input: &str) -> LangResult<Term> {
+fn compile(input: &str) -> LangResult<Interpreter> {
     let mut ctx = Context::new();
     let ast = parse(input).map_err(LocatedError::kind_into)?;
     let hir = pijama_hir::lower_ast(&mut ctx, ast).map_err(LocatedError::kind_into)?;
     ty_check(&hir, &mut ctx).map_err(LocatedError::kind_into)?;
-    Ok(Term::from_hir(&ctx, hir))
+    let mir = pijama_mir::Term::from_hir(&hir, &mut ctx);
+    let interpreter = pijama_codegen::compile(&ctx, &mir);
+    Ok(interpreter)
 }
 
 fn arithmetic(c: &mut Criterion) {
     let input = include_str!("arithmetic.pj");
-    let term = compile(input).unwrap();
-    let mut machine = MachineBuilder::default().build();
-    c.bench_function("arithmetic", |b| b.iter(|| machine.evaluate(term.clone())));
+    let interpreter = compile(input).unwrap();
+    c.bench_function("arithmetic", |b| b.iter(|| interpreter.clone().run()));
 }
 
 fn logic(c: &mut Criterion) {
     let input = include_str!("logic.pj");
-    let term = compile(input).unwrap();
-    let mut machine = MachineBuilder::default().build();
-    c.bench_function("logic", |b| b.iter(|| machine.evaluate(term.clone())));
+    let interpreter = compile(input).unwrap();
+    c.bench_function("logic", |b| b.iter(|| interpreter.clone().run()));
 }
 
 fn factorial(c: &mut Criterion) {
     let input = include_str!("factorial.pj");
-    let term = compile(input).unwrap();
-    let mut machine = MachineBuilder::default().build();
-    c.bench_function("factorial", |b| b.iter(|| machine.evaluate(term.clone())));
+    let interpreter = compile(input).unwrap();
+    c.bench_function("factorial", |b| b.iter(|| interpreter.clone().run()));
 }
 
 fn factorial_tail(c: &mut Criterion) {
     let input = include_str!("factorial_tail.pj");
-    let term = compile(input).unwrap();
-    let mut machine = MachineBuilder::default().build();
-    c.bench_function("factorial_tail", |b| {
-        b.iter(|| machine.evaluate(term.clone()))
-    });
+    let interpreter = compile(input).unwrap();
+    c.bench_function("factorial_tail", |b| b.iter(|| interpreter.clone().run()));
 }
 
 fn fibonacci(c: &mut Criterion) {
     let input = include_str!("fibonacci.pj");
-    let term = compile(input).unwrap();
-    let mut machine = MachineBuilder::default().build();
-    c.bench_function("fibonacci", |b| b.iter(|| machine.evaluate(term.clone())));
+    let interpreter = compile(input).unwrap();
+    c.bench_function("fibonacci", |b| b.iter(|| interpreter.clone().run()));
 }
 
 fn fibonacci_tail(c: &mut Criterion) {
     let input = include_str!("fibonacci_tail.pj");
-    let term = compile(input).unwrap();
-    let mut machine = MachineBuilder::default().build();
-    c.bench_function("fibonacci_tail", |b| {
-        b.iter(|| machine.evaluate(term.clone()))
-    });
+    let interpreter = compile(input).unwrap();
+    c.bench_function("fibonacci_tail", |b| b.iter(|| interpreter.clone().run()));
 }
 
 fn fancy_max(c: &mut Criterion) {
     let input = include_str!("fancy_max.pj");
-    let term = compile(input).unwrap();
-    let mut machine = MachineBuilder::default().build();
-    c.bench_function("fancy_max", |b| b.iter(|| machine.evaluate(term.clone())));
+    let interpreter = compile(input).unwrap();
+    c.bench_function("fancy_max", |b| b.iter(|| interpreter.clone().run()));
 }
 
 fn step(c: &mut Criterion) {
     let input = include_str!("step.pj");
-    let term = compile(input).unwrap();
-    let mut machine = MachineBuilder::default().build();
-    c.bench_function("step", |b| b.iter(|| machine.evaluate(term.clone())));
+    let interpreter = compile(input).unwrap();
+    c.bench_function("step", |b| b.iter(|| interpreter.clone().run()));
 }
 
 fn gcd(c: &mut Criterion) {
     let input = include_str!("gcd.pj");
-    let term = compile(input).unwrap();
-    let mut machine = MachineBuilder::default().build();
-    c.bench_function("gcd", |b| b.iter(|| machine.evaluate(term.clone())));
+    let interpreter = compile(input).unwrap();
+    c.bench_function("gcd", |b| b.iter(|| interpreter.clone().run()));
 }
 
 fn ackermann(c: &mut Criterion) {
     let input = include_str!("ackermann.pj");
-    let term = compile(input).unwrap();
-    let mut machine = MachineBuilder::default().build();
-    c.bench_function("ackermann", |b| b.iter(|| machine.evaluate(term.clone())));
+    let interpreter = compile(input).unwrap();
+    c.bench_function("ackermann", |b| b.iter(|| interpreter.clone().run()));
 }
 
 fn calling(c: &mut Criterion) {
     let input = include_str!("calling.pj");
-    let term = compile(input).unwrap();
-    let mut machine = MachineBuilder::default().build();
-    c.bench_function("calling", |b| b.iter(|| machine.evaluate(term.clone())));
+    let interpreter = compile(input).unwrap();
+    c.bench_function("calling", |b| b.iter(|| interpreter.clone().run()));
 }
 
 fn complex_calling(c: &mut Criterion) {
     let input = include_str!("complex_calling.pj");
-    let term = compile(input).unwrap();
-    let mut machine = MachineBuilder::default().build();
-    c.bench_function("complex_calling", |b| {
-        b.iter(|| machine.evaluate(term.clone()))
-    });
+    let interpreter = compile(input).unwrap();
+    c.bench_function("complex_calling", |b| b.iter(|| interpreter.clone().run()));
 }
 
 fn cond_chain(c: &mut Criterion) {
     let input = include_str!("cond_chain.pj");
-    let term = compile(input).unwrap();
-    let mut machine = MachineBuilder::default().build();
-    c.bench_function("cond_chain", |b| b.iter(|| machine.evaluate(term.clone())));
+    let interpreter = compile(input).unwrap();
+    c.bench_function("cond_chain", |b| b.iter(|| interpreter.clone().run()));
 }
 
 fn short_circuit(c: &mut Criterion) {
     let input = include_str!("short_circuit.pj");
-    let term = compile(input).unwrap();
-    let mut machine = MachineBuilder::default().build();
-    c.bench_function("short_circuit", |b| {
-        b.iter(|| machine.evaluate(term.clone()))
-    });
+    let interpreter = compile(input).unwrap();
+    c.bench_function("short_circuit", |b| b.iter(|| interpreter.clone().run()));
 }
 
 fn adler32(c: &mut Criterion) {
     let input = include_str!("adler32.pj");
-    let term = compile(input).unwrap();
-    let mut machine = MachineBuilder::default().build();
-    c.bench_function("adler32", |b| b.iter(|| machine.evaluate(term.clone())));
+    let interpreter = compile(input).unwrap();
+    c.bench_function("adler32", |b| b.iter(|| interpreter.clone().run()));
 }
 
 criterion_group!(

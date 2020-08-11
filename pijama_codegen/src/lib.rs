@@ -15,6 +15,17 @@ pub fn run(ctx: &Context, term: &Term) {
     interpreter.run();
 }
 
+pub fn compile(ctx: &Context, term: &Term) -> Interpreter {
+    let main = Function::new(0);
+    let mut heap = Heap::new();
+    heap.push(main);
+    let mut compiler = Compiler::new(ctx, &mut heap, 0);
+    compiler.compile(term);
+    // println!("main: {:?}", compiler.func.chunk);
+    *heap.get_mut(0).unwrap() = compiler.func;
+    Interpreter::new(0, heap)
+}
+
 #[derive(Debug, Clone)]
 enum Value {
     Int(i64),
@@ -222,12 +233,14 @@ impl Chunk {
     }
 }
 
+#[derive(Clone)]
 struct CallFrame {
     function: Function,
     ins_ptr: usize,
     base_ptr: usize,
 }
 
+#[derive(Clone)]
 struct CallStack {
     head: CallFrame,
     stack: Vec<CallFrame>,
@@ -260,7 +273,7 @@ impl CallStack {
     }
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 struct ArgStack {
     base_ptr: usize,
     stack: Vec<Value>,
@@ -297,7 +310,8 @@ impl ArgStack {
     }
 }
 
-struct Interpreter {
+#[derive(Clone)]
+pub struct Interpreter {
     arg_stack: ArgStack,
     call_stack: CallStack,
     heap: Heap,
@@ -324,7 +338,7 @@ impl Interpreter {
         Some(op)
     }
 
-    fn run(&mut self) {
+    pub fn run(&mut self) {
         // println!("{:?}", self.arg_stack);
         while let Some(op) = self.read_op() {
             // println!("{:?}", op);
