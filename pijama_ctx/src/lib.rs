@@ -12,6 +12,12 @@ use store::Store;
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct LocalId(usize);
 
+impl LocalId {
+    pub const fn main() -> Self {
+        LocalId(0)
+    }
+}
+
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct TermId(usize);
 
@@ -31,7 +37,7 @@ pub struct Context<'ast> {
 
 impl<'ast> Context<'ast> {
     pub fn new() -> Self {
-        Self {
+        let mut ctx = Self {
             local_store: Store {
                 gen_id: Generator::new(LocalId),
                 locations: HashMap::default(),
@@ -45,7 +51,10 @@ impl<'ast> Context<'ast> {
             locals: HashMap::default(),
             ty_gen: Generator::new(Ty::Var),
             local_gen: Generator::new(Local::Temp),
-        }
+        };
+        let main_id: LocalId = ctx.new_id();
+        ctx.save_local(main_id, Local::Main);
+        ctx
     }
 
     pub fn new_ty(&mut self) -> Ty {

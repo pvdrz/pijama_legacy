@@ -143,26 +143,30 @@ impl<'a> Display for Primitive {
 #[derive(Debug, Clone, Copy)]
 pub enum Local<'a> {
     Name(&'a str),
-    Wildcard,
     Temp(usize),
+    Main,
+    Wildcard,
 }
 
 impl<'a> Display for Local<'a> {
     fn fmt(&self, f: &mut Formatter) -> Result {
         match self {
             Local::Name(name) => write!(f, "{}", name),
-            Local::Wildcard => write!(f, "_"),
             Local::Temp(id) => write!(f, "#{}", id),
+            Local::Main => write!(f, "#main"),
+            Local::Wildcard => write!(f, "_"),
         }
     }
 }
 
 impl<'a> PartialEq for Local<'a> {
     fn eq(&self, other: &Self) -> bool {
-        if let (Local::Name(n1), Local::Name(n2)) = (self, other) {
-            n1 == n2
-        } else {
-            false
+        match (self, other) {
+            (Local::Name(n1), Local::Name(n2)) => n1 == n2,
+            (Local::Temp(n1), Local::Temp(n2)) => n1 == n2,
+            (Local::Main, Local::Main) => true,
+            (Local::Wildcard, Local::Wildcard) => false,
+            _ => false,
         }
     }
 }

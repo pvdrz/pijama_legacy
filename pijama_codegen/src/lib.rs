@@ -1,13 +1,13 @@
 use pijama_common::{BinOp, Literal, UnOp};
 use pijama_ctx::{Context, ContextExt, LocalId};
-use pijama_mir::{BindKind, PrimFn, Term, TermKind};
+use pijama_mir::{PrimFn, RValue, RValueKind, Term, TermKind};
 use pijama_ty::Ty;
 
 pub fn run(ctx: &Context, term: &Term) {
     let main = Function::new(0);
     let mut heap = Heap::new();
     heap.push(main);
-    let mut compiler = Compiler::new(ctx, &mut heap, 0);
+    let mut compiler = Compiler::new(ctx, &mut heap, 0, LocalId::main());
     compiler.compile(term);
     // println!("main: {:?}", compiler.func.chunk);
     *heap.get_mut(0).unwrap() = compiler.func;
@@ -19,7 +19,7 @@ pub fn compile(ctx: &Context, term: &Term) -> Interpreter {
     let main = Function::new(0);
     let mut heap = Heap::new();
     heap.push(main);
-    let mut compiler = Compiler::new(ctx, &mut heap, 0);
+    let mut compiler = Compiler::new(ctx, &mut heap, 0, LocalId::main());
     compiler.compile(term);
     // println!("main: {:?}", compiler.func.chunk);
     *heap.get_mut(0).unwrap() = compiler.func;
@@ -117,15 +117,46 @@ struct Compiler<'ast, 'ctx, 'heap> {
 }
 
 impl<'ast, 'ctx, 'heap> Compiler<'ast, 'ctx, 'heap> {
-    fn new(ctx: &'ctx Context<'ast>, heap: &'heap mut Heap, ptr: usize) -> Self {
+    fn new(ctx: &'ctx Context<'ast>, heap: &'heap mut Heap, ptr: usize, local_id: LocalId) -> Self {
         let func = heap.get(ptr).unwrap().clone();
         Self {
             ctx,
             func,
-            locals: vec![],
+            locals: vec![local_id],
             heap,
         }
     }
+
+    fn compile_rvalue(&mut self, local_id: LocalId, rvalue: &RValue) {
+        // FIXME avoid clone
+        match rvalue.kind.clone() {
+            RValueKind::Term(kind) => self.compile(&Term {
+                id: rvalue.id,
+                kind,
+            }),
+            RValueKind::Abs(ref args, ref body) => {
+                let function = Function::new(args.len());
+                let ptr = self.heap.len();
+                self.heap.push(function);
+
+                let mut compiler = Compiler::new(self.ctx, self.heap, ptr, local_id);
+                for arg in args {
+                    compiler.locals.push(*arg);
+                }
+                compiler.compile(body);
+                compiler.func.write(OpCode::Return);
+                for _ in args {
+                    compiler.locals.pop().unwrap();
+                }
+
+                let func = compiler.func;
+                *self.heap.get_mut(ptr).unwrap() = func;
+
+                self.func.write(OpCode::Push(Value::Ptr(ptr)));
+            }
+        }
+    }
+
     fn compile(&mut self, term: &Term) {
         match &term.kind {
             TermKind::Lit(lit) => {
@@ -181,31 +212,11 @@ impl<'ast, 'ctx, 'heap> Compiler<'ast, 'ctx, 'heap> {
                 };
                 self.func.write(opcode);
             }
-            TermKind::Let(BindKind::NonRec, lhs_id, rhs, tail) => {
-                self.compile(rhs);
+            TermKind::Let(_, lhs_id, rhs, tail) => {
                 self.locals.push(*lhs_id);
+                self.compile_rvalue(*lhs_id, rhs);
                 self.compile(tail);
                 self.locals.pop().unwrap();
-            }
-            TermKind::Abs(args, body) => {
-                let function = Function::new(args.len());
-                let ptr = self.heap.len();
-                self.heap.push(function);
-
-                let mut compiler = Compiler::new(self.ctx, self.heap, ptr);
-                for arg in args {
-                    compiler.locals.push(*arg);
-                }
-                compiler.compile(body);
-                compiler.func.write(OpCode::Return);
-                for _ in args {
-                    compiler.locals.pop().unwrap();
-                }
-
-                let func = compiler.func;
-                *self.heap.get_mut(ptr).unwrap() = func;
-
-                self.func.write(OpCode::Push(Value::Ptr(ptr)));
             }
             TermKind::App(func, args) => {
                 self.compile(func);
@@ -230,11 +241,6 @@ impl<'ast, 'ctx, 'heap> Compiler<'ast, 'ctx, 'heap> {
                 let end_else = self.func.chunk.code.len();
 
                 self.func.chunk.code[start_else - 1] = OpCode::Skip(end_else - start_else);
-            }
-            _ => {
-                print!("Cannot compile ");
-                term.show(self.ctx);
-                panic!()
             }
         }
     }
@@ -295,10 +301,19 @@ impl CallStack {
     }
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Debug, Clone)]
 struct ArgStack {
     base_ptr: usize,
     stack: Vec<Value>,
+}
+
+impl Default for ArgStack {
+    fn default() -> Self {
+        Self {
+            base_ptr: 0,
+            stack: vec![Value::Ptr(0)],
+        }
+    }
 }
 
 impl ArgStack {
@@ -322,13 +337,16 @@ impl ArgStack {
         self.stack.len() - self.base_ptr
     }
 
-    fn inc_base(&mut self, base_ptr: usize) {
-        self.base_ptr += base_ptr;
+    fn inc_base(&mut self, offset: usize) {
+        self.base_ptr += offset;
     }
 
-    fn truncate(&mut self, base_ptr: usize) {
+    fn dec_base(&mut self, offset: usize) {
+        self.base_ptr -= offset;
+    }
+
+    fn clean(&mut self) {
         self.stack.truncate(self.base_ptr);
-        self.base_ptr = base_ptr;
     }
 }
 
@@ -495,13 +513,8 @@ impl Interpreter {
                     self.arg_stack.push(value);
                 }
                 OpCode::Call(arity) => {
-                    let base_ptr = self.arg_stack.len() - arity;
-                    let ptr = self
-                        .arg_stack
-                        .get(base_ptr - 1)
-                        .unwrap()
-                        .clone()
-                        .assert_ptr();
+                    let base_ptr = self.arg_stack.len() - arity - 1;
+                    let ptr = self.arg_stack.get(base_ptr).unwrap().clone().assert_ptr();
                     self.arg_stack.inc_base(base_ptr);
                     self.call_stack.push(CallFrame {
                         function: self.heap.get(ptr).cloned().unwrap(),
@@ -511,9 +524,9 @@ impl Interpreter {
                 }
                 OpCode::Return => {
                     let ret_value = self.arg_stack.pop().unwrap();
-                    self.call_stack.pop().unwrap();
-                    self.arg_stack.truncate(self.call_stack.head().base_ptr);
-                    self.arg_stack.pop().unwrap();
+                    let base_ptr = self.call_stack.pop().unwrap().base_ptr;
+                    self.arg_stack.clean();
+                    self.arg_stack.dec_base(base_ptr);
                     self.arg_stack.push(ret_value);
                 }
                 OpCode::JumpIfFalse(offset) => {
