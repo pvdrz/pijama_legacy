@@ -79,6 +79,7 @@ enum OpCode {
     Local(usize),
     Call(usize),
     Push(Value),
+    Pop,
     Return,
     JumpIfFalse(usize),
     Skip(usize),
@@ -228,6 +229,7 @@ impl<'ast, 'ctx, 'heap> Compiler<'ast, 'ctx, 'heap> {
             TermKind::Cond(if_term, do_term, else_term) => {
                 self.compile(if_term.as_ref());
                 self.func.write(OpCode::JumpIfFalse(usize::max_value()));
+                self.func.write(OpCode::Pop);
 
                 let start_do = self.func.chunk.code.len();
                 self.compile(do_term.as_ref());
@@ -331,6 +333,10 @@ impl ArgStack {
 
     fn get(&self, index: usize) -> Option<&Value> {
         self.stack.get(index + self.base_ptr)
+    }
+
+    fn last(&self) -> Option<&Value> {
+        self.stack.last()
     }
 
     fn len(&self) -> usize {
@@ -508,6 +514,9 @@ impl Interpreter {
                     let value = value.clone();
                     self.arg_stack.push(value);
                 }
+                OpCode::Pop => {
+                    self.arg_stack.pop().unwrap();
+                }
                 OpCode::Local(index) => {
                     let value = self.arg_stack.get(index).unwrap().clone();
                     self.arg_stack.push(value);
@@ -530,7 +539,7 @@ impl Interpreter {
                     self.arg_stack.push(ret_value);
                 }
                 OpCode::JumpIfFalse(offset) => {
-                    let cond = self.arg_stack.pop().unwrap().assert_int();
+                    let cond = self.arg_stack.last().unwrap().clone().assert_int();
 
                     if cond == 0 {
                         self.call_stack.head_mut().ins_ptr += offset;
