@@ -9,7 +9,7 @@ pub fn run(ctx: &Context, term: &Term) {
     heap.push(main);
     let mut compiler = Compiler::new(ctx, &mut heap, 0, LocalId::main());
     compiler.compile(term);
-    // println!("main: {:?}", compiler.func.chunk);
+    println!("main: {:?}", compiler.func.chunk);
     *heap.get_mut(0).unwrap() = compiler.func;
     let mut interpreter = Interpreter::new(0, heap);
     interpreter.run();
@@ -21,7 +21,7 @@ pub fn compile(ctx: &Context, term: &Term) -> Interpreter {
     heap.push(main);
     let mut compiler = Compiler::new(ctx, &mut heap, 0, LocalId::main());
     compiler.compile(term);
-    // println!("main: {:?}", compiler.func.chunk);
+    println!("main: {:?}", compiler.func.chunk);
     *heap.get_mut(0).unwrap() = compiler.func;
     Interpreter::new(0, heap)
 }
@@ -81,6 +81,7 @@ enum OpCode {
     Push(Value),
     Pop,
     Return,
+    JumpIfTrue(usize),
     JumpIfFalse(usize),
     Skip(usize),
 }
@@ -178,6 +179,30 @@ impl<'ast, 'ctx, 'heap> Compiler<'ast, 'ctx, 'heap> {
                 }
                 panic!("could not find {:?}", id)
             }
+            TermKind::PrimApp(PrimFn::BinOp(BinOp::And), args) => {
+                self.compile(&args[0]);
+                self.func.write(OpCode::JumpIfFalse(usize::max_value()));
+
+                let start_arg_1 = self.func.chunk.code.len();
+                self.func.write(OpCode::Pop);
+                self.compile(&args[1]);
+                let end_arg_1 = self.func.chunk.code.len();
+
+                self.func.chunk.code[start_arg_1 - 1] =
+                    OpCode::JumpIfFalse(end_arg_1 - start_arg_1);
+            }
+            TermKind::PrimApp(PrimFn::BinOp(BinOp::Or), args) => {
+                self.compile(&args[0]);
+                self.func.write(OpCode::JumpIfTrue(usize::max_value()));
+
+                let start_arg_1 = self.func.chunk.code.len();
+                self.func.write(OpCode::Pop);
+                self.compile(&args[1]);
+                let end_arg_1 = self.func.chunk.code.len();
+
+                self.func.chunk.code[start_arg_1 - 1] =
+                    OpCode::JumpIfTrue(end_arg_1 - start_arg_1);
+            }
             TermKind::PrimApp(prim, args) => {
                 for arg in args.iter().take(prim.arity()) {
                     self.compile(arg);
@@ -197,8 +222,6 @@ impl<'ast, 'ctx, 'heap> Compiler<'ast, 'ctx, 'heap> {
                     PrimFn::BinOp(BinOp::Mul) => OpCode::Mul,
                     PrimFn::BinOp(BinOp::Div) => OpCode::Div,
                     PrimFn::BinOp(BinOp::Rem) => OpCode::Rem,
-                    PrimFn::BinOp(BinOp::And) => OpCode::And,
-                    PrimFn::BinOp(BinOp::Or) => OpCode::Or,
                     PrimFn::BinOp(BinOp::BitAnd) => OpCode::BitAnd,
                     PrimFn::BinOp(BinOp::BitOr) => OpCode::BitOr,
                     PrimFn::BinOp(BinOp::BitXor) => OpCode::BitXor,
@@ -210,6 +233,7 @@ impl<'ast, 'ctx, 'heap> Compiler<'ast, 'ctx, 'heap> {
                     PrimFn::BinOp(BinOp::Gt) => OpCode::Gt,
                     PrimFn::BinOp(BinOp::Lte) => OpCode::Lte,
                     PrimFn::BinOp(BinOp::Gte) => OpCode::Gte,
+                    PrimFn::BinOp(BinOp::And) | PrimFn::BinOp(BinOp::Or) => unreachable!(),
                 };
                 self.func.write(opcode);
             }
@@ -229,12 +253,13 @@ impl<'ast, 'ctx, 'heap> Compiler<'ast, 'ctx, 'heap> {
             TermKind::Cond(if_term, do_term, else_term) => {
                 self.compile(if_term.as_ref());
                 self.func.write(OpCode::JumpIfFalse(usize::max_value()));
-                self.func.write(OpCode::Pop);
 
                 let start_do = self.func.chunk.code.len();
+                self.func.write(OpCode::Pop);
                 self.compile(do_term.as_ref());
                 self.func.write(OpCode::Skip(usize::max_value()));
                 let end_do = self.func.chunk.code.len();
+                self.func.write(OpCode::Pop);
 
                 self.func.chunk.code[start_do - 1] = OpCode::JumpIfFalse(end_do - start_do);
 
@@ -385,9 +410,9 @@ impl Interpreter {
     }
 
     pub fn run(&mut self) {
-        // println!("{:?}", self.arg_stack);
+        println!("{:?}", self.arg_stack);
         while let Some(op) = self.read_op() {
-            // println!("{:?}", op);
+            println!("{:?}", op);
             match op {
                 OpCode::PrintInt => {
                     let int = self.arg_stack.pop().unwrap().assert_int();
@@ -538,6 +563,13 @@ impl Interpreter {
                     self.arg_stack.dec_base(base_ptr);
                     self.arg_stack.push(ret_value);
                 }
+                OpCode::JumpIfTrue(offset) => {
+                    let cond = self.arg_stack.last().unwrap().clone().assert_int();
+
+                    if cond != 0 {
+                        self.call_stack.head_mut().ins_ptr += offset;
+                    }
+                }
                 OpCode::JumpIfFalse(offset) => {
                     let cond = self.arg_stack.last().unwrap().clone().assert_int();
 
@@ -549,7 +581,7 @@ impl Interpreter {
                     self.call_stack.head_mut().ins_ptr += offset;
                 }
             }
-            // println!("{:?}", self.arg_stack);
+            println!("{:?}", self.arg_stack);
         }
     }
 }
