@@ -2,7 +2,7 @@ mod arg_stack;
 mod call_stack;
 mod closure;
 mod heap;
-pub mod instruction;
+mod instruction;
 
 use arg_stack::ArgStack;
 use call_stack::CallStack;
@@ -15,8 +15,7 @@ pub const EXIT: u8 = 93;
 macro_rules! use_instructions {
     ($($instruction:ident), *) => {
         use std::io;
-        use instruction::Instruction;
-        use instruction::{ $($instruction, )* };
+        pub use instruction::{Instruction, $($instruction, )* };
 
         impl<'code> Machine<'code> {
             pub fn run(&mut self) {
@@ -37,7 +36,7 @@ macro_rules! use_instructions {
         fn disassemble<W: io::Write>(code: &CodeSlice, w: &mut W) -> io::Result<()> {
             let mut index = 0;
             while let Some(byte) = code.read_u8(index) {
-                write!(w, "{}: ", index);
+                write!(w, "{:04}: ", index)?;
                 index += 1;
                 index = match byte {
                     $($instruction::CODE => $instruction::disassemble(code, index, w)?, )*
@@ -82,6 +81,7 @@ use_instructions!(
     Jump,
     JumpIfZero,
     JumpNonZero,
+    PushClosure,
     Return,
     Call
 );
@@ -119,38 +119,5 @@ impl<'code> Machine<'code> {
         let byte = frame.code().read_u8(ins_ptr).unwrap();
         *frame.ins_ptr_mut() += 1;
         byte
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn it_works() {
-        let mut code = CodeBuf::default();
-
-        code.write_u8(Push::CODE);
-        code.write_i64(10);
-
-        code.write_u8(Push::CODE);
-        code.write_i64(20);
-
-        code.write_u8(Add::CODE);
-
-        code.write_u8(255);
-
-        // code.disassemble();
-
-        let code = vec![code];
-
-        let main_ptr = FuncPtr::new(0);
-
-        let heap = Heap::new();
-
-        let main = heap.insert(Closure::new(main_ptr));
-
-        let mut machine = Machine::new(main, &code);
-
-        machine.run();
     }
 }

@@ -2,7 +2,7 @@ use pijama_common::{BinOp, Literal, UnOp};
 use pijama_ctx::{Context, ContextExt, LocalId};
 use pijama_mir::{Lambda, PrimFn, Term, TermKind};
 use pijama_ty::Ty;
-use pijama_vm::{instruction::*, Closure, CodeBuf, FuncPtr, Heap, Machine, EXIT};
+use pijama_vm::*;
 
 pub fn run(ctx: &Context, term: &Term) {
     let heap = Heap::new();
@@ -24,7 +24,12 @@ pub fn run(ctx: &Context, term: &Term) {
     Machine::new(main, &code).run();
 }
 
-pub fn compile<'code>(ctx: &Context, code: &'code mut Vec<CodeBuf>, heap: &'code Heap, term: &Term) -> Machine<'code> {
+pub fn compile<'code>(
+    ctx: &Context,
+    code: &'code mut Vec<CodeBuf>,
+    heap: &'code Heap,
+    term: &Term,
+) -> Machine<'code> {
     code.push(CodeBuf::default());
 
     let mut compiler = Compiler::new(ctx, code, &heap, LocalId::main());
@@ -86,7 +91,7 @@ impl<'ast, 'ctx, 'code> Compiler<'ast, 'ctx, 'code> {
 
         let ptr = self.heap.insert(Closure::new(func_ptr));
 
-        self.code().write_u8(Push::CODE);
+        self.code().write_u8(PushClosure::CODE);
         self.code().write_i64(ptr as i64);
     }
 

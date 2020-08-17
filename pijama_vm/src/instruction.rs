@@ -340,10 +340,33 @@ impl Instruction for JumpNonZero {
 // Call Stack Instructions
 // -----------------------
 
+pub struct PushClosure;
+
+impl Instruction for PushClosure {
+    const CODE: u8 = 122;
+
+    fn run(machine: &mut Machine) {
+        let value = unsafe { machine.read_i64() };
+
+        machine.arg_stack.push(value);
+    }
+
+    fn disassemble<W: io::Write>(
+        code: &CodeSlice,
+        index: usize,
+        buffer: &mut W,
+    ) -> io::Result<usize> {
+        let value = code.read_i64(index).unwrap();
+
+        writeln!(buffer, "PushClosure 0x{:x}", value)?;
+        Ok(index + 8)
+    }
+}
+
 pub struct Return;
 
 impl Instruction for Return {
-    const CODE: u8 = 122;
+    const CODE: u8 = 123;
 
     fn run(machine: &mut Machine) {
         let return_value = machine.arg_stack.pop().unwrap();
@@ -368,7 +391,7 @@ impl Instruction for Return {
 pub struct Call;
 
 impl Instruction for Call {
-    const CODE: u8 = 123;
+    const CODE: u8 = 124;
 
     fn run(machine: &mut Machine) {
         let arity = unsafe { machine.read_i64() } as usize;
