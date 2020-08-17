@@ -1,9 +1,9 @@
 use pijama_common::Primitive;
 use pijama_ctx::{Context, ContextExt, LocalId, TermId, TypeInfo};
-use pijama_hir::{BindKind as HirBindKind, Term as HirTerm, TermKind as HirTermKind};
+use pijama_hir::{Term as HirTerm, TermKind as HirTermKind};
 use pijama_ty::Ty;
 
-use crate::{BindKind, PrimFn, RValue, RValueKind, Term, TermKind};
+use crate::{Lambda, PrimFn, Term, TermKind};
 
 pub(crate) fn lower_term(term: &HirTerm, ctx: &mut Context) -> Term {
     let kind = match &term.kind {
@@ -23,6 +23,8 @@ pub(crate) fn lower_term(term: &HirTerm, ctx: &mut Context) -> Term {
             vec![lower_term(t1, ctx), lower_term(t2, ctx)],
         ),
         HirTermKind::Abs(arg, body) => {
+            let lambda = lower_abs(ctx, term.id, *arg, body.as_ref());
+
             let loc = ctx.get_location(term.id).unwrap();
             let info = ctx.get_type_info(term.id).unwrap().clone();
 
@@ -30,25 +32,11 @@ pub(crate) fn lower_term(term: &HirTerm, ctx: &mut Context) -> Term {
             ctx.insert_location(local_id, loc);
             ctx.insert_type_info(local_id, info.clone());
 
-            let rvalue_id: TermId = ctx.new_id();
-            ctx.insert_location(rvalue_id, loc);
-            ctx.insert_type_info(rvalue_id, info.clone());
-
-            let var_id: TermId = ctx.new_id();
-            ctx.insert_location(var_id, loc);
-            ctx.insert_type_info(var_id, info.clone());
-
-            let rvalue = RValue {
-                id: rvalue_id,
-                kind: lower_abs(ctx, *arg, body.as_ref()),
-            };
-
             TermKind::Let(
-                BindKind::NonRec,
                 local_id,
-                Box::new(rvalue),
+                Box::new(lambda),
                 Box::new(Term {
-                    id: var_id,
+                    id: term.id,
                     kind: TermKind::Var(local_id),
                 }),
             )
@@ -127,25 +115,13 @@ pub(crate) fn lower_term(term: &HirTerm, ctx: &mut Context) -> Term {
                 ctx.insert_location(local_id, loc);
                 ctx.insert_type_info(local_id, func_info.clone());
 
-                let rvalue_id: TermId = ctx.new_id();
-                ctx.insert_location(rvalue_id, loc);
-                ctx.insert_type_info(rvalue_id, func_info.clone());
-
-                let var_id: TermId = ctx.new_id();
-                ctx.insert_location(var_id, loc);
-                ctx.insert_type_info(var_id, func_info.clone());
-
-                let rvalue = RValue {
-                    id: rvalue_id,
-                    kind: RValueKind::Abs(new_args, Term { id: body_id, kind }),
-                };
+                let lambda = Lambda(func.id, new_args, Term { id: body_id, kind });
 
                 TermKind::Let(
-                    BindKind::NonRec,
                     local_id,
-                    Box::new(rvalue),
+                    Box::new(lambda),
                     Box::new(Term {
-                        id: var_id,
+                        id: func.id,
                         kind: TermKind::Var(local_id),
                     }),
                 )
@@ -158,20 +134,12 @@ pub(crate) fn lower_term(term: &HirTerm, ctx: &mut Context) -> Term {
             Box::new(lower_term(do_term, ctx)),
             Box::new(lower_term(el_term, ctx)),
         ),
-        HirTermKind::Let(kind, lhs, rhs, tail) => {
-            let kind = match kind {
-                HirBindKind::NonRec => BindKind::NonRec,
-                HirBindKind::Rec => BindKind::Rec,
-            };
+        HirTermKind::Let(_, lhs, rhs, tail) => {
             let rvalue = match &rhs.kind {
-                HirTermKind::Abs(arg, body) => RValue {
-                    id: rhs.id,
-                    kind: lower_abs(ctx, *arg, body.as_ref()),
-                },
-                _ => lower_term(rhs.as_ref(), ctx).into_rvalue(),
+                HirTermKind::Abs(arg, body) => lower_abs(ctx, rhs.id, *arg, body.as_ref()),
+                _ => Lambda::thunk(lower_term(rhs.as_ref(), ctx)),
             };
             TermKind::Let(
-                kind,
                 *lhs,
                 Box::new(rvalue),
                 Box::new(lower_term(tail.as_ref(), ctx)),
@@ -181,7 +149,7 @@ pub(crate) fn lower_term(term: &HirTerm, ctx: &mut Context) -> Term {
     Term { id: term.id, kind }
 }
 
-fn lower_abs(ctx: &mut Context, arg: LocalId, mut body: &HirTerm) -> RValueKind {
+fn lower_abs(ctx: &mut Context, term_id: TermId, arg: LocalId, mut body: &HirTerm) -> Lambda {
     let mut args = vec![arg];
 
     while let HirTermKind::Abs(arg, new_body) = &body.kind {
@@ -189,5 +157,5 @@ fn lower_abs(ctx: &mut Context, arg: LocalId, mut body: &HirTerm) -> RValueKind 
         body = new_body;
     }
 
-    RValueKind::Abs(args, lower_term(body, ctx))
+    Lambda(term_id, args, lower_term(body, ctx))
 }

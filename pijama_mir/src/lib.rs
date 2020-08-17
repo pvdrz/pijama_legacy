@@ -31,15 +31,6 @@ pub struct Term {
     pub kind: TermKind,
 }
 
-impl Term {
-    fn into_rvalue(self) -> RValue {
-        RValue {
-            id: self.id,
-            kind: RValueKind::Term(self.kind),
-        }
-    }
-}
-
 #[derive(Debug, Clone)]
 pub enum TermKind {
     Lit(Literal),
@@ -47,20 +38,18 @@ pub enum TermKind {
     App(Box<Term>, Vec<Term>),
     PrimApp(PrimFn, Vec<Term>),
     Cond(Box<Term>, Box<Term>, Box<Term>),
-    Let(BindKind, LocalId, Box<RValue>, Box<Term>),
+    Let(LocalId, Box<Lambda>, Box<Term>),
 }
 
 #[derive(Debug, Clone)]
-pub struct RValue {
-    pub id: TermId,
-    pub kind: RValueKind,
+pub struct Lambda(pub TermId, pub Vec<LocalId>, pub Term);
+
+impl Lambda {
+    pub fn thunk(term: Term) -> Self {
+        Lambda(term.id, vec![], term)
+    }
 }
 
-#[derive(Debug, Clone)]
-pub enum RValueKind {
-    Term(TermKind),
-    Abs(Vec<LocalId>, Term),
-}
 
 impl<'ast> Term {
     pub fn from_hir(term: &pijama_hir::Term, ctx: &mut Context) -> Term {

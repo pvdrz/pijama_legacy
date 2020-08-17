@@ -63,8 +63,6 @@ enum OpCode {
     Mul,
     Div,
     Rem,
-    And,
-    Or,
     BitAnd,
     BitOr,
     BitXor,
@@ -237,7 +235,7 @@ impl<'ast, 'ctx, 'heap> Compiler<'ast, 'ctx, 'heap> {
                 };
                 self.func.write(opcode);
             }
-            TermKind::Let(_, lhs_id, rhs, tail) => {
+            TermKind::Let(lhs_id, rhs, tail) => {
                 self.locals.push(*lhs_id);
                 self.compile_rvalue(*lhs_id, rhs);
                 self.compile(tail);
@@ -311,10 +309,6 @@ impl CallStack {
 
     fn head_mut(&mut self) -> &mut CallFrame {
         &mut self.head
-    }
-
-    fn head(&self) -> &CallFrame {
-        &self.head
     }
 
     fn push(&mut self, head: CallFrame) {
@@ -467,18 +461,6 @@ impl Interpreter {
                     let int2 = self.arg_stack.pop().unwrap().assert_int();
                     let int1 = self.arg_stack.pop().unwrap().assert_int();
                     self.arg_stack.push(Value::Int(int1 % int2));
-                }
-                OpCode::And => {
-                    // FIXME this need short-circuiting
-                    let int2 = self.arg_stack.pop().unwrap().assert_int() != 0;
-                    let int1 = self.arg_stack.pop().unwrap().assert_int() != 0;
-                    self.arg_stack.push(Value::Int((int1 && int2).into()));
-                }
-                OpCode::Or => {
-                    // FIXME this need short-circuiting
-                    let int2 = self.arg_stack.pop().unwrap().assert_int() != 0;
-                    let int1 = self.arg_stack.pop().unwrap().assert_int() != 0;
-                    self.arg_stack.push(Value::Int((int1 || int2).into()));
                 }
                 OpCode::BitAnd => {
                     let int2 = self.arg_stack.pop().unwrap().assert_int();
