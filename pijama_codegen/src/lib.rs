@@ -12,14 +12,12 @@ pub fn run(ctx: &Context, term: &Term) {
     compiler.compile(term);
     code[0].write_u8(EXIT);
 
+    println!("main:");
+    code[0].disassemble();
+
     let main_ptr = FuncPtr::new(0);
 
     let main = heap.insert(Closure::new(main_ptr));
-
-    for code in &code {
-        // println!("{:?}", code);
-        code.disassemble()
-    }
 
     Machine::new(main, &code).run();
 }
@@ -90,6 +88,9 @@ impl<'ast, 'ctx, 'code> Compiler<'ast, 'ctx, 'code> {
         let func_ptr = FuncPtr::new(code_ptr);
 
         let ptr = self.heap.insert(Closure::new(func_ptr));
+
+        println!("{}:", self.ctx.get_local(local_id).unwrap());
+        compiler.code().disassemble();
 
         self.code().write_u8(PushClosure::CODE);
         self.code().write_i64(ptr as i64);
