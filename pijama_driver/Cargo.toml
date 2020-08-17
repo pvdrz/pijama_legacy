@@ -17,6 +17,7 @@ pijama_lir = { path = "../pijama_lir" }
 pijama_machine = { path = "../pijama_machine" }
 pijama_common = { path = "../pijama_common" }
 pijama_codegen = { path = "../pijama_codegen" }
+pijama_vm = { path = "../pijama_vm" }
 
 [dev-dependencies]
 criterion = "0.3"
