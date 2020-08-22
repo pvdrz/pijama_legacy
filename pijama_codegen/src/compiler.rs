@@ -4,11 +4,66 @@ use pijama_mir::{Lambda, PrimFn, Term, TermKind};
 use pijama_ty::Ty;
 use pijama_vm::*;
 
+#[derive(Clone, Eq, PartialEq)]
+struct Upvalue {
+    index: usize,
+    is_local: bool,
+}
+
+impl Upvalue {
+    fn new(index: usize, is_local: bool) -> Self {
+        Self { index, is_local }
+    }
+}
+
+struct Scope {
+    locals: Vec<LocalId>,
+    upvalues: Vec<Upvalue>,
+}
+
+impl Scope {
+    fn new(id: LocalId) -> Self {
+        Self {
+            locals: vec![id],
+            upvalues: vec![],
+        }
+    }
+
+    fn push_local(&mut self, id: LocalId) {
+        self.locals.push(id);
+    }
+
+    fn pop_local(&mut self) {
+        self.locals.pop().unwrap();
+    }
+
+    fn resolve_local(&self, id: LocalId) -> Option<usize> {
+        for (index, id2) in self.locals.iter().enumerate().rev() {
+            if *id2 == id {
+                return Some(index);
+            }
+        }
+        None
+    }
+
+    fn add_upvalue(&mut self, new_upvalue: Upvalue) -> usize {
+        for (index, upvalue) in self.upvalues.iter().enumerate() {
+            if *upvalue == new_upvalue {
+                return index;
+            }
+        }
+
+        let index = self.upvalues.len();
+        self.upvalues.push(new_upvalue);
+
+        index
+    }
+}
+
 pub(crate) struct Compiler<'ast, 'ctx, 'code> {
     ctx: &'ctx Context<'ast>,
-    locals: Vec<LocalId>,
+    scopes: Vec<Scope>,
     code: &'code mut Vec<CodeBuf>,
-    index: usize,
     heap: &'code Heap,
 }
 
@@ -19,44 +74,71 @@ impl<'ast, 'ctx, 'code> Compiler<'ast, 'ctx, 'code> {
         heap: &'code Heap,
         local_id: LocalId,
     ) -> Self {
-        let index = code.len() - 1;
         Self {
             ctx,
-            locals: vec![local_id],
+            scopes: vec![Scope::new(local_id)],
             code,
-            index,
             heap,
         }
     }
 
+    fn scope_mut(&mut self, lvl: usize) -> &mut Scope {
+        let index = self.scopes.len() - lvl - 1;
+        if let Some(scope) = self.scopes.get_mut(index) {
+            scope
+        } else {
+            panic!("Reached root scope")
+        }
+    }
+
     fn code(&mut self) -> &mut CodeBuf {
-        &mut self.code[self.index]
+        &mut self.code[self.scopes.len() - 1]
     }
 
     fn compile_lambda(&mut self, local_id: LocalId, Lambda(_, args, body): &Lambda) {
-        let code_ptr = self.index + 1;
-
+        self.scopes.push(Scope::new(local_id));
         self.code.push(CodeBuf::default());
 
-        let mut compiler = Compiler::new(self.ctx, self.code, self.heap, local_id);
         for arg in args {
-            compiler.locals.push(*arg);
+            self.scope_mut(0).push_local(*arg);
         }
-        compiler.compile(body);
-        compiler.code().write_u8(Return::CODE);
+        self.compile(body);
+        self.code().write_u8(Return::CODE);
         for _ in args {
-            compiler.locals.pop().unwrap();
+            self.scope_mut(0).pop_local();
         }
 
-        let func_ptr = FuncPtr::new(code_ptr);
-
+        let func_ptr = FuncPtr::new(self.scopes.len() - 1);
         let ptr = self.heap.insert(Closure::new(func_ptr));
 
         println!("{}:", self.ctx.get_local(local_id).unwrap());
-        compiler.code().disassemble();
+        self.code().disassemble();
+
+        let scope = self.scopes.pop().unwrap();
 
         self.code().write_u8(PushClosure::CODE);
         self.code().write_i64(ptr as i64);
+        self.code().write_i64(scope.upvalues.len() as i64);
+
+        for upvalue in scope.upvalues {
+            self.code().write_u8(upvalue.is_local.into());
+            self.code().write_i64(upvalue.index as i64);
+        }
+    }
+
+    fn resolve_local(&mut self, id: LocalId, level: usize) -> Option<usize> {
+        self.scope_mut(level).resolve_local(id)
+    }
+
+    fn resolve_upvalue(&mut self, id: LocalId, level: usize) -> usize {
+        let upvalue = if let Some(local) = self.resolve_local(id, level + 1) {
+            Upvalue::new(local, true)
+        } else {
+            let index = self.resolve_upvalue(id, level + 1);
+            Upvalue::new(index, false)
+        };
+
+        self.scope_mut(level).add_upvalue(upvalue)
     }
 
     pub(crate) fn compile(&mut self, term: &Term) {
@@ -71,15 +153,15 @@ impl<'ast, 'ctx, 'code> Compiler<'ast, 'ctx, 'code> {
                 self.code().write_u8(Push::CODE);
                 self.code().write_i64(int);
             }
-            TermKind::Var(id) => {
-                for (index, id2) in self.locals.iter().enumerate().rev() {
-                    if id2 == id {
-                        self.code().write_u8(PushLocal::CODE);
-                        self.code().write_i64(index as i64);
-                        return;
-                    }
+            &TermKind::Var(id) => {
+                if let Some(index) = self.resolve_local(id, 0) {
+                    self.code().write_u8(PushLocal::CODE);
+                    self.code().write_i64(index as i64);
+                } else {
+                    let index = self.resolve_upvalue(id, 0);
+                    self.code().write_u8(PushUpvalue::CODE);
+                    self.code().write_i64(index as i64);
                 }
-                panic!("could not find {:?}", id)
             }
             TermKind::PrimApp(PrimFn::BinOp(BinOp::And), args) => {
                 self.compile(&args[0]);
@@ -143,14 +225,14 @@ impl<'ast, 'ctx, 'code> Compiler<'ast, 'ctx, 'code> {
                 self.code().write_u8(opcode);
             }
             TermKind::Let(lhs_id, rhs, tail) => {
-                self.locals.push(*lhs_id);
+                self.scope_mut(0).push_local(*lhs_id);
                 if rhs.1.len() > 0 {
                     self.compile_lambda(*lhs_id, rhs);
                 } else {
                     self.compile(&rhs.2);
                 }
                 self.compile(tail);
-                self.locals.pop().unwrap();
+                self.scope_mut(0).pop_local();
             }
             TermKind::App(func, args) => {
                 self.compile(func);

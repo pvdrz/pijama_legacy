@@ -78,6 +78,7 @@ use_instructions!(
     Push,
     Pop,
     PushLocal,
+    PushUpvalue,
     Jump,
     JumpIfZero,
     JumpNonZero,

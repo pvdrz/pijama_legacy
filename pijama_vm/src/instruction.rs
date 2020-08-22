@@ -259,6 +259,28 @@ impl Instruction for PushLocal {
     }
 }
 
+pub struct PushUpvalue;
+
+impl Instruction for PushUpvalue {
+    const CODE: u8 = 150;
+
+    fn run(machine: &mut Machine) {
+        let index = unsafe { machine.read_i64() } as usize;
+
+        todo!()
+    }
+
+    fn disassemble<W: io::Write>(
+        code: &CodeSlice,
+        index: usize,
+        buffer: &mut W,
+    ) -> io::Result<usize> {
+        let offset = code.read_i64(index).unwrap() as usize;
+
+        writeln!(buffer, "PushUpvalue {}", offset)?;
+        Ok(index + 8)
+    }
+}
 // -------------------------
 // Control Flow Instructions
 // -------------------------
@@ -353,13 +375,25 @@ impl Instruction for PushClosure {
 
     fn disassemble<W: io::Write>(
         code: &CodeSlice,
-        index: usize,
+        mut index: usize,
         buffer: &mut W,
     ) -> io::Result<usize> {
         let value = code.read_i64(index).unwrap();
+        index += 8;
+        let count = code.read_i64(index).unwrap();
+        index += 8;
 
-        writeln!(buffer, "PushClosure 0x{:x}", value)?;
-        Ok(index + 8)
+        writeln!(buffer, "PushClosure 0x{:x} {}", value, count)?;
+
+        for _ in 0..count {
+            let is_local = code.read_u8(index).unwrap() == 0;
+            index += 1;
+            let upvalue_index = code.read_u8(index).unwrap();
+            index += 8;
+
+            writeln!(buffer, "      Upvalue {} {}", is_local, upvalue_index)?;
+        }
+        Ok(index)
     }
 }
 
