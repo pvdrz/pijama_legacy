@@ -266,8 +266,8 @@ impl Instruction for PushUpvalue {
 
     fn run(machine: &mut Machine) {
         let index = unsafe { machine.read_i64() } as usize;
-
-        todo!()
+        let upvalue = unsafe { &*(machine.call_stack.last_mut().closure()) }.get_upvalue(index);
+        machine.arg_stack.push(upvalue);
     }
 
     fn disassemble<W: io::Write>(
@@ -369,6 +369,20 @@ impl Instruction for PushClosure {
 
     fn run(machine: &mut Machine) {
         let value = unsafe { machine.read_i64() };
+        let count = unsafe { machine.read_i64() } as usize;
+
+        let closure = unsafe { &mut *(value as *mut Closure) };
+        for i in 0..count {
+            let is_local = unsafe { machine.read_u8() } != 0;
+            let index = unsafe { machine.read_i64() } as usize;
+
+            if is_local {
+                closure.push_upvalue(machine.arg_stack[index]);
+            } else {
+                let peek_closure = unsafe { &*(machine.call_stack.peek().closure()) };
+                closure.push_upvalue(peek_closure.get_upvalue(index));
+            }
+        }
 
         machine.arg_stack.push(value);
     }
@@ -386,9 +400,9 @@ impl Instruction for PushClosure {
         writeln!(buffer, "PushClosure 0x{:x} {}", value, count)?;
 
         for _ in 0..count {
-            let is_local = code.read_u8(index).unwrap() == 0;
+            let is_local = code.read_u8(index).unwrap() != 0;
             index += 1;
-            let upvalue_index = code.read_u8(index).unwrap();
+            let upvalue_index = code.read_i64(index).unwrap();
             index += 8;
 
             writeln!(buffer, "      Upvalue {} {}", is_local, upvalue_index)?;

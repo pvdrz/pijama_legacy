@@ -93,14 +93,23 @@ impl FuncPtr {
 
 pub struct Closure {
     func_ptr: FuncPtr,
+    upvalues: Vec<i64>,
 }
 
 impl Closure {
     pub fn new(func_ptr: FuncPtr) -> Self {
-        Self { func_ptr }
+        Self { func_ptr, upvalues: Vec::new() }
     }
 
     pub fn func_ptr(&self) -> FuncPtr {
         self.func_ptr
+    }
+
+    pub fn push_upvalue(&mut self, value: i64) {
+        self.upvalues.push(value);
+    }
+
+    pub fn get_upvalue(&self, i: usize) -> i64{
+        self.upvalues[i]
     }
 }

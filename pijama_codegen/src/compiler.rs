@@ -111,7 +111,12 @@ impl<'ast, 'ctx, 'code> Compiler<'ast, 'ctx, 'code> {
         let func_ptr = FuncPtr::new(self.scopes.len() - 1);
         let ptr = self.heap.insert(Closure::new(func_ptr));
 
-        println!("{}:", self.ctx.get_local(local_id).unwrap());
+        if let Some(name) = self.ctx.get_local(local_id) {
+            println!("{}:", name);
+        } else {
+            println!("{:?}", local_id)
+        }
+
         self.code().disassemble();
 
         let scope = self.scopes.pop().unwrap();
@@ -142,6 +147,7 @@ impl<'ast, 'ctx, 'code> Compiler<'ast, 'ctx, 'code> {
     }
 
     pub(crate) fn compile(&mut self, term: &Term) {
+        println!("{:?}", term);
         match &term.kind {
             TermKind::Lit(lit) => {
                 let int = match lit {

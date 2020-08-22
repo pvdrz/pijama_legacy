@@ -36,6 +36,10 @@ impl<'code> CallFrame<'code> {
     pub(crate) fn base_ptr(self) -> usize {
         self.base_ptr
     }
+
+    pub(crate) fn closure(&self) -> *const Closure {
+        self.closure
+    }
 }
 
 #[derive(Clone)]
@@ -54,6 +58,10 @@ impl<'code> CallStack<'code> {
 
     pub(crate) fn last_mut(&mut self) -> &mut CallFrame<'code> {
         &mut self.last
+    }
+
+    pub(crate) fn peek(&self) -> &CallFrame<'code> {
+        self.stack.last().unwrap()
     }
 
     pub(crate) fn push_frame(

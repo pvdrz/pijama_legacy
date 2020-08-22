@@ -1,10 +1,10 @@
-fn loop(): Bool do
+fn loop(x: Unit): Bool do
     if false do
         true
     else
-        loop()
+        loop(x)
     end
 end
 
-x = true || loop()
+x = true || loop(unit)
 print(x)
