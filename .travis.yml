@@ -12,5 +12,11 @@ jobs:
   fast_finish: true
 
 script:
+  - |
+    if [[ "$TRAVIS_RUST_VERSION" == stable ]]
+    then
+      rustup component add rustfmt
+      cargo fmt --all -- --check
+    fi
   - cargo build --verbose --all-targets
   - cargo test --verbose
